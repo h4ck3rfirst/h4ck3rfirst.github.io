@@ -99,7 +99,7 @@ theme_mode:  dark
 cdn:
 
 # the avatar on sidebar, support local or CORS resources
-avatar: https://account.hackthebox.com/storage/users/f4f022d9-e0f9-428d-8ba9-6f475c82183b-avatar.png"
+avatar: https://account.hackthebox.com/storage/users/f4f022d9-e0f9-428d-8ba9-6f475c82183b-avatar.png
 
 # The URL of the site-wide social preview image used in SEO `og:image` meta tag.
 # It can be overridden by a customized `page.image` in front matter.
