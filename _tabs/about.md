@@ -1,35 +1,19 @@
 ---
+layout: page  # Use your theme's page layout
 title: About Me
-layout: single
-classes: wide
-permalink: /about/
 ---
 
-# Nikhil Deepak Vishwakarma  
-**Aspiring Offensive Security Professional**  
+# About
 
+Hi, I'm h4ck3rfirst, a passionate web security enthusiast and developer. I co-founded [your project or team, e.g., "RedTeam Hub"](https://github.com/yourproject) to explore ethical hacking and build secure apps.
 
-I am a passionate beginner in **offensive security** with strong hands-on experience in penetration testing, ethical hacking, and vulnerability research. I regularly solve labs and machines on **TryHackMe**, **HackTheBox**, and **PortSwigger Web Security Academy**. I love breaking things (legally) and learning how systems can be secured better.
+With a background in [your experience, e.g., "computer science and cybersecurity"], I spend my days diving into vulnerabilities, coding tools in Python and JS, and sharing knowledge through blogs and open-source repos.
 
+Interests: Red teaming, AI/ML for security, Jekyll sites, and coffee-fueled late-night debugging.
 
-
-### Hands-On Experience
-| Platform         | Progress                     |
-|------------------|------------------------------|
-| HackTheBox       | 22+ Machines rooted          |
-| TryHackMe        | 110+ Rooms & Labs            |
-| PortSwigger      | 120+ Web Security Labs       |
-| VulnHub & Others | 40+ Machines/Labs            |
-
-**Pentesting Domains**: Web Applications • Networks • Active Directory • Mobile Apps • Cloud Security
-
-**Tools I Use Daily**: Burp Suite, Metasploit, Nmap, Wireshark, John the Ripper, sqlmap, ffuf, Gobuster, BloodHound, CrackMapExec
-
-**Languages & Scripting**:  
-Python (Intermediate) • Bash • PowerShell • Java • JavaScript (Learning)
-
-**OS & Environment**: Kali Linux • Parrot OS • Windows • VirtualBox
 ---
 
-**Always learning, always hacking (ethically!).**  
-Feel free to connect or check out my GitHub repos — I’m open to bug bounty tips, CTF teammates, and entry-level red team/pentest opportunities! 🔴
+<!-- Simple horizontal line separator like the example -->
+<hr style="border: none; border-top: 3px solid #333; margin: 2em 0;">
+
+<p><em>Let's connect: <a href="mailto:your.email@example.com">Email</a> | <a href="https://github.com/h4ck3rfirst">GitHub</a> | <a href="https://twitter.com/yourhandle">X/Twitter</a></em></p>
