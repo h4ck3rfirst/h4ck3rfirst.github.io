@@ -5,6 +5,8 @@ permalink: /robots.txt
 
 User-agent: *
 
+It is a static website bro. you found nothing
+
 Disallow: /norobots/
 
 Sitemap: {{ '/sitemap.xml' | absolute_url }}
