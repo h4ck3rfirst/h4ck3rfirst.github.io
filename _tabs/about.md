@@ -1,4 +1,3 @@
-
 ---
 title: About Me
 layout: single
@@ -8,11 +7,11 @@ permalink: /about/
 
 # Nikhil Deepak Vishwakarma  
 **Aspiring Offensive Security Professional**  
----
+
 
 I am a passionate beginner in **offensive security** with strong hands-on experience in penetration testing, ethical hacking, and vulnerability research. I regularly solve labs and machines on **TryHackMe**, **HackTheBox**, and **PortSwigger Web Security Academy**. I love breaking things (legally) and learning how systems can be secured better.
 
----
+
 
 ### Hands-On Experience
 | Platform         | Progress                     |
