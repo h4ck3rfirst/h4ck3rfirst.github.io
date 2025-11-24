@@ -1,11 +1,9 @@
 ---
-layout: post
 title: "HackTheBox Expressway Walkthrough - Pentest Lab Notes"
 date: 2025-11-23 12:00:00 +0530
-categories: [hackthebox, pentest, walkthrough]
+categories: [hackthebox, walkthrough]
 tags: [ctf, http,linux, rce, expressway, htb, writeups ]
-author: h4ck3rfirst
-excerpt: "Complete walkthrough of the HackTheBox Pentest Lab machine 'Expressway' – Kerberos delegation abuse leading to RCE and privilege escalation."
+excerpt: "Complete walkthrough of the HackTheBox Pentest Lab machine 'Expressway'"
 ---
 
 # Walkthrough: Expressway
@@ -64,7 +62,7 @@ What is ISAKMP?
 
 ISAKMP (Internet Security Association and Key Management Protocol) is used by IKE to negotiate IPsec SAs. It listens on UDP/500, handling phase 1 negotiations (algorithm selection, key exchange). IKE responses allow enumeration of modes (Main/Aggressive) and identity material.
 
-#### IKE Enumeration: ike-scan
+## IKE Enumeration: ike-scan
 
 Probed target in Main and Aggressive modes to identify a valid ID:
 
@@ -101,7 +99,7 @@ Starting ike-scan 1.9.6 with 1 hosts (http://www.nta-monitor.com/tools/ike-scan/
 Ending ike-scan 1.9.6: 1 hosts scanned in 0.133 seconds (7.49 hosts/sec).  1 returned handshake; 0 returned notify
 
 ```
-### PSK Cracking
+## PSK Cracking
 
 Used wordlist attack with rockyou.txt:
 
@@ -145,7 +143,7 @@ ike@expressway:~$ ls
 user.txt
 
 ```
-### Local Enumeration & Privilege Escalation
+## Local Enumeration & Privilege Escalation
 
 Ran linpeas for enumeration, but manual checks were needed for privilege escalation.found
 

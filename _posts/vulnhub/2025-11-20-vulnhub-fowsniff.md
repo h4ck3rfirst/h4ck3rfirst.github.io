@@ -61,7 +61,7 @@ Root flag: /root/flag.txt
 
 
 
-### 1. Reconnaissance
+## 1. Reconnaissance
 
 **1.1 Initial Setup**   
 
@@ -77,7 +77,7 @@ Key Finding: Employee usernames include mauer, mustikka, tegel, baksteen, seina,
 No active reconnaissance (e.g., DNS queries) was performed to avoid alerting the target.
 
 
-### 2. Scanning 
+## 2. Scanning 
 **2.1 Port and Service Discovery**   
 An aggressive Nmap scan was conducted to identify open ports, services, and versions. Due to the lab environment's constraints, a full port scan **(-p-)** was initially attempted but timed out; a targeted scan with default scripts **(-sC)** and version detection **(-sV)** was used for efficiency.
 
@@ -116,7 +116,7 @@ No firewalls or rate-limiting detected during scanning.
 
 Before eunumration we will add some the ```fowsniff.thm``` to /etc/hosts file.
 
-### 3. Enumeration
+## 3. Enumeration
 
 **3.1 Web Enumeration (Port 80/TCP)**
 
@@ -220,7 +220,7 @@ Services indicate email server setup. No anonymous access; authentication requir
 **3.3 Credential Harvesting and Cracking**   
 Using OSINT from Twitter/Pastebin, extracted MD5 hashes for 9 users. Cracked via Hashkiller (online tool leveraging rainbow tables).
 
-### 4. Gaining access
+## 4. Gaining access
 **4.1 POP3 Brute Force Authentication**
 ```
 ┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
@@ -354,7 +354,7 @@ baksteen@fowsniff:~$ sudo -l
 Sorry, user baksteen may not run sudo on fowsniff.
 ```
 Low level user doesn't have sudo permission
-### 5. Privilage escalation
+## 5. Privilage escalation
 
  **5.1 System Enumeration**
 
@@ -508,7 +508,7 @@ Special thanks to psf, @nbulischeck and the whole Fofao Team.
 # 
 ```
 
-###  Conclusion and Lessons Learned 
+##  Conclusion and Lessons Learned 
 **Conclusion**
 
 The Fowsniff Corp system was successfully compromised from initial foothold to full root privilege escalation using only authenticated access and local misconfiguration exploitation.
@@ -550,7 +550,7 @@ Manual enumeration + automation in small environments → A simple ls /opt found
 
 ***Writeups must be reproducible → Every command in this report can be copy-pasted and will work in the lab.***
 
-### Final Statement
+# Final Statement
 
     "In secure environments, the most dangerous vulnerabilities are the ones that look harmless."
 

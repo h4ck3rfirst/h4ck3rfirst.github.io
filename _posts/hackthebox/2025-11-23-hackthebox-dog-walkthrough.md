@@ -2,7 +2,7 @@
 layout: post  # Use your theme's default post layout, or 'page' if it's a static page
 title: "HackTheBox Dog Walkthrough - Pentest Lab Notes"
 date: 2025-11-23 12:00:00 -0500  # Adjust timezone if needed
-categories: [hackthebox, pentest, walkthrough]
+categories: [hackthebox, walkthrough]
 tags: [ctf, enumeration, exploit, dog, writeups, htb, ]
 author: h4ck3rfirst
 img: https://labs.hackthebox.com/achievement/machine/2423723/651

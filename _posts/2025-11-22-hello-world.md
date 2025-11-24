@@ -7,4 +7,4 @@ categories: personal hacking
 Hey everyone!  
 I’m **h4ck3rfirst** – aspiring ethical hacker & bug bounty hunter.
 
-This blog will contain:
+# my all blog will contain: notes, writeup, roadmap, methodolgies, everything with offensive sec
