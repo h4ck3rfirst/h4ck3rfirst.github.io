@@ -16,15 +16,15 @@ tags: [ctf, http,linux, rce, expressway, htb, writeups, outbound, labs ]
 
 ## 🧾 Table of Contents
 
-- [Introduction](#introduction)
-- [Reconnaissance](#reconnaissance)
-- [Foothold via Roundcube](#foothold-via-roundcube)
-- [MySQL Enumeration & Decryption](#mysql-enumeration--decryption)
-- [SSH to Jacob & User Flag](#ssh-to-jacob--user-flag)
-- [Privilege Escalation to Root](#privilege-escalation-to-root)
-- [Post Exploitation](#post-exploitation)
-- [Lessons Learned](#lessons-learned)
-- [References](#references)
+- Introduction
+- Reconnaissance
+- Foothold via Roundcube
+- MySQL Enumeration & Decryption
+- [SSH to Jacob & User Flag]
+- Privilege Escalation to Root
+- Post Exploitation
+- Lessons Learned
+- References
 
 ---
 
