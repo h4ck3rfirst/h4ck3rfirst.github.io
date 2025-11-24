@@ -1,6 +1,6 @@
 ---
 title: "HackTheBox Outbound Walkthrough "
-date: 2025-11-24 12:00:00 +0530
+date: 2025-11-24 
 categories: [hackthebox, walkthrough]
 tags: [ctf, http,linux, rce, expressway, htb, writeups, outbound, labs ]
 ---
