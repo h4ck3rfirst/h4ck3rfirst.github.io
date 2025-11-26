@@ -2,17 +2,16 @@
 layout: post  # Use your theme's default post layout, or 'page' if it's a static page
 title: "HackTheBox Planning Walkthrough - Pentest Lab Notes"
 date: 2025-09-23 12:00:00 -0500  # Adjust timezone if needed
-categories: [hackthebox, walkthrough]
-tags: [ctf, enumeration, exploit, planning, writeups, htb, writeups ]
+categories: hackthebox, walkthrough
+tags: ctf, enumeration, exploit, planning, writeups, htb, writeups 
 author: h4ck3rfirst
-img: https://labs.hackthebox.com/achievement/machine/2423723/660
 ---
 
 # 🛡️ HackTheBox - Planning
 
 **Difficulty:** Easy  
 **Category:** Comprehensive Penetration  
-**Target Machine:** `planning.htb `  OR  10.10.11.68
+**Target Machine:** `planning.htb`  OR  10.10.11.68
 
 ## 📌 Overview
 
@@ -337,8 +336,6 @@ bash-5.2# cat /root/root.txt
 
 ```
 **📄 root.txt captured**
-
-![image](https://labs.hackthebox.com/achievement/machine/2423723/660)
 
 ## ✅ Summary
 
