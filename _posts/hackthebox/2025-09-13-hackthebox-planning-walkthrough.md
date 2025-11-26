@@ -5,8 +5,7 @@ date: 2025-09-23 12:00:00 -0500  # Adjust timezone if needed
 categories: [hackthebox, walkthrough]
 tags: [ctf, enumeration, exploit, planning, writeups, htb, writeups ]
 author: h4ck3rfirst
-image: https://labs.hackthebox.com/achievement/machine/2423723/660
-excerpt: "Detailed notes on exploiting the planning machine in HackTheBox Pentest Labs."
+img: https://labs.hackthebox.com/achievement/machine/2423723/660
 ---
 
 # 🛡️ HackTheBox - Planning
