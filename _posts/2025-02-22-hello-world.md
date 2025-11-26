@@ -1,6 +1,6 @@
 ---
 title:  "Hello World – My Hacking Journey Begins"
-date:   2025-11-22
+date:   2025-02-22
 categories: personal hacking
 ---
 
