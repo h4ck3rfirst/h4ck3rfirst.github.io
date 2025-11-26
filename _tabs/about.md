@@ -18,11 +18,15 @@ Interests: Red teaming, Offensive security, bug bounty, troubleshooting, Desktop
             style="border: none; width: 100%; height: 550px; border-radius: 0.5rem;"
             loading="lazy" title="TryHackMe Profile"></iframe>
   </div>
-  <div>
+<div>
     <h3>HackTheBox</h3>
-    <iframe src="https://app.hackthebox.com/profile/2423723"
-            style="border: none; width: 100%; height: 560px; border-radius: 0.5rem;"
-            loading="lazy" title="HackTheBox Profile"></iframe>
+    <a href="https://app.hackthebox.com/profile/2423723" target="_blank" rel="noopener noreferrer">
+      <img src="https://www.hackthebox.com/badge/image/2423723"
+           alt="My HackTheBox Badge - Rank, Points, and Owned Boxes"
+           style="width: 100%; height: auto; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"
+           loading="lazy">
+    </a>
+    <p style="font-size: 0.9em; color: #666; margin-top: 5px;">(Click to view full profile)</p>
   </div>
 </div>
 
