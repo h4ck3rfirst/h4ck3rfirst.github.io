@@ -123,16 +123,16 @@ First run: It may take a moment to initialize (creates ~/.config/Postman/ for us
 - Check logs if issues arise: ~/.config/Postman/logs/.
 - Test: Create a simple GET request to https://httpbin.org/get.
 
-## Troubleshooting
+# Postman on Linux – Troubleshooting Guide
 
-Issue| Possible Cause | Solution| 
-------|-----------------|-----------|
-Exec format error| "Wrong architecture (e.g., ARM64)"| "Download x86_64 version or use web app. Verify with file /opt/Postman/Postman (should show ELF 64-bit LSB executable, x86-64)."
-Permission denied| File ownership| sudo chown -R $USER:$USER /opt/Postman (if needed for edits).
-No icon in menu| Desktop file issue| Update Icon path or run sudo update-desktop-database.
-App closes immediately,First-run init or GPU issue,Run with --disable-gpu flag: postman --disable-gpu. Check logs.
-Download fails| Network/firewall| Use curl alternative: curl -L https://dl.pstmn.io/download/latest/linux64 -o Postman.tar.gz.
-Outdated version| Old tar.gz| Always grab the latest from the site—Postman auto-updates after install.
+| Issue                                  | Possible Cause                                   | Solution |
+|----------------------------------------|--------------------------------------------------|----------|
+| **Exec format error**                  | Wrong architecture (e.g., ARM binary on x86_64)  | Download the **x86_64** version or use the web app.<br>Verify with:<br>`file /opt/Postman/Postman`<br>→ should show **ELF 64-bit LSB executable, x86-64** |
+| **Permission denied**                  | Incorrect ownership of the Postman directory     | ```bash<br>sudo chown -R $USER:$USER /opt/Postman<br>``` |
+| **No icon in application menu**        | Missing or incorrect `.desktop` file             | 1. Ensure the `Icon=` path is correct in `/usr/share/applications/postman.desktop`<br>2. Run:<br>`sudo update-desktop-database` |
+| **App crashes or closes immediately**  | GPU/driver issue or first-run initialization     | Launch with GPU disabled:<br>`/opt/Postman/Postman --disable-gpu`<br>Check logs:<br>`cat ~/.config/Postman/log.log` |
+| **Download fails in browser**          | Firewall, proxy, or network restrictions         | Use terminal:<br>`curl -L https://dl.pstmn.io/download/latest/linux64 -o Postman.tar.gz`<br>or<br>`wget https://dl.pstmn.io/download/latest/linux64 -O Postman.tar.gz` |
+| **Stuck on an outdated version**       | Installed from an old archive                    | Always download the latest version from:<br>https://www.postman.com/downloads/<br>Postman will auto-update after the first successful launch |
 
 
  - ARM64 Users: No native support. Alternatives: Bruno (sudo apt install bruno) or Insomnia (older .deb versions).
