@@ -95,13 +95,17 @@ Username: natas2
 URL:      http://natas2.natas.labs.overthewire.org
 
 http://natas2.natas.labs.overthewire.org/
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas2-1.png)
+
+![natas2-1](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas2-1.png)
 Source code review
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas2-2.png)
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas2-3.png)
+![natas2-2](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas2-2.png)
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas2-4.png)
+
+![natas2-3](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas2-3.png)
+
+
+![natas2-4](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas2-4.png)
 
 ```zsh
 
@@ -122,17 +126,17 @@ Username: natas3
 URL:      http://natas3.natas.labs.overthewire.org
 
 
-
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas3-1.png)
-
-
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas3-2.png)
+![natas3-1](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas3-1.png)
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas3-3.png)
+
+![natas3-2](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas3-2.png)
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas3-4.png)
+![natas3-3](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas3-3.png)
+
+
+![natas3-4](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas3-4.png)
 
 
 
@@ -147,7 +151,7 @@ natas4:QryZXc2e0zahULdHrtHxzyYkj59kUxLQ
 Username: natas5
 URL:      http://natas4.natas.labs.overthewire.org
 ```**For this level you need burpsuite or zap owasp to modifie the request **```
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas4-1.png)
+![natas4-1](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas4-1.png)
 
 
 Catch the Request on Burpsuite and send it to Repecter
@@ -155,7 +159,7 @@ Catch the Request on Burpsuite and send it to Repecter
 
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas4-2.png)
+![natas4-2](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas4-2.png)
 
 
 By this
@@ -176,7 +180,7 @@ it is like refering some other place like ```http://natas5.natas.labs.overthewir
 
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas4-3.png)
+![natas4-3](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas4-3.png)
 Boom
 
 ```zsh
@@ -192,9 +196,13 @@ Access granted. The password for natas5 is 0n35PkggAPm2zbEpOU802c0x0Msn1ToK
 Username: natas5
 URL:      http://natas5.natas.labs.overthewire.org
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas5-1.png)
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas5-2.png)
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/nastas5-3.png)
+
+![natas5-1](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas5-1.png)
+
+![natas5-2](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas5-2.png)
+
+![natas5-3](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/nastas5-3.png)
+
 
 ```zsh  
 Access granted. The password for natas6 is 0RoJwHdSKWFTYR5WuiAewauSuNaBXned
@@ -205,13 +213,13 @@ Access granted. The password for natas6 is 0RoJwHdSKWFTYR5WuiAewauSuNaBXned
 Username: natas6
 URL:      http://natas6.natas.labs.overthewire.org
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas6-1.png)
+![natas6-1](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas6-1.png)
 
 
 The form compares the submitted secret value to the one stored in includes/secret.inc
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas6-2.png)
+![natas6-2](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas6-2.png)
 
 
 
@@ -222,19 +230,19 @@ browse to ```http://natas6.natas.labs.overthewire.org/includes/secret.inc``` dis
 
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas6-3.png)
+![natas6-3](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas6-3.png)
 
 
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas6-4.png)
+![natas6-4](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas6-4.png)
 
 
 
 Enter that secret in the web form and submit.
 
 
-![image](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas6-5.png)
+![natas6-5](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas6-5.png)
 
 ```zsh
 Access granted.          
@@ -247,7 +255,7 @@ Username: natas7
 URL:      http://natas7.natas.labs.overthewire.org
 this is LFI(local file inclusion ) types of Vulnerablitie
 
-![natas7 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/raw/main/overthewire/files/natas/natas7.gif)
+![natas7 demo](https://github.com/h4ck3rfirst/all-Exploit-notes/raw/main/overthewire/files/natas/natas7.gif)
 
 ```zsh 
 natas8 : xcoXLmzMkoIP9D7hlgPlh9XD7OgLAe5Q
@@ -258,7 +266,7 @@ natas8 : xcoXLmzMkoIP9D7hlgPlh9XD7OgLAe5Q
 Username: natas8
 URL:      http://natas8.natas.labs.overthewire.org
 
-![natas8 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/raw/main/overthewire/files/natas/natas8.gif)
+![natas8 demo](https://github.com/h4ck3rfirst/all-Exploit-notes/raw/main/overthewire/files/natas/natas8.gif)
 
 ```zsh 
 Access granted. The password for natas9 is ZE1ck82lmdGIoErlhQgWND6j2Wzz6b6t 
@@ -269,7 +277,7 @@ Access granted. The password for natas9 is ZE1ck82lmdGIoErlhQgWND6j2Wzz6b6t
 Username: natas9
 URL :     http://natas9.natas.labs.overthewire.org
 
-![natas9 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/raw/main/overthewire/files/natas/natas9.gif)
+![natas9 demo](https://github.com/h4ck3rfirst/all-Exploit-notes/raw/main/overthewire/files/natas/natas9.gif)
 
 ```zsh
 natas10 :  t7I5VHvpa14sJTUGV0cbEsbYfFP2dmOu
@@ -285,18 +293,20 @@ my mistake it found the worng password
 the path of correct password is /etc/netas_webpass/natas11
 you can replace it with /tmp/pass
 the payload
-[a-zA-Z0-9] /etc/natas_webpass/natas11 #
+[a-zA-Z0-9] /etc/natas_webpass/natas11 
 ```
 Refer's : [bypass of special character](https://stackoverflow.com/questions/76836086/xss-payload-that-can-bypass-special-character-check)
 
-![natas10 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas10.gif)
+
+![natas10 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas10.gif)
 
 ```zsh
 
 /etc/natas_webpass/natas11:UJdqkK1pTu6VLt9UHWAgRZz6sVUZ3lEk
 
 ```
-#3# Natas Level 10 → Level 11
+## Natas Level 10 → Level 11
+
 Username: natas11
 URL:      http://natas11.natas.labs.overthewire.org
 
@@ -365,7 +375,7 @@ The password for natas12 is yZdkjAYZRd3R7tq7T5kXMjMJlOIkzDeB
 Username: natas12
 URL:      http://natas12.natas.labs.overthewire.org
 
-![natas12 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas12.gif)
+![natas12 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas12.gif)
 
 ```zsh
 natas13 : trbs5pCjCrkuSknBBKHhaBxq6Wm1j3LC
@@ -377,7 +387,7 @@ natas13 : trbs5pCjCrkuSknBBKHhaBxq6Wm1j3LC
 Username: natas13
 URL:      http://natas13.natas.labs.overthewire.org
 
-![natas13 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas13.gif)
+![natas13 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas13.gif)
 
 ```zsh
 
@@ -389,7 +399,7 @@ natas14 : z3UYcr4v4uBpeX8f7EZbMHlzK4UR2XtQ
 Username: natas14
 URL:      http://natas14.natas.labs.overthewire.org
 
-![natas13 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas14.gif)
+![natas13 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas14.gif)
 
 ```zsh
 Successful login! The password for natas15 is SdqIqBsFcz3yotlNYErZSZwblkm0lrvx
@@ -402,7 +412,7 @@ URL:      http://natas15.natas.labs.overthewire.org
 
 It take a half hours for sqlijection and dump all the cred 
 
-![natas13 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas15.gif)
+![natas13 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas15.gif)
 
 ```zsh  
 ┌──(kali㉿kali)-[/media/…/ctf/Other/overthewire/natas]
@@ -659,7 +669,7 @@ Table: users
 Username: natas18
 URL:      http://natas18.natas.labs.overthewire.org
 
-![natas18 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas18.gif) 
+![natas18 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas18.gif) 
 
 ```zsh
 
@@ -673,7 +683,7 @@ Password: tnwER7PdfWkxsG4FNWUtoAZ9VyZTJqJr
 Username: natas19
 URL:      http://natas19.natas.labs.overthewire.org
 
-![natas19 demo](https://github.com/nikhil-ji-first/all-Exploit-notes/blob/main/overthewire/files/natas/natas19.gif)
+![natas19 demo](https://raw.githubusercontent.com/h4ck3rfirst/all-Exploit-notes/refs/heads/main/overthewire/files/natas/natas19.gif)
 
 
 ```zsh
