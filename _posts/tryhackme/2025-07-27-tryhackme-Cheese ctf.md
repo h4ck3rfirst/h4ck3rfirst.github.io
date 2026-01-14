@@ -17,10 +17,10 @@ This is a write-up for the **CheeseCTF** room on TryHackMe, which involves explo
 
 ## Table of Contents
 
-- [Reconnaissance](#reconnaissance)
-- [Foothold](#foothold)
-- [Privilege Escalation](#privilege-escalation)
-- [Root Flag](#root-flag)
+- Reconnaissance
+- Foothold
+- Privilege Escalation
+- Root Flag
   
 ---
 
@@ -90,6 +90,9 @@ We generate an SSH key pair, then add the public key to the authorized_keys file
 After doing so, we can SSH into the comte user’s account and retrieve the user flag:
 ```
  ssh -i temp_id_rsa comte@10.10.145.132
+```
+#### User flag
+```
  cat user.txt
 THM{9f2c**REDACTED**b17a}
 ```
@@ -114,7 +117,7 @@ This indicates that the user can manipulate a systemd timer called exploit.timer
 ```
 We find that the exploit.service copies the xxd binary to the /opt directory and sets the SUID bit, allowing anyone to execute it with root privileges.
 
-**Fixing the Exploit Timer**
+#### Fixing the Exploit Timer
 
 The timer file /etc/systemd/system/exploit.timer is misconfigured with an empty OnBootSec value. We modify it to trigger immediately upon activation:
 ```
@@ -142,9 +145,9 @@ This triggers the associated exploit.service, which places the xxd binary in /op
 ```
  /opt/xxd "/root/root.txt" | xxd -r
 ```
-**THM{dca75**REDACTED**167c}**
+  **THM{dca75**REDACTED**167c}**
 
-**Root Flag**
+#### **Root Flag**
 
 Once we gain root access, we are able to retrieve the root flag located in /root/root.txt:
 ```
