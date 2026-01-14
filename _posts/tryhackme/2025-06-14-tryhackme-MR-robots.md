@@ -3,7 +3,7 @@ layout: post  # Use your theme's default post layout, or 'page' if it's a static
 title: "Tryhackme Mr robot Walkthrough - Pentest Lab Notes"
 date: 2025-06-14 12:00:00 -0500  # Adjust timezone if needed
 categories: [tryhackme, walkthrough]
-tags: ctf, enumeration, exploit, Mr robot, writeups, htb, writeups tryhackme walkthrough
+tags: [ctf, enumeration, exploit, Mr robot, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough]
 author: h4ck3rfirst
 ---
 # 🤖 TryHackMe: Robot Room - Walkthrough
