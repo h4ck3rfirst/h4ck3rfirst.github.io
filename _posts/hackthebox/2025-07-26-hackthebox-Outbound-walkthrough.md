@@ -1,11 +1,13 @@
 ---
 title: "HackTheBox Outbound Walkthrough "
-date: 2025-11-24 
+date: 2025-07-26 
 categories: [hackthebox, walkthrough]
-tags: [ctf, http,linux, rce, expressway, htb, writeups, outbound, labs ]
+tags: [ctf, http,linux, rce, season9 htb, htb, writeups, outbound, gobuster, nmap, Lateral Movement, twtyr45t825hg5oyg5f1233roundcube, mysql, below, webmail, below, msfconsole,CVE-2025-27591 ]
+author: h4ck3rfirst
+excerpt: "Complete walkthrough of the HackTheBox Pentest Lab machine 'Outbound hackthebox'"
 ---
 
-# 🛡️ HTB Linux Machine Walkthrough - `mail.outbound.htb`
+#  HTB Linux Machine Walkthrough - `mail.outbound.htb`
 
 > **Difficulty**: Easy  
 > **OS**: Linux  
@@ -14,7 +16,7 @@ tags: [ctf, http,linux, rce, expressway, htb, writeups, outbound, labs ]
 
 ---
 
-## 🧾 Table of Contents
+##  Table of Contents
 
 - Introduction
 - Reconnaissance
@@ -28,7 +30,7 @@ tags: [ctf, http,linux, rce, expressway, htb, writeups, outbound, labs ]
 
 ---
 
-## 📘 Introduction
+##  Introduction
 
 This write-up covers the compromise of an HTB-style Linux machine using:
 
@@ -39,9 +41,9 @@ This write-up covers the compromise of an HTB-style Linux machine using:
 
 ---
 
-## 🔍 Reconnaissance
+##  Reconnaissance
 
-### 🔎 Nmap Scan
+###  Nmap Scan
 
 ```bash
 nmap -sC -sV -oN scan.txt <target_ip>
@@ -52,19 +54,19 @@ Open Ports:
 80/tcp  open  http    Apache httpd 2.4.41 ((Ubuntu))
 ```
 
-### 🌐 Web Recon 
-🛠️ Setup
+### Web Recon 
+Setup
 
 Add the domain to your /etc/hosts:```sudo nano /etc/hosts``` then adding the ```<target_ip> mail.outbound.htb```
 
-### 📨 Login Credentials
+### Login Credentials
 
 Use the provided credentials:
 
 Username: ```tyler```
 Password: ```LhKL1o9Nm3X2```
 
-### 🔍 Web Enumration 
+### Web Enumration 
 
 After login, webmail shows Roundcube v1.6.10
 
@@ -79,7 +81,7 @@ Shellcodes: No Results
                          
 ```
 ## Inital Foothold
- 🔗 GitHub PoC:-->[scipt](https://github.com/hakaioffsec/CVE-2025-49113-exploit)
+ GitHub PoC:-->[scipt](https://github.com/hakaioffsec/CVE-2025-49113-exploit)
  i recommend to use msfconsole for this
  
  
@@ -119,9 +121,9 @@ meterpeter> shell
 
 You now have a shell as www-data.
 
-### 📦 MySQL Enumeration & Decryption
+### MySQL Enumeration & Decryption
 
-#### 🔑 Extract Credentials
+#### Extract Credentials
 
 Check Roundcube config:
 ```
@@ -137,7 +139,7 @@ Decryption key: ```rcmail-!24ByteDESkey*Str```
 ```
 mysql://roundcube:RCDBPass2025@localhost/roundcube
 ```
-#### 🛢️ Login to MySQL 
+#### Login to MySQL 
 
 ```
 mysql -u roundcube -pRCDBPass2025
@@ -159,7 +161,7 @@ Found jacob and it's encrypted password
 1;username|s:5:"jacob";storage_host|s:9:"localhost";storage_port|i:143;storage_ssl|b:0;password|s:32:"L7Rv00A8TuwJAr67kITxxcSgnIk25Am/
 ```
 
-#### 🔐 Decrypt Encrypted Password
+#### Decrypt Encrypted Password
 
 Extracted session contained base64-encrypted passwords. Thnxx GPT's to help
 
@@ -181,12 +183,12 @@ cleaned = decrypted.rstrip(b"\x00").rstrip(b"\x08").decode('utf-8', errors='igno
 print("[+] Password:", cleaned)
 ```
 
-### ✅ Output: Jacob's decrypted password
+### Output: Jacob's decrypted password
 
 i thought i Found User cred but it is half wrong  when i try ssh to logged with this decypted password  it says's it worng when i su with meterpreter shell it logged in after some emnuration
 
 it is Webmail Password
-#### 📬 Webmail Access
+#### Webmail Access
 
 ```
 jacob:595mO8DmwGeD
@@ -196,14 +198,14 @@ Login as Jacob to the webmail portal. Find:
 SSH credentials    
 Note about below system log tool
 
-## 🔐 SSH     
+## SSH     
 **ssh jacob@mail.outbound.htb**
 
 ```
 cat user.txt
 ```
 
-## 🔼 Privilege Escalation - `jacob` ➜ `root`
+## Privilege Escalation - `jacob` ➜ `root`
 
 ### 🎯 Goal
 
@@ -211,7 +213,7 @@ Escalate privileges from low-privileged user `jacob` to full root access by abus
 
 ---
 
-### 🔍 Step 1: Enumerate Sudo Permissions
+### Step 1: Enumerate Sudo Permissions
 
 Check what the user `jacob` can run as root:
 
@@ -223,7 +225,7 @@ sudo -l
 
 This reveals that the user can run the below binary as root without a password.
 
-#### 📦 What is below?
+#### What is below?
 below is a system resource monitoring tool, similar to top or htop. It logs and displays CPU, memory, and I/O usage, and stores its data and logs under /var/log/below/.
 
 ```
@@ -240,7 +242,7 @@ In version 0.8.0, this log writing is vulnerable to a symlink attack, allowing a
 
 Now I searched online for some exploit in the version and I stumbled across 
 
-#### 🧨 Vulnerability: [CVE-2025-27591 POC ](https://github.com/BridgerAlderson/CVE-2025-27591-PoC)
+#### Vulnerability: [CVE-2025-27591 POC ](https://github.com/BridgerAlderson/CVE-2025-27591-PoC)
 
  [Other POC](https://github.com/riotkit-org/below)
 
@@ -275,11 +277,11 @@ Exploitatioins Step
 If successful, you will now be root:
 
 ```
-first@mail:~#
-```
-whoami
+first@mail:~# whoami
+root
 
-**🏁 Get root.txt**
+```
+** Get root.txt**
 
 
 | Technique            | Description                             |
