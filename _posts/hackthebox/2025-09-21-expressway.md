@@ -2,7 +2,7 @@
 title: "HackTheBox Expressway Walkthrough - Pentest Lab Notes"
 date: 2025-09-21
 categories: [hackthebox, walkthrough]
-tags: [ctf, http,linux, rce, expressway, htb, writeups, rustscan, ike-scan, psk-crack, CVE-2025-32462, sudo -V ]
+tags: [ctf, http,linux, rce, expressway, htb, writeups, rustscan, ike-scan, psk-crack, CVE-2025-32462, sudo -V, scp, linpeas.sh, rockyou.txt]
 excerpt: "Complete walkthrough of the HackTheBox Pentest Lab machine 'Expressway'"
 ---
 
