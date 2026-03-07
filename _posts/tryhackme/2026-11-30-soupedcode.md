@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "HackTheBox Soupedcode Walkthrough "
-date: 2025-10-26
+date: 2025-11-30
 categories: [hackthebox, walkthrough]
 tags: [ctf, http,linux, rce, tryhackme, htb, writeups, Soupedcode, labs, nmap, soupedcode, rid, window, active direcotry, smnb, smb, impacket, user.txt, nxc, Kerberoasting, john, evilrm, hashcat, impacket-smbclient,  ]
 author: h4ck3rfirst
