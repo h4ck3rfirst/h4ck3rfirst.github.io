@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "HackTheBox Operation endgame Walkthrough "
-date: 2025-11-30
+date: 2026-03-06 
 categories: [tryhackme, walkthrough]
 tags: [ctf, http,linux, rce, tryhackme, htb, writeups, Operation endgame, labs, nmap, Operation endgame, rid, window, active direcotry, smb, ldap, impacket, nxc, Kerberoasting, john, evilrm, hashcat, impacket-smbclient, rdp, operation_endgame tryhackme, genericwrite, genericall, tragetkerberoasting, bloodHound, smbexec.py ]
 author: h4ck3rfirst
