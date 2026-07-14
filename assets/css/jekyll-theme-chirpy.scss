@@ -43,3 +43,89 @@
         transform: translate(var(--mx), var(--my)) scale(0);
     }
 }
+/* ==========================================================================
+   SPACESHIP DASHBOARD SYSTEM OVERRIDES (Split-Screen Plate Layout)
+   ========================================================================== */
+
+/* 1. Main Content Window Plate */
+#main-wrapper {
+  background: rgba(10, 15, 30, 0.65) !important;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 210, 255, 0.25) !important;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 
+    0 0 30px rgba(0, 210, 255, 0.1),
+    inset 0 0 20px rgba(0, 210, 255, 0.05) !important;
+  padding: 2rem !important;
+  margin-top: 20px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+
+  /* Glass Window Corner Decals */
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 12px; height: 12px;
+    border-top: 2px solid #00d2ff; border-left: 2px solid #00d2ff;
+  }
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0; width: 12px; height: 12px;
+    border-bottom: 2px solid #00d2ff; border-right: 2px solid #00d2ff;
+  }
+}
+
+/* 2. Side Panel Container (The Spaceship HUD Cockpit Layout) */
+#sidebar {
+  background: linear-gradient(180deg, rgba(16, 20, 35, 0.85) 0%, rgba(5, 8, 15, 0.95) 100%) !important;
+  border-right: 2px solid rgba(0, 210, 255, 0.3) !important;
+  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  position: relative;
+  
+  /* Tactical Grid Pattern Layer */
+  background-image: 
+    linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px) !important;
+  background-size: 20px 20px !important;
+
+  /* Sci-Fi Scanner Line Effect */
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 4px;
+    background: linear-gradient(90deg, transparent, #00d2ff, transparent);
+    animation: radarScan 6s linear infinite;
+    opacity: 0.4;
+  }
+}
+
+/* 3. Terminal Font Glow Overrides */
+h1, h2, h3, .post-title, .site-title {
+  color: #00d2ff !important;
+  text-shadow: 0 0 10px rgba(0, 210, 255, 0.5) !important;
+  font-family: 'Courier New', Courier, monospace !important;
+  letter-spacing: 1px;
+}
+
+.post-content {
+  color: #e0e6ed !important;
+  line-height: 1.8;
+  font-size: 1.05rem;
+}
+
+/* 4. Interactive Glass Plate Elements (Links/Cards) */
+.card, code, pre {
+  background: rgba(0, 210, 255, 0.04) !important;
+  border: 1px solid rgba(0, 210, 255, 0.15) !important;
+  border-radius: 8px !important;
+}
+
+/* Radar Animation Definition */
+@keyframes radarScan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}

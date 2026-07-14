@@ -40,6 +40,38 @@
     </ul>
   </nav>
 
+  <!-- ========================================================================== -->
+  <!-- SPACESHIP HUD COCKPIT PANEL CONTAINER -->
+  <!-- ========================================================================== -->
+  <div class="spaceship-hud-panel" style="width: calc(100% - 30px); margin: 15px auto; padding: 14px; border: 1px dashed rgba(0, 210, 255, 0.35); border-radius: 8px; background: rgba(5, 10, 25, 0.6); backdrop-filter: blur(4px); box-shadow: inset 0 0 15px rgba(0, 210, 255, 0.05);">
+    <div style="font-family: 'Courier New', Courier, monospace; font-size: 11px; font-weight: bold; color: #00d2ff; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;">
+      <span>🛸 COCKPIT CORE:</span>
+      <span style="color: #39ff14; text-shadow: 0 0 8px #39ff14; animation: cockpitBlink 1.8s infinite;">ONLINE</span>
+    </div>
+    <div style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: rgba(0, 210, 255, 0.75); line-height: 1.6; letter-spacing: 0.5px;">
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0, 210, 255, 0.1); padding-bottom: 3px; margin-bottom: 3px;">
+        <span>SYS_LOC:</span>
+        <span style="color: #ffffff;">ORBITAL_DECK_A</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0, 210, 255, 0.1); padding-bottom: 3px; margin-bottom: 3px;">
+        <span>VELOCITY:</span>
+        <span style="color: #ffffff; font-variant-numeric: tabular-nums;">27,600 KM/H</span>
+      </div>
+      <div style="display: flex; justify-content: space-between;">
+        <span>SHIELD:</span>
+        <span style="color: #00d2ff; font-weight: bold;">100%</span>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes cockpitBlink { 
+      0%, 100% { opacity: 1; transform: scale(1); } 
+      50% { opacity: 0.4; transform: scale(0.98); } 
+    }
+  </style>
+  <!-- ========================================================================== -->
+
   <div class="sidebar-bottom d-flex flex-wrap  align-items-center w-100">
     {% unless site.theme_mode %}
       <button type="button" class="btn btn-link nav-link" aria-label="Switch Mode" id="mode-toggle">
