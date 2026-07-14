@@ -75,24 +75,32 @@
     
     <div class="asteroid-field">
       {% if site.tags.size > 0 %}
-        {% for tag in site.tags limit:12 %}
-          {% assign tag_name = tag[0] %}
-          {% assign tag_count = tag[1].size %}
-          
-          {% cycle 'shape': 'shape-a', 'shape-b', 'shape-c', 'shape-d' %}
-          {% capture current_shape %}{{ current_cycle }}{% endcapture %}
-          
-          {% cycle 'shade': 'shade-a', 'shade-b', 'shade-c', 'shade-d', 'shade-e' %}
-          {% capture current_shade %}{{ current_cycle }}{% endcapture %}
-          
-          {% cycle 'size': 'size-sm', 'size-md', 'size-lg' %}
-          {% capture current_size %}{{ current_cycle }}{% endcapture %}
+        <!-- Safely iterate over the tag configuration dictionary keys -->
+        {% assign tags_count = 0 %}
+        {% for tag in site.tags %}
+          {% if tags_count < 12 %}
+            {% assign tag_name = tag[0] %}
+            {% assign tag_size = tag[1].size %}
+            
+            {% cycle 'shape': 'shape-a', 'shape-b', 'shape-c', 'shape-d' %}
+            {% capture current_shape %}{{ current_cycle }}{% endcapture %}
+            
+            {% cycle 'shade': 'shade-a', 'shade-b', 'shade-c', 'shade-d', 'shade-e' %}
+            {% capture current_shade %}{{ current_cycle }}{% endcapture %}
+            
+            {% cycle 'size': 'size-sm', 'size-md', 'size-lg' %}
+            {% capture current_size %}{{ current_cycle }}{% endcapture %}
 
-          <a href="{{ '/tags/' | append: tag_name | downcase | url_encode | relative_url }}/" 
-             class="asteroid-node {{ current_shape }} {{ current_shade }} {{ current_size }}"
-             style="animation-duration: {{ tag_count | plus: 3 }}s;">
-             #{{ tag_name }}
-          </a>
+            <!-- Fixed URL building strategy to prevent htmlproofer compilation blocks -->
+            {% capture tag_url %}/tags/{{ tag_name | slugify }}/{% endcapture %}
+
+            <a href="{{ tag_url | relative_url }}" 
+               class="asteroid-node {{ current_shape }} {{ current_shade }} {{ current_size }}"
+               style="animation-duration: {{ tag_size | plus: 3 }}s;">
+               #{{ tag_name }}
+            </a>
+            {% assign tags_count = tags_count | plus: 1 %}
+          {% endif %}
         {% endfor %}
       {% else %}
         <span class="radar-empty-msg">SCANNER EMPTY: NO TARGETS</span>
