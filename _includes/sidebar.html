@@ -41,62 +41,24 @@
   </nav>
 
   <!-- ========================================================================== -->
-  <!-- SPACESHIP HUD COCKPIT PANEL CONTAINER -->
-  <!-- ========================================================================== -->
-  <div class="spaceship-hud-panel">
-    <div class="hud-core-title">
-      <span>🛸 COCKPIT CORE:</span>
-      <span class="hud-online-blink">ONLINE</span>
-    </div>
-    <div class="hud-metrics-list">
-      <div class="hud-metric-row">
-        <span>SYS_LOC:</span>
-        <span class="hud-val">ORBITAL_DECK_A</span>
-      </div>
-      <div class="hud-metric-row">
-        <span>VELOCITY:</span>
-        <span class="hud-val">27,600 KM/H</span>
-      </div>
-      <div class="hud-metric-row">
-        <span>SHIELD:</span>
-        <span class="hud-val-glow">100%</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================================================== -->
-  <!-- ASTEROID RADAR BELT (TRENDING TAGS REPLACEMENT) -->
+  <!-- CLEANED SPACESHIP TRENDING TAGS FIELD -->
   <!-- ========================================================================== -->
   <div class="asteroid-radar-belt">
     <div class="radar-belt-header">
       <span class="radar-dot-pulse"></span>
-      <span>⚠️ ASTEROID RADAR BELT:</span>
+      <span>⭐ TARGET CHANNELS:</span>
     </div>
     
     <div class="asteroid-field">
       {% if site.tags.size > 0 %}
-        <!-- Counter block initialization to prevent multi-cycle overlap text leakage -->
         {% assign idx = 0 %}
         {% for tag in site.tags %}
           {% if idx < 12 %}
             {% assign tag_name = tag[0] %}
-            {% assign tag_size = tag[1].size %}
-            
-            <!-- Structural separation corrections for standard layout styling arrays -->
-            {% cycle 'shape', 'shape-a', 'shape-b', 'shape-c', 'shape-d' %}
-            {% capture current_shape %}{{ current_cycle }}{% endcapture %}
-            
-            {% cycle 'shade', 'shade-a', 'shade-b', 'shade-c', 'shade-d', 'shade-e' %}
-            {% capture current_shade %}{{ current_cycle }}{% endcapture %}
-            
-            {% cycle 'size', 'size-sm', 'size-md', 'size-lg' %}
-            {% capture current_size %}{{ current_cycle }}{% endcapture %}
-
             {% capture tag_url %}/tags/{{ tag_name | slugify }}/{% endcapture %}
 
-            <a href="{{ tag_url | relative_url }}" 
-               class="asteroid-node {{ current_shape }} {{ current_shade }} {{ current_size }}"
-               style="animation-duration: {{ tag_size | plus: 3 }}s;">
+            <!-- Clean iteration layout without liquid cycle bugs -->
+            <a href="{{ tag_url | relative_url }}" class="space-tag-node">
                #{{ tag_name }}
             </a>
             {% assign idx = idx | plus: 1 %}
@@ -134,7 +96,7 @@
           {%- endunless -%}
           {%- assign email = site.social.email | split: '@' -%}
           {%- capture url -%}
-            javascript:location.href = 'mailto:' + ['{{ email[0] }}','{{ email[1] }}'].join('@')
+            javascript:location.href = 'mailto:' + ['{{ email }}','{{ email }}'].join('@')
           {%- endcapture -%}
         {% when 'rss' %}
           {% assign url = '/feed.xml' | relative_url %}

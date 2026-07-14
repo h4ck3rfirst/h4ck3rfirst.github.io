@@ -10,14 +10,12 @@ layout: compress
 
 {% if site.theme_mode %}
   {% capture prefer_mode %}data-mode="{{ site.theme_mode }}"{% endcapture %}
-{% endif %}
+endif %}
 
-<!-- `site.alt_lang` can specify a language different from the UI -->
 <html lang="{{ page.lang | default: site.alt_lang | default: site.lang }}" {{ prefer_mode }}>
   {% include head.html %}
 
   <body>
-    <!-- 1. Space Background Canvas -->
     <div class="space-bg"></div>
 
     {% include sidebar.html lang=lang %}
@@ -35,7 +33,6 @@ layout: compress
             {% endif %}
           </main>
 
-          <!-- panel -->
           <aside aria-label="Panel" id="panel-wrapper" class="col-xl-3 ps-2 text-muted">
             <div class="access">
               {% include_cached update-list.html lang=lang %}
@@ -50,7 +47,6 @@ layout: compress
         </div>
 
         <div class="row">
-          <!-- tail -->
           <div id="tail-wrapper" class="col-12 col-lg-11 col-xl-9 px-md-4">
             {% for _include in layout.tail_includes %}
               {% assign _include_path = _include | append: '.html' %}
@@ -77,8 +73,6 @@ layout: compress
       {% include_cached notification.html lang=lang %}
     {% endif %}
 
-    <!-- Embedded scripts -->
-
     {% for _include in layout.script_includes %}
       {% assign _include_path = _include | append: '.html' %}
       {% include {{ _include_path }} %}
@@ -86,41 +80,49 @@ layout: compress
 
     {% include_cached search-loader.html lang=lang %}
 
-    <!-- 2. Integrated Mouse Tracking Space Particles Engine -->
+    <!-- UPGRADED HYPER-DENSITY COSMIC ENERGY EMITTER -->
     <script>
     document.addEventListener("DOMContentLoaded", () => {
         const bg = document.querySelector('.space-bg');
+        const colorPalette = ['#00d2ff', '#00f5d4', '#9b5de5', '#f15bb5', '#fee440', '#ffffff'];
         
         document.addEventListener("mousemove", (e) => {
-            // Move parallax space background frame
             if (bg) {
-                const moveX = (window.innerWidth / 2 - e.clientX) * 0.02;
-                const moveY = (window.innerHeight / 2 - e.clientY) * 0.02;
+                const moveX = (window.innerWidth / 2 - e.clientX) * 0.015;
+                const moveY = (window.innerHeight / 2 - e.clientY) * 0.015;
                 bg.style.transform = `translate(${moveX}px, ${moveY}px)`;
             }
 
-            // Cap emission density loop to save layout performance processing loops
-            if (Math.random() > 0.15) return;
+            // Spawn multiple sparkles per mouse pass movement frame
+            for (let i = 0; i < 2; i++) {
+                const star = document.createElement("div");
+                star.classList.add("star");
+                
+                // Slight randomization around current coordinate index
+                const offset = () => Math.random() * 10 - 5;
+                star.style.left = `${e.pageX + offset()}px`;
+                star.style.top = `${e.pageY + offset()}px`;
 
-            const star = document.createElement("div");
-            star.classList.add("star");
-            star.style.left = `${e.pageX}px`;
-            star.style.top = `${e.pageY}px`;
+                const size = Math.random() * 5 + 2;
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
 
-            const size = Math.random() * 4 + 1;
-            star.style.width = `${size}px`;
-            star.style.height = `${size}px`;
+                // Multi-coloured nebulae spectrum selection mapping rules
+                const randomColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+                star.style.backgroundColor = randomColor;
+                star.style.setProperty("--glow-clr", randomColor);
 
-            const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 80 + 40;
-            const starX = Math.cos(angle) * distance;
-            const starY = Math.sin(angle) * distance;
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 110 + 50;
+                const starX = Math.cos(angle) * distance;
+                const starY = Math.sin(angle) * distance;
 
-            star.style.setProperty("--mx", `${starX}px`);
-            star.style.setProperty("--my", `${starY}px`);
+                star.style.setProperty("--mx", `${starX}px`);
+                star.style.setProperty("--my", `${starY}px`);
 
-            document.body.appendChild(star);
-            setTimeout(() => star.remove(), 1200);
+                document.body.appendChild(star);
+                setTimeout(() => star.remove(), 1000);
+            }
         });
     });
     </script>
