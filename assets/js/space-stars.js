@@ -85,3 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   animate();
 });
+// Show planet if there's a post from last 7 days
+const latestPostDate = new Date('2023-07-10'); // ← Change to your latest post date
+const daysSince = (Date.now() - latestPostDate) / (1000 * 60 * 60 * 24);
+
+if (daysSince < 7) {
+  // Load the planet
+  const script = document.createElement('script');
+  script.src = "{{ '/assets/js/planet.js' | relative_url }}";
+  document.body.appendChild(script);
+}
