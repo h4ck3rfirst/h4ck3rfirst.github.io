@@ -9,3 +9,37 @@
 ';
 
 /* append your custom style below */
+/* Deep space background configuration */
+.space-bg {
+    position: fixed;
+    top: -5%;
+    left: -5%;
+    width: 110vw;
+    height: 110vh;
+    z-index: -1;
+    background: radial-gradient(circle at center, #111a24 0%, #030307 100%);
+    transition: transform 0.2s ease-out;
+}
+
+/* Star trail mouse particles */
+.star {
+    position: absolute;
+    background-color: #ffffff;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    animation: flyOut 1.5s linear forwards;
+    z-index: 9999; /* Ensures stars stay above elements */
+}
+
+@keyframes flyOut {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        box-shadow: 0 0 10px #ffffff, 0 0 20px #00d2ff;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(var(--mx), var(--my)) scale(0);
+    }
+}
