@@ -9,123 +9,160 @@
 ';
 
 /* append your custom style below */
-/* Deep space background configuration */
-.space-bg {
-    position: fixed;
-    top: -5%;
-    left: -5%;
-    width: 110vw;
-    height: 110vh;
-    z-index: -1;
-    background: radial-gradient(circle at center, #111a24 0%, #030307 100%);
-    transition: transform 0.2s ease-out;
-}
-
-/* Star trail mouse particles */
-.star {
-    position: absolute;
-    background-color: #ffffff;
-    border-radius: 50%;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    animation: flyOut 1.5s linear forwards;
-    z-index: 9999; /* Ensures stars stay above elements */
-}
-
-@keyframes flyOut {
-    0% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-        box-shadow: 0 0 10px #ffffff, 0 0 20px #00d2ff;
-    }
-    100% {
-        opacity: 0;
-        transform: translate(var(--mx), var(--my)) scale(0);
-    }
-}
 /* ==========================================================================
-   SPACESHIP DASHBOARD SYSTEM OVERRIDES (Split-Screen Plate Layout)
+   GLOBAL SPACESHIP PROTOCOL - FULL SYSTEM RESKIN
    ========================================================================== */
 
-/* 1. Main Content Window Plate */
-#main-wrapper {
-  background: rgba(10, 15, 30, 0.65) !important;
-  border-radius: 16px;
-  border: 1px solid rgba(0, 210, 255, 0.25) !important;
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  box-shadow: 
-    0 0 30px rgba(0, 210, 255, 0.1),
-    inset 0 0 20px rgba(0, 210, 255, 0.05) !important;
-  padding: 2rem !important;
-  margin-top: 20px;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
-  overflow: hidden;
-
-  /* Glass Window Corner Decals */
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 12px; height: 12px;
-    border-top: 2px solid #00d2ff; border-left: 2px solid #00d2ff;
-  }
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0; right: 0; width: 12px; height: 12px;
-    border-bottom: 2px solid #00d2ff; border-right: 2px solid #00d2ff;
-  }
+/* --- 1. Master Structural Scopes --- */
+html, body {
+  background-color: #020206 !important;
+  color: #d1d9e6 !important;
 }
 
-/* 2. Side Panel Container (The Spaceship HUD Cockpit Layout) */
+/* Base Top Navigation & Sidebar Adjustments */
 #sidebar {
-  background: linear-gradient(180deg, rgba(16, 20, 35, 0.85) 0%, rgba(5, 8, 15, 0.95) 100%) !important;
-  border-right: 2px solid rgba(0, 210, 255, 0.3) !important;
-  box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-  position: relative;
-  
-  /* Tactical Grid Pattern Layer */
-  background-image: 
-    linear-gradient(rgba(0, 210, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 210, 255, 0.03) 1px, transparent 1px) !important;
-  background-size: 20px 20px !important;
+  background: linear-gradient(180deg, rgba(10, 14, 26, 0.9) 0%, rgba(3, 5, 10, 0.98) 100%) !important;
+  border-right: 1px solid rgba(0, 210, 255, 0.25) !important;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(10px);
+}
 
-  /* Sci-Fi Scanner Line Effect */
+/* --- 2. Main Content Flight Windows (Post Plates) --- */
+#main-wrapper {
+  background: transparent !important;
+}
+
+/* Transform Every Blog Entry Item Card into a Glass Cockpit Window Plate */
+article.card, .post-preview, #core-wrapper #main {
+  background: rgba(12, 19, 36, 0.6) !important;
+  border: 1px solid rgba(0, 210, 255, 0.2) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(8px) saturate(140%) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37), inset 0 0 15px rgba(0, 210, 255, 0.03) !important;
+  padding: 24px !important;
+  margin-bottom: 25px !important;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+  position: relative;
+
+  /* Corner Hardware Crosshair Visual Accents */
+  &::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 10px; height: 10px;
+    border-top: 2px solid #00d2ff; border-left: 2px solid #00d2ff; opacity: 0.6;
+  }
   &::after {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 4px;
-    background: linear-gradient(90deg, transparent, #00d2ff, transparent);
-    animation: radarScan 6s linear infinite;
-    opacity: 0.4;
+    content: ''; position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+    border-bottom: 2px solid #00d2ff; border-right: 2px solid #00d2ff; opacity: 0.6;
+  }
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 210, 255, 0.5) !important;
+    box-shadow: 0 12px 40px rgba(0, 210, 255, 0.15) !important;
   }
 }
 
-/* 3. Terminal Font Glow Overrides */
-h1, h2, h3, .post-title, .site-title {
+/* --- 3. Typography & Neon Injections --- */
+h1, h2, h3, h4, h5, h6, .post-title, .site-title {
   color: #00d2ff !important;
-  text-shadow: 0 0 10px rgba(0, 210, 255, 0.5) !important;
+  text-shadow: 0 0 12px rgba(0, 210, 255, 0.4) !important;
   font-family: 'Courier New', Courier, monospace !important;
-  letter-spacing: 1px;
+  font-weight: 700 !important;
 }
 
-.post-content {
-  color: #e0e6ed !important;
-  line-height: 1.8;
-  font-size: 1.05rem;
+a {
+  color: #00b0ff;
+  &:hover { color: #ffbc00; text-shadow: 0 0 8px #ffbc00; }
 }
 
-/* 4. Interactive Glass Plate Elements (Links/Cards) */
-.card, code, pre {
-  background: rgba(0, 210, 255, 0.04) !important;
-  border: 1px solid rgba(0, 210, 255, 0.15) !important;
-  border-radius: 8px !important;
+.text-muted, .post-meta {
+  color: rgba(0, 210, 255, 0.5) !important;
+  font-family: monospace;
 }
 
-/* Radar Animation Definition */
-@keyframes radarScan {
-  0% { top: 0%; }
-  100% { top: 100%; }
+/* --- 4. HUD Component Styling (Sidebar Modules) --- */
+.spaceship-hud-panel {
+  width: calc(100% - 30px); margin: 15px auto 5px auto; padding: 14px;
+  border: 1px dashed rgba(0, 210, 255, 0.3); border-radius: 8px;
+  background: rgba(5, 9, 20, 0.7);
+}
+.hud-core-title {
+  font-family: monospace; font-size: 11px; font-weight: bold; color: #00d2ff;
+  display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;
+}
+.hud-online-blink { color: #39ff14; text-shadow: 0 0 8px #39ff14; animation: telemetryBlink 1.8s infinite; }
+.hud-metrics-list { font-family: monospace; font-size: 11px; color: rgba(0, 210, 255, 0.7); line-height: 1.6; margin-top: 5px; }
+.hud-metric-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0, 210, 255, 0.08); padding-bottom: 2px; margin-bottom: 2px; }
+.hud-val { color: #ffffff; }
+.hud-val-glow { color: #00d2ff; font-weight: bold; text-shadow: 0 0 5px #00d2ff; }
+
+/* --- 5. Clean Asteroid Implementation --- */
+.asteroid-radar-belt {
+  width: calc(100% - 30px); margin: 10px auto 15px auto; padding: 12px;
+  border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 8px; background: rgba(2, 4, 10, 0.8);
+}
+.radar-belt-header {
+  font-family: monospace; font-size: 10px; font-weight: bold; color: #ffbc00;
+  display: flex; align-items: center; gap: 6px; margin-bottom: 10px;
+}
+.radar-dot-pulse { width: 6px; height: 6px; background: #ffbc00; border-radius: 50%; animation: telemetryBlink 1s infinite; }
+.asteroid-field { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
+
+/* Dynamic Asteroid Nodes Styling */
+.asteroid-node {
+  display: inline-block !important; color: #ffffff !important; text-decoration: none !important;
+  font-family: monospace; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease; cursor: pointer;
+  box-shadow: inset -3px -3px 8px rgba(0,0,0,0.6), inset 2px 2px 4px rgba(255,255,255,0.15);
+  animation: asteroidSwarm ease-in-out infinite alternate;
+  
+  /* Shapes rules overrides */
+  &.shape-a { clip-path: polygon(40% 0%, 90% 15%, 100% 60%, 75% 100%, 15% 90%, 0% 45%); }
+  &.shape-b { clip-path: polygon(25% 15%, 85% 0%, 100% 50%, 80% 95%, 20% 80%, 5% 40%); }
+  &.shape-c { clip-path: polygon(35% 0%, 75% 20%, 95% 65%, 65% 100%, 30% 90%, 0% 55%); }
+  &.shape-d { clip-path: polygon(45% 10%, 90% 5%, 100% 70%, 70% 95%, 10% 85%, 0% 30%); }
+
+  /* Shades configurations */
+  &.shade-a { background: #3d3a45; }
+  &.shade-b { background: #4f5d75; }
+  &.shade-c { background: #2d3142; }
+  &.shade-d { background: #5c504a; }
+  &.shade-e { background: #344e41; }
+
+  /* Sizes rules layouts */
+  &.size-sm { padding: 4px 8px; font-size: 9px; }
+  &.size-md { padding: 6px 11px; font-size: 10.5px; }
+  &.size-lg { padding: 8px 14px; font-size: 12px; }
+
+  &:hover {
+    transform: scale(1.2) rotate(8deg) !important;
+    background: #ffbc00 !important; color: #000000 !important;
+    box-shadow: 0 0 15px #ffbc00 !important; z-index: 10;
+  }
+}
+
+/* --- 6. Auxiliary Dashboard Interfaces (Search & Pagination) --- */
+#search-input {
+  background: rgba(0,0,0,0.5) !important;
+  border: 1px solid rgba(0, 210, 255, 0.3) !important;
+  color: white !important;
+  border-radius: 20px !important;
+  &:focus { box-shadow: 0 0 10px rgba(0, 210, 255, 0.4) !important; }
+}
+
+.pagination .page-item .page-link {
+  background: rgba(12, 19, 36, 0.6) !important;
+  border: 1px solid rgba(0, 210, 255, 0.2) !important;
+  color: #00d2ff !important;
+  margin: 0 3px; border-radius: 4px;
+  &:hover { background: #00d2ff !important; color: black !important; }
+}
+.pagination .page-item.active .page-link {
+  background: #ffbc00 !important; border-color: #ffbc00 !important; color: black !important;
+}
+
+/* Animations */
+@keyframes telemetryBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes asteroidSwarm {
+  0% { transform: translateY(0px) rotate(0deg); }
+  100% { transform: translateY(-7px) rotate(4deg); }
 }

@@ -43,23 +43,23 @@
   <!-- ========================================================================== -->
   <!-- SPACESHIP HUD COCKPIT PANEL CONTAINER -->
   <!-- ========================================================================== -->
-  <div class="spaceship-hud-panel" style="width: calc(100% - 30px); margin: 15px auto 5px auto; padding: 14px; border: 1px dashed rgba(0, 210, 255, 0.35); border-radius: 8px; background: rgba(5, 10, 25, 0.6); backdrop-filter: blur(4px); box-shadow: inset 0 0 15px rgba(0, 210, 255, 0.05);">
-    <div style="font-family: 'Courier New', Courier, monospace; font-size: 11px; font-weight: bold; color: #00d2ff; text-transform: uppercase; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; letter-spacing: 1px;">
+  <div class="spaceship-hud-panel">
+    <div class="hud-core-title">
       <span>🛸 COCKPIT CORE:</span>
-      <span style="color: #39ff14; text-shadow: 0 0 8px #39ff14; animation: cockpitBlink 1.8s infinite;">ONLINE</span>
+      <span class="hud-online-blink">ONLINE</span>
     </div>
-    <div style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: rgba(0, 210, 255, 0.75); line-height: 1.6; letter-spacing: 0.5px;">
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0, 210, 255, 0.1); padding-bottom: 3px; margin-bottom: 3px;">
+    <div class="hud-metrics-list">
+      <div class="hud-metric-row">
         <span>SYS_LOC:</span>
-        <span style="color: #ffffff;">ORBITAL_DECK_A</span>
+        <span class="hud-val">ORBITAL_DECK_A</span>
       </div>
-      <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(0, 210, 255, 0.1); padding-bottom: 3px; margin-bottom: 3px;">
+      <div class="hud-metric-row">
         <span>VELOCITY:</span>
-        <span style="color: #ffffff; font-variant-numeric: tabular-nums;">27,600 KM/H</span>
+        <span class="hud-val">27,600 KM/H</span>
       </div>
-      <div style="display: flex; justify-content: space-between;">
+      <div class="hud-metric-row">
         <span>SHIELD:</span>
-        <span style="color: #00d2ff; font-weight: bold;">100%</span>
+        <span class="hud-val-glow">100%</span>
       </div>
     </div>
   </div>
@@ -67,82 +67,44 @@
   <!-- ========================================================================== -->
   <!-- ASTEROID RADAR BELT (TRENDING TAGS REPLACEMENT) -->
   <!-- ========================================================================== -->
-  <div class="asteroid-radar-belt" style="width: calc(100% - 30px); margin: 10px auto 15px auto; padding: 12px; border: 1px solid rgba(0, 210, 255, 0.15); border-radius: 8px; background: rgba(2, 4, 10, 0.85); position: relative; overflow: hidden;">
-    <div style="font-family: 'Courier New', Courier, monospace; font-size: 10px; font-weight: bold; color: #ffbc00; text-transform: uppercase; margin-bottom: 10px; letter-spacing: 1px; display: flex; align-items: center; gap: 5px;">
-      <span style="display: inline-block; width: 6px; height: 6px; background: #ffbc00; border-radius: 50%; animation: cockpitBlink 1s infinite;"></span>
+  <div class="asteroid-radar-belt">
+    <div class="radar-belt-header">
+      <span class="radar-dot-pulse"></span>
       <span>⚠️ ASTEROID RADAR BELT:</span>
     </div>
     
-    <div class="asteroid-field" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; min-height: 80px; position: relative; z-index: 2;">
+    <div class="asteroid-field">
       {% if site.tags.size > 0 %}
-        {% capture tag_list %}
-          {% for tag in site.tags %}
-            {{ tag[0] }}::{{ tag[1].size }}|
-          {% endfor %}
-        {% endcapture %}
-        {% assign sorted_tags = tag_list | split: '|' %}
-        
-        {% for item in sorted_tags limit:8 %}
-          {% assign tag_pair = item | split: '::' %}
-          {% assign tag_name = tag_pair[0] | strip %}
-          {% assign tag_count = tag_pair[1] | plus: 0 %}
+        {% for tag in site.tags limit:12 %}
+          {% assign tag_name = tag[0] %}
+          {% assign tag_count = tag[1].size %}
           
-          {% if tag_name != empty %}
-            <!-- Liquid Logic to cycle through variations of Shapes, Shades, and Sizes dynamically -->
-            {% cycle 'shape': 'polygon(40% 0%, 85% 20%, 100% 60%, 75% 100%, 25% 100%, 0% 50%)', 'polygon(30% 10%, 80% 0%, 100% 40%, 80% 90%, 20% 85%, 0% 40%)', 'polygon(25% 0%, 75% 15%, 100% 55%, 70% 95%, 30% 100%, 0% 60%)', 'polygon(45% 5%, 90% 15%, 95% 65%, 65% 95%, 15% 80%, 5% 35%)' %}
-            {% capture current_shape %}{{ current_cycle }}{% endcapture %}
-            
-            {% cycle 'shade': '#4a4e69', '#6c757d', '#3d348b', '#5c677d', '#43281c', '#2f3e46' %}
-            {% capture current_shade %}{{ current_cycle }}{% endcapture %}
-            
-            {% cycle 'size': 'padding: 6px 10px; font-size: 10px;', 'padding: 8px 12px; font-size: 11px;', 'padding: 5px 9px; font-size: 9px;', 'padding: 7px 14px; font-size: 11.5px;' %}
-            {% capture current_size %}{{ current_cycle }}{% endcapture %}
+          {% cycle 'shape': 'shape-a', 'shape-b', 'shape-c', 'shape-d' %}
+          {% capture current_shape %}{{ current_cycle }}{% endcapture %}
+          
+          {% cycle 'shade': 'shade-a', 'shade-b', 'shade-c', 'shade-d', 'shade-e' %}
+          {% capture current_shade %}{{ current_cycle }}{% endcapture %}
+          
+          {% cycle 'size': 'size-sm', 'size-md', 'size-lg' %}
+          {% capture current_size %}{{ current_cycle }}{% endcapture %}
 
-            <a href="{{ '/tags/' | append: tag_name | downcase | url_encode | relative_url }}/" 
-               class="asteroid-node" 
-               style="
-                 display: inline-block;
-                 color: #ffffff !important;
-                 text-decoration: none !important;
-                 font-family: monospace;
-                 font-weight: bold;
-                 text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-                 background: {{ current_shade }};
-                 clip-path: {{ current_shape }};
-                 {{ current_size }}
-                 box-shadow: inset -4px -4px 10px rgba(0,0,0,0.6), inset 3px 3px 5px rgba(255,255,255,0.2);
-                 border: 1px solid rgba(255,255,255,0.1);
-                 transition: all 0.3s ease;
-                 cursor: pointer;
-                 animation: asteroidFloat {{ tag_count | plus: 3 }}s ease-in-out infinite alternate;
-               "
-               onmouseover="this.style.transform='scale(1.15) rotate(5deg)'; this.style.background='#ffbc00'; this.style.color='#000000'"
-               onmouseout="this.style.transform='scale(1) rotate(0deg)'; this.style.background='{{ current_shade }}'; this.style.color='#ffffff'">
-               #{{ tag_name }}
-            </a>
-          {% endif %}
+          <a href="{{ '/tags/' | append: tag_name | downcase | url_encode | relative_url }}/" 
+             class="asteroid-node {{ current_shape }} {{ current_shade }} {{ current_size }}"
+             style="animation-duration: {{ tag_count | plus: 3 }}s;">
+             #{{ tag_name }}
+          </a>
         {% endfor %}
       {% else %}
-        <span style="font-family: monospace; font-size: 10px; color: rgba(0,210,255,0.4);">SCANNER EMPTY: NO TARGETS</span>
+        <span class="radar-empty-msg">SCANNER EMPTY: NO TARGETS</span>
       {% endif %}
     </div>
   </div>
 
-  <style>
-    @keyframes cockpitBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    @keyframes asteroidFloat {
-      0% { transform: translateY(0px) rotate(0deg); }
-      100% { transform: translateY(-6px) rotate(3deg); }
-    }
-  </style>
-  <!-- ========================================================================== -->
-
-  <div class="sidebar-bottom d-flex flex-wrap  align-items-center w-100">
+  <div class="sidebar-bottom d-flex flex-wrap align-items-center w-100">
     {% unless site.theme_mode %}
       <button type="button" class="btn btn-link nav-link" aria-label="Switch Mode" id="mode-toggle">
         <i class="fas fa-adjust"></i>
       </button>
-
       {% if site.data.contact.size > 0 %}
         <span class="icon-border"></span>
       {% endif %}
@@ -150,7 +112,6 @@
 
     {% for entry in site.data.contact %}
       {%- assign url = null -%}
-
       {% case entry.type %}
         {% when 'github', 'twitter' %}
           {%- unless site[entry.type].username -%}
@@ -174,24 +135,7 @@
       {% endcase %}
 
       {% if url %}
-        <a
-          href="{{ url }}"
-          aria-label="{{ entry.type }}"
-          {% assign link_types = '' %}
-
-          {% unless entry.noblank %}
-            target="_blank"
-            {% assign link_types = 'noopener noreferrer' %}
-          {% endunless %}
-
-          {% if entry.type == 'mastodon' %}
-            {% assign link_types = link_types | append: ' me' | strip %}
-          {% endif %}
-
-          {% unless link_types == empty %}
-            rel="{{ link_types }}"
-          {% endunless %}
-        >
+        <a href="{{ url }}" aria-label="{{ entry.type }}" {% assign link_types = '' %} {% unless entry.noblank %} target="_blank" {% assign link_types = 'noopener noreferrer' %} {% endunless %} {% if entry.type == 'mastodon' %} {% assign link_types = link_types | append: ' me' | strip %} {% endif %} {% unless link_types == empty %} rel="{{ link_types }}" {% endunless %}>
           <i class="{{ entry.icon }}"></i>
         </a>
       {% endif %}
