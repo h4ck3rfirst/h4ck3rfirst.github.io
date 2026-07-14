@@ -10,67 +10,81 @@
 
 /* append your custom style below */
 /* ==========================================================================
-   HYPER-SPACE STARDUST ENGINE & CLEAN TAG NODES
+   GLOBAL COCKPIT SYSTEM STYLES & PLANETARY INTERFACES
    ========================================================================== */
 
-/* Upgraded High-Energy Particle Trail Glares */
-.star {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 999999;
-  transform: translate(-50%, -50%);
-  animation: cosmicBlast 1s cubic-bezier(0.0, 0.7, 0.1, 1) forwards;
+/* Star void backdrop layout */
+.space-bg {
+  position: fixed; top: -10%; left: -10%; width: 120vw; height: 120vh;
+  z-index: -2; background: radial-gradient(circle at center, #0a0f1d 0%, #020205 100%);
+  transition: transform 0.2s ease-out;
 }
 
-@keyframes cosmicBlast {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1.2);
-    box-shadow: 0 0 10px var(--glow-clr), 0 0 20px var(--glow-clr);
+/* 1. FLIGHT MAIN SCREEN LAYOUT PANE */
+.main-window-pane {
+  background: rgba(8, 14, 28, 0.6) !important;
+  border: 1px solid rgba(0, 212, 255, 0.25) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px) saturate(140%) !important;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,212,255,0.05) !important;
+  padding: 30px !important;
+  position: relative;
+  
+  &::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 12px; height: 12px;
+    border-top: 3px solid #00d2ff; border-left: 3px solid #00d2ff;
   }
-  100% {
-    opacity: 0;
-    transform: translate(var(--mx), var(--my)) scale(0);
+  &::after {
+    content: ''; position: absolute; bottom: 0; right: 0; width: 12px; height: 12px;
+    border-bottom: 3px solid #00d2ff; border-right: 3px solid #00d2ff;
   }
 }
 
-/* Clean UI Structure for the Tag Radar Belt Container Box */
-.asteroid-radar-belt {
-  width: calc(100% - 30px);
-  margin: 15px auto;
-  padding: 14px;
-  border: 1px solid rgba(0, 210, 255, 0.2);
-  border-radius: 10px;
-  background: rgba(4, 6, 14, 0.85);
-}
-.radar-belt-header {
-  font-family: monospace; font-size: 11px; font-weight: bold; color: #ffbc00;
-  display: flex; align-items: center; gap: 6px; margin-bottom: 12px; letter-spacing: 0.5px;
-}
-.radar-dot-pulse { width: 6px; height: 6px; background: #ffbc00; border-radius: 50%; animation: radPulse 1.5s infinite; }
-.asteroid-field { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-start; }
-
-/* Interactive Cyberpunk Tag Nodes */
-.space-tag-node {
-  display: inline-block !important;
-  color: #00d2ff !important;
-  text-decoration: none !important;
-  font-family: monospace;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 5px 10px;
-  background: rgba(0, 210, 255, 0.05);
-  border: 1px solid rgba(0, 210, 255, 0.2);
-  border-radius: 6px;
-  transition: all 0.25s ease-in-out;
+/* 2. PLANETARY ARTICLE CARD PLATES */
+article.card, .post-preview {
+  background: radial-gradient(circle at 90% 10%, rgba(0, 212, 255, 0.12) 0%, rgba(5, 8, 16, 0.75) 80%) !important;
+  border: 1px solid rgba(0, 212, 255, 0.2) !important;
+  border-radius: 50px 16px 50px 16px !important; /* Generates unique planetary curvature profile */
+  box-shadow: inset -5px -5px 15px rgba(0,0,0,0.6), 0 4px 15px rgba(0,0,0,0.4) !important;
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
 
   &:hover {
-    background: #00d2ff !important;
-    color: #020206 !important;
-    box-shadow: 0 0 12px #00d2ff;
-    transform: scale(1.05) translateY(-1px);
+    transform: scale(1.015) translateY(-2px);
+    border-color: rgba(0, 212, 255, 0.5) !important;
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.15), inset -2px -2px 10px rgba(0, 212, 255, 0.05) !important;
   }
 }
 
-@keyframes radPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
+/* 3. RIGHT HAND SIDEBAR TARGET SEARCH PANEL */
+.target-tracking-deck {
+  background: rgba(4, 6, 12, 0.5) !important;
+  border-left: 1px dashed rgba(0, 212, 255, 0.2) !important;
+  border-radius: 0 16px 16px 0;
+  
+  #search-input {
+    background: rgba(0,0,0,0.6) !important;
+    border: 1px solid rgba(0, 212, 255, 0.3) !important;
+    color: #ffffff !important;
+    font-family: monospace;
+    &:focus { border-color: #ffbc00 !important; box-shadow: 0 0 10px rgba(255,188,0,0.3) !important; }
+  }
+}
+
+/* Glowing Neon Fonts Rules */
+h1, h2, h3, .post-title, .site-title {
+  color: #00d2ff !important;
+  text-shadow: 0 0 10px rgba(0, 212, 255, 0.4) !important;
+  font-family: 'Courier New', Courier, monospace !important;
+}
+
+/* Engine Particle Trail Sparkles */
+.star-sparkle {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 999999;
+  transform: translate(-50%, -50%);
+  animation: flareOut 1s cubic-bezier(0, 0.6, 0.2, 1) forwards;
+}
+
+@keyframes flareOut {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 8px var(--glow), 0 0 16px var(--glow); }
+  100% { opacity: 0; transform: translate(var(--mx), var(--my)) scale(0); }
+}
