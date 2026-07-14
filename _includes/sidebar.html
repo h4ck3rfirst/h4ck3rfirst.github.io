@@ -75,23 +75,23 @@
     
     <div class="asteroid-field">
       {% if site.tags.size > 0 %}
-        <!-- Safely iterate over the tag configuration dictionary keys -->
-        {% assign tags_count = 0 %}
+        <!-- Counter block initialization to prevent multi-cycle overlap text leakage -->
+        {% assign idx = 0 %}
         {% for tag in site.tags %}
-          {% if tags_count < 12 %}
+          {% if idx < 12 %}
             {% assign tag_name = tag[0] %}
             {% assign tag_size = tag[1].size %}
             
-            {% cycle 'shape': 'shape-a', 'shape-b', 'shape-c', 'shape-d' %}
+            <!-- Structural separation corrections for standard layout styling arrays -->
+            {% cycle 'shape', 'shape-a', 'shape-b', 'shape-c', 'shape-d' %}
             {% capture current_shape %}{{ current_cycle }}{% endcapture %}
             
-            {% cycle 'shade': 'shade-a', 'shade-b', 'shade-c', 'shade-d', 'shade-e' %}
+            {% cycle 'shade', 'shade-a', 'shade-b', 'shade-c', 'shade-d', 'shade-e' %}
             {% capture current_shade %}{{ current_cycle }}{% endcapture %}
             
-            {% cycle 'size': 'size-sm', 'size-md', 'size-lg' %}
+            {% cycle 'size', 'size-sm', 'size-md', 'size-lg' %}
             {% capture current_size %}{{ current_cycle }}{% endcapture %}
 
-            <!-- Fixed URL building strategy to prevent htmlproofer compilation blocks -->
             {% capture tag_url %}/tags/{{ tag_name | slugify }}/{% endcapture %}
 
             <a href="{{ tag_url | relative_url }}" 
@@ -99,7 +99,7 @@
                style="animation-duration: {{ tag_size | plus: 3 }}s;">
                #{{ tag_name }}
             </a>
-            {% assign tags_count = tags_count | plus: 1 %}
+            {% assign idx = idx | plus: 1 %}
           {% endif %}
         {% endfor %}
       {% else %}
@@ -149,6 +149,4 @@
       {% endif %}
     {% endfor %}
   </div>
-  <!-- .sidebar-bottom -->
 </aside>
-<!-- #sidebar -->
