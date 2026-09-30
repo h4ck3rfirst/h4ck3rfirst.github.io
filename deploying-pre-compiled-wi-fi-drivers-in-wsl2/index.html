@@ -1,0 +1,453 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Deploying Pre-Compiled Wi-Fi Drivers in WSL2 - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Deploying Pre-Compiled Wi-Fi Drivers in WSL2"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Guide: Deploying Pre-Compiled Wi-Fi Drivers in WSL2 Scenario: You have built a custom WSL2 kernel with wireless support enabled (CONFIG_CFG80211,&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/deploying-pre-compiled-wi-fi-drivers-in-wsl2/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;399b33d25e97aaafdf782ff626f536c4"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/deploying-pre-compiled-wi-fi-drivers-in-wsl2/"},"headline":"Deploying Pre-Compiled Wi-Fi Drivers in WSL2","datePublished":"2026-10-01T00:09+05:30","dateModified":"2026-10-01T00:09+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Guide: Deploying Pre-Compiled Wi-Fi Drivers in WSL2 Scenario: You have built a custom WSL2 kernel with wireless support enabled (CONFIG_CFG80211,&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>Deploying Pre-Compiled Wi-Fi Drivers in WSL2</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-10-01T00:09" class="feed__date">October 1, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><h1 id="guide-deploying-pre-compiled-wi-fi-drivers-in-wsl2">Guide: Deploying Pre-Compiled Wi-Fi Drivers in WSL2</h1><p><strong>Scenario:</strong> You have built a custom WSL2 kernel with wireless support enabled (<code>CONFIG_CFG80211</code>, <code>CONFIG_MAC80211</code>) and successfully compiled the out-of-kernel driver on a development machine. Instead of re-compiling the driver stack on every new WSL2 instance, you can package the compiled module hierarchy into a zip archive and deploy it instantly.</p><h3 id="what-is-inside-the-zip-file">What is inside the ZIP file?</h3><p>The backup zip file preserves the exact kernel tree directory structure required by Linux:</p><ul><li><code>/lib/modules/&lt;kernel-version&gt;/kernel/drivers/net/wireless/</code> — Contains the compiled driver binary file (e.g., <code>8821au.ko</code>).</li><li><code>/lib/modules/&lt;kernel-version&gt;/</code> — Core dependency mapping files (<code>modules.dep</code>, <code>modules.alias</code>, etc.) generated during the initial compilation.</li></ul><p><a href="https://github.com/h4ck3rfirst/Custom-kernel-Wsl2/blob/main/6.18.40.1-microsoft-standard-WSL2%2B.zip">Zipfile</a> downlaod and linux wsl</p><p><a href="https://github.com/h4ck3rfirst/Custom-kernel-Wsl2/blob/main/vmlinux-wifi">Custom precompiled kernel</a> at window downlaod folder</p><hr><h2 id="step-by-step-restoration-guide">Step-by-Step Restoration Guide</h2><p>Use these steps to restore the pre-compiled driver on any target Windows machine running a clean WSL2 Linux distribution.</p><h3 id="step-1-configure-the-custom-kernel-on-windows">Step 1: Configure the Custom Kernel on Windows</h3><p>Ensure the Windows host <code>.wslconfig</code> file (located in your Windows user profile directory: <code>C:\Users\&lt;Windows_User&gt;\.wslconfig</code>) points directly to the custom compiled, wireless-enabled kernel binary:</p><pre><code class="language-ini">[wsl2]
+kernel=C:\\path\\to\\your\\custom\\vmlinux-wifi
+</code></pre><h3 id="step-2-extract-and-move-modules-into-wsl2">Step 2: Extract and Move Modules into WSL2</h3><ol><li>Open your WSL2 Linux terminal.</li><li>Navigate to the directory where your backup zip file or extracted module folder is located (e.g., a shared mount path or your home directory).</li><li>Copy the entire pre-compiled structure into the system module directory using superuser privileges:</li></ol><pre><code class="language-bash"># Ensure the system module root directory exists
+sudo mkdir -p /lib/modules/
+
+# Copy the pre-compiled module folder into the system path
+# (Replace &lt;kernel-version-folder&gt; with your actual folder name, e.g., 6.18.40.1-microsoft-standard-WSL2+)
+sudo cp -r &lt;kernel-version-folder&gt; /lib/modules/
+</code></pre><h3 id="step-3-refresh-kernel-module-dependencies">Step 3: Refresh Kernel Module Dependencies</h3><p>Force Linux to re-index its module directory and register the newly dropped driver binary:</p><pre><code class="language-bash">sudo depmod -a
+</code></pre><h3 id="step-4-restart-the-wsl2-environment">Step 4: Restart the WSL2 Environment</h3><p>For the kernel to cleanly initialize the drivers and bind them to the passed-through USB device, execute a full environment reset:</p><ol><li>Open a standard <strong>Windows PowerShell</strong> window and stop the WSL instance:<pre><code class="language-powershell">wsl --shutdown
+</code></pre></li><li>Attach the physical USB Wi-Fi adapter to WSL2 using your standard <code>usbipd</code> command workflow.</li><li>Relaunch your <strong>WSL2 Linux</strong> distribution terminal.</li></ol><h3 id="step-5-verify-and-activate-the-interface">Step 5: Verify and Activate the Interface</h3><p>Confirm that the kernel picked up the hardware layer automatically without errors:</p><pre><code class="language-bash"># Verify the wireless physical layer is detected
+iw dev
+
+# View all available network interfaces
+ifconfig -a
+</code></pre><p>Bring the newly created interface online (replace <code>wlan0</code> with your specific interface name if it uses a predictable <code>wlx...</code> identifier):</p><pre><code class="language-bash">sudo ifconfig wlan0 up
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on October 1, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/learning/">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/">Linux</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fdeploying-pre-compiled-wi-fi-drivers-in-wsl2%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Deploying%20Pre-Compiled%20Wi-Fi%20Drivers%20in%20WSL2&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fdeploying-pre-compiled-wi-fi-drivers-in-wsl2%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Deploying%20Pre-Compiled%20Wi-Fi%20Drivers%20in%20WSL2 https%3A%2F%2Fh4ck3rfirst.github.io%2Fdeploying-pre-compiled-wi-fi-drivers-in-wsl2%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/how-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2/" class="content__nav-link" rel="prev"><div><span>Previous</span> Custom Kernel Wsl2</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-09-30T22:47" class="feed__date">September 30, 2026</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/how-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2/">Custom Kernel Wsl2</a></h3></header><p>How to Enable USB Wi-Fi Passthrough &amp; Realtek RTL8821AU Monitor Mode in WSL2 By default, Windows Subsystem for Linux (WSL2)&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

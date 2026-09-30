@@ -1,0 +1,502 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>custom kernel wsl2</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Custom Kernel Wsl2"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="How to Enable USB Wi-Fi Passthrough &amp;amp; Realtek RTL8821AU Monitor Mode in WSL2 By default, Windows Subsystem for Linux (WSL2)&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/how-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;399b33d25e97aaafdf782ff626f536c4"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/how-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2/"},"headline":"Custom Kernel Wsl2","datePublished":"2026-09-30T22:47+05:30","dateModified":"2026-09-30T23:10+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"How to Enable USB Wi-Fi Passthrough &amp; Realtek RTL8821AU Monitor Mode in WSL2 By default, Windows Subsystem for Linux (WSL2)&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>Custom Kernel Wsl2</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-09-30T22:47" class="feed__date">September 30, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><h2 id="how-to-enable-usb-wi-fi-passthrough--realtek-rtl8821au-monitor-mode-in-wsl2">How to Enable USB Wi-Fi Passthrough &amp; Realtek RTL8821AU Monitor Mode in WSL2</h2><p>By default, <strong>Windows Subsystem for Linux (WSL2)</strong> runs a stripped-down stock Microsoft Linux kernel. While great for general development and containerized workloads, it lacks built-in drivers for USB IP virtual host controllers (<code>vhci_hcd</code>), wireless configuration APIs (<code>cfg80211</code>/<code>mac80211</code>), and out-of-tree Wi-Fi dongles (like the <strong>Realtek RTL8821AU</strong>).</p><p>If you want to run wireless penetration testing, packet injection, and monitor mode natively inside WSL2, you need to compile a <strong>custom WSL2 kernel</strong>, enable <strong>USB/IP</strong>, and compile your adapter’s kernel drivers.</p><p>This guide walks through the step-by-step setup using <strong><code>usbipd-win</code></strong> and building a custom wireless kernel.</p><h2 id="technical-overview--prerequisites">Technical Overview &amp; Prerequisites</h2><p>To pass a physical USB Wi-Fi adapter into WSL2, two core components are required:</p><ol><li><p><strong>Host-Side Bridge (<code>usbipd-win</code>):</strong> Windows forwards raw USB packets to the Linux VM over virtual network sockets.</p></li><li><p><strong>Guest-Side Kernel Engine:</strong> The WSL2 Linux kernel must be compiled with <code>vhci_hcd</code> support, <code>mac80211</code>/<code>cfg80211</code> wireless stacks, and the appropriate driver module (<code>8821au.ko</code>).</p></li></ol><h2 id="step-1-install-and-configure-usbipd-win-on-windows">Step 1: Install and Configure <code>usbipd-win</code> on Windows</h2><p>Open <strong>PowerShell as Administrator</strong> on your Windows host system to install the USB bridging software:</p><p>PowerShell</p><pre><code># Install usbipd-win via winget
+winget install --interactive --exact dorssel.usbipd-win
+</code></pre><p><em>Note: Restart your terminal or system after installation so environment variables take effect.</em></p><h3 id="bind-and-attach-your-adapter">Bind and Attach Your Adapter</h3><p>Plug in your USB Wi-Fi adapter (e.g., TP-Link RTL8821AU) and identify its <strong>BUSID</strong>:</p><p>PowerShell</p><pre><code># List connected USB devices
+usbipd list
+</code></pre><p>Identify your adapter in the output (e.g., <code>BUSID 1-3</code>):</p><p>Plaintext</p><pre><code>BUSID  VID:PID    DEVICE                          STATE
+1-3    2357:0120  TP-Link Wireless USB Adapter    Not shared
+</code></pre><p>Bind the adapter to make it available for sharing, then attach it to your WSL distribution:</p><p>PowerShell</p><pre><code># Bind the BUSID (Only needs to be done once per port)
+usbipd bind --busid 1-3
+
+# Attach the device to your WSL2 instance
+usbipd attach --wsl --busid 1-3
+</code></pre><blockquote><p><strong>Useful Management Commands:</strong></p><ul><li><p><strong>Reconnecting:</strong> If you unplug the adapter or restart Windows, simply re-attach it:</p><p><code>usbipd attach --wsl --busid 1-3</code></p></li><li><p><strong>Releasing Control:</strong> To give the adapter back to Windows:</p><p><code>usbipd detach --busid 1-3</code></p></li></ul></blockquote><h2 id="step-2-build-a-custom-wsl2-linux-kernel">Step 2: Build a Custom WSL2 Linux Kernel</h2><p>Because the stock Microsoft kernel lacks USB/IP host controller modules (<code>vhci_hcd</code>), attaching the adapter will throw a <code>Loading vhci_hcd failed</code> error until a custom kernel is loaded.</p><h3 id="1-install-build-dependencies-inside-wsl2">1. Install Build Dependencies inside WSL2</h3><p>Launch your WSL2 distribution and install the compilation tools:</p><p>Bash</p><pre><code>sudo apt update &amp;&amp; sudo apt install -y \
+  build-essential \
+  libncurses-dev \
+  flex \
+  bison \
+  libssl-dev \
+  bc \
+  libelf-dev \
+  pkg-config \
+  ccache \
+  git
+</code></pre><h3 id="2-clone-the-official-microsoft-wsl2-kernel-source">2. Clone the Official Microsoft WSL2 Kernel Source</h3><p>Clone the matching stable branch of the WSL2 kernel:</p><p>Bash</p><pre><code>mkdir -p ~/kernel-build &amp;&amp; cd ~/kernel-build
+git clone --depth=1 -b linux-msft-wsl-6.18.y https://github.com/microsoft/WSL2-Linux-Kernel.git
+cd WSL2-Linux-Kernel
+</code></pre><h3 id="3-configure-kernel-features-make-menuconfig">3. Configure Kernel Features (<code>make menuconfig</code>)</h3><p>Pull the running WSL config as a baseline and open the configuration menu:</p><p>Bash</p><pre><code>zcat /proc/config.gz &gt; .config
+make menuconfig
+</code></pre><p>Ensure the following features are selected as <strong>Built-in <code>[*]</code></strong> (press <code>Y</code> on each):</p><ul><li><p><strong>USB/IP Virtual Host Controller Interface:</strong></p><ul><li><p><code>Device Drivers</code> —&gt; <code>USB support</code> —&gt;</p><ul><li><p><code>[*] USB/IP support</code> (<code>CONFIG_USBIP_CORE</code>)</p></li><li><p><code>[*] VHCI hcd</code> (<code>CONFIG_USBIP_VHCI_HCD</code>)</p></li><li><p><code>[*] Host Controller drivers</code> (<code>CONFIG_USBIP_HOST</code>)</p></li></ul></li></ul></li><li><p><strong>Wireless Subsystems:</strong></p><ul><li><p><code>Networking support</code> —&gt; <code>Wireless</code> —&gt;</p><ul><li><p><code>[*] cfg80211 - wireless configuration API</code></p></li><li><p><code>[*] Generic IEEE 802.11 Networking Stack (mac80211)</code></p></li></ul></li></ul></li></ul><p>Save the configuration and exit <code>menuconfig</code>.</p><h2 id="step-3-high-speed-compilation--driver-installation">Step 3: High-Speed Compilation &amp; Driver Installation</h2><p>Leverage <code>ccache</code> and multi-threaded compilation to speed up the kernel build:</p><p>Bash</p><pre><code># 1. Compile the kernel and install base module structures
+make CC=&quot;ccache gcc&quot; -j$(($(nproc) + 2)) &amp;&amp; \
+sudo make modules_install &amp;&amp; \
+cp arch/x86/boot/bzImage /mnt/c/Users/nikhi/vmlinux-wifi
+</code></pre><p>it will take 2 hours to compile the custom wsl kernel</p><h3 id="compile-the-realtek-rtl8821au-driver">Compile the Realtek RTL8821AU Driver</h3><p>Switch to your out-of-tree <code>8821au</code> driver source directory and compile it against your newly built kernel headers:</p><p>Bash</p><pre><code>cd ~/shared/tools/wifi-pentesting/complied/8821au-20210708
+
+# Clean build directory and compile module
+make clean
+make CC=&quot;ccache gcc&quot; -j$(($(nproc) + 2))
+
+# Install driver module and update module dependencies
+sudo make install
+sudo depmod -a
+</code></pre><h2 id="step-4-configure-distro-specific-or-global-kernel-boot">Step 4: Configure Distro-Specific or Global Kernel Boot</h2><p>You can apply your new kernel globally via <code>.wslconfig</code> or lock it specifically to your distribution using <code>/etc/wsl.conf</code>.</p><h3 id="option-a-distribution-specific-configuration-etcwslconf">Option A: Distribution-Specific Configuration (<code>/etc/wsl.conf</code>)</h3><p>To make <strong>only</strong> your pentesting distribution read the custom wireless kernel without affecting other WSL instances:</p><p>Open <code>/etc/wsl.conf</code> inside your Linux terminal:</p><p>Bash</p><pre><code>sudo nano /etc/wsl.conf
+</code></pre><p>Add the following configuration block:</p><p>Ini, TOML</p><pre><code>[wsl2]
+kernel=C:\\Users\\nikhi\\vmlinux-wifi
+
+[boot]
+systemd=true
+
+[user]
+default=h4ck3rfirst
+</code></pre><h3 id="option-b-global-configuration-wslconfig">Option B: Global Configuration (<code>.wslconfig</code>)</h3><p>To apply the custom kernel across all WSL2 instances, edit <code>C:\Users\&lt;Username&gt;\.wslconfig</code> in Windows PowerShell:</p><p>Ini, TOML</p><pre><code>[wsl2]
+kernel=C:\\Users\\nikhi\\vmlinux-wifi
+</code></pre><h2 id="step-5-restart-wsl-and-verify-monitor-mode">Step 5: Restart WSL and Verify Monitor Mode</h2><ol><li><p>From <strong>Windows PowerShell</strong>, shut down WSL to load the new kernel image:</p><p>PowerShell</p><pre><code>wsl --shutdown
+wsl -d kali-linux
+</code></pre></li><li><p>Attach the USB dongle from <strong>PowerShell (Admin)</strong>:</p><p>PowerShell</p><pre><code>usbipd attach --wsl --busid 1-3
+</code></pre></li><li><p>Inside your <strong>WSL terminal</strong>, load the module and verify interface recognition:</p><p>Bash</p><pre><code># Load driver module
+sudo modprobe 8821au
+
+# Verify network interfaces
+iwconfig
+</code></pre></li></ol><h3 id="enabling-monitor-mode">Enabling Monitor Mode</h3><p>With <code>wlan0</code> attached, toggle the wireless interface into monitor mode for packet capturing:</p><p>Bash</p><pre><code>sudo ip link set wlan0 down
+sudo iw dev wlan0 set type monitor
+sudo ip link set wlan0 up
+
+# Verify active mode
+iwconfig wlan0
+</code></pre><h2 id="troubleshooting-quick-reference">Troubleshooting Quick-Reference</h2><table><thead><tr><th><strong>Issue</strong></th><th><strong>Root Cause</strong></th><th><strong>Solution</strong></th></tr></thead><tbody><tr><td><strong><code>Loading vhci_hcd failed</code></strong></td><td>Active kernel lacks USB/IP modules.</td><td>Boot into custom kernel compiled with <code>CONFIG_USBIP_VHCI_HCD</code>.</td></tr><tr><td><strong><code>Module 8821au not found</code></strong></td><td>Drivers not installed into <code>/lib/modules/$(uname -r)</code>.</td><td>Run <code>sudo make modules_install</code> in kernel tree, then rebuild driver with <code>sudo make install &amp;&amp; sudo depmod -a</code>.</td></tr><tr><td><strong><code>Device with busid is already attached</code></strong></td><td>Adapter is locked by another session.</td><td>Run <code>usbipd detach --busid &lt;BUSID&gt;</code> and then re-attach.</td></tr></tbody></table></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on September 30, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/learning/">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/">Linux</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhow-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Custom%20Kernel%20Wsl2&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhow-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Custom%20Kernel%20Wsl2 https%3A%2F%2Fh4ck3rfirst.github.io%2Fhow-to-enable-usb-wi-fi-passthrough-and-realtek-rtl8821au-monitor-mode-in-wsl2%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/cohort/" class="content__nav-link" rel="prev"><figure class="content__nav-image"><img src="https://h4ck3rfirst.github.io/media/posts/9/responsive/cohort-xs.png" class="lazyload" loading="lazy" alt="" height="800" width="800"></figure><div><span>Previous</span> HackTheBox Cohort Walkthrough</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/deploying-pre-compiled-wi-fi-drivers-in-wsl2/" class="content__nav-link" rel="next"><div><span>Next</span> Deploying Pre-Compiled Wi-Fi Drivers in WSL2</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-10-01T00:09" class="feed__date">October 1, 2026</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/deploying-pre-compiled-wi-fi-drivers-in-wsl2/">Deploying Pre-Compiled Wi-Fi Drivers in WSL2</a></h3></header><p>Guide: Deploying Pre-Compiled Wi-Fi Drivers in WSL2 Scenario: You have built a custom WSL2 kernel with wireless support enabled (CONFIG_CFG80211,&hellip;</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>
